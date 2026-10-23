@@ -1,8 +1,7 @@
-ASHFALL ALPHA 0.8.8.1 — EXPÉDITION PLEIN ÉCRAN
+ASHFALL Alpha 0.8.8.2 — Correction des proportions plein écran
 
-Version complète construite sur 0.8.8.
-Mode immersion automatique pendant expédition ; retour au refuge normal.
-Avant mise à jour, sauvegarder/exporter le code depuis le jeu.
-Remplacer les 9 fichiers à la racine du dépôt GitHub Pages.
-Ne pas effacer les données de la PWA sur iPhone.
-Moteur 360 x 400 : l’image s’adapte à la surface de l’écran et peut être étirée selon le ratio du téléphone ; commandes tactiles conservent leur mapping.
+La zone de jeu conserve le ratio logique 360x400 (9:10) et reste centrée dans la hauteur disponible. Joystick et sprites ne sont plus allongés. Les bandes restantes servent de fond à l’interface : cette correction ne constitue pas encore une caméra à champ de vision étendu.
+
+Avant déploiement, exporter la sauvegarde dans Notes. Remplacer tous les fichiers à la racine du dépôt GitHub (9 fichiers) et vérifier la version affichée. Ne pas désinstaller la PWA.
+
+Tests: joystick rond, personnage non étiré, DASH en mouvement, portes latérales accessibles, sac/carte et reprise de sauvegarde.
