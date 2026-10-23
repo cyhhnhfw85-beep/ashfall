@@ -1,7 +1,8 @@
-ASHFALL Alpha 0.8.7 — Pixel-Art Reborn
+ASHFALL ALPHA 0.8.8 — IMMERSION (VERSION COMPLÈTE)
 
-Version complète basée sur 0.8.6. Sprites pixel-art procéduraux (joueur, mutants, drones, robots, sentinelles, boss), sols sectoriels détaillés et coffre rehaussé. Aucun sprite externe nécessaire.
-
-Sauvegarde: clé ashfall_pwa_v1 inchangée. Exporter la sauvegarde avant installation.
-
-Remplacer les fichiers à la racine du dépôt GitHub, contrôler le déploiement Pages, puis vérifier que l’application indique 0.8.7. Ne pas désinstaller la PWA.
+9 fichiers à placer directement à la racine du dépôt GitHub.
+Basée sur Alpha 0.8.7 : personnages pixel-art et sauvegardes préservés.
+Nouveautés : sons facultatifs, effets d’impact localisés, particules, lumière discrète, réglages Son/Effets/Réduit.
+IMPORTANT : exporter la sauvegarde via le jeu avant mise à jour. Ne pas supprimer la PWA installée.
+Le son est désactivé par défaut et demande un appui utilisateur.
+Tests : syntaxe JavaScript + intégrité du ZIP. Test iPhone nécessaire.
