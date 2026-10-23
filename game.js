@@ -392,10 +392,9 @@ function renderRefugeCharacter(){
  if($('characterHeldWeaponImage')){
   const weaponName=String(data.equipped?.name||'').toLowerCase();
   const isPistol=/pistolet|secours/.test(weaponName)||!data.equipped;
-  const asset=isPistol?'pistol':'rifle';
   const img=$('characterHeldWeaponImage');
-  const wanted='assets/nomade/'+asset+'.png';
-  if(img.getAttribute('src')!==wanted)img.setAttribute('src',wanted);
+  const source=isPistol?img.dataset.pistolSrc:$('nomadeRifleData')?.src;
+  if(source && img.src!==source) img.src=source;
 }
  if($('characterWeaponBadge'))$('characterWeaponBadge').textContent=data.equipped?`${data.equipped.rar} · ${data.equipped.name}`:'Aucune arme';
  if($('characterPowerBadge'))$('characterPowerBadge').textContent=data.equipped?`${data.equipped.dmg+data.dmgLv*3} DGT · ${data.equipped.rate} tirs/s`:'Puissance nulle';

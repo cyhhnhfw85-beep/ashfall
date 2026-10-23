@@ -21,3 +21,6 @@ Correction du double positionnement SVG/CSS qui rendait l’arme tenue invisible
 Trois sprites PNG transparents intégrés dans le menu Personnage, avec corps immobile et pose commutée automatiquement selon l'arme.
 Le gameplay, les sauvegardes et les statistiques ne sont pas modifiés.
 Limite actuelle : les armes disponibles sont classées visuellement en deux silhouettes (pistolet / fusil), et la jonction aux épaules sur les images sources reste perfectible.
+
+## 0.8.9.33 — Correctif des images manquantes
+Les images du personnage sont directement embarquées dans index.html afin de fonctionner même si un hébergement n’expose pas les sous-dossiers. Les PNG restent inclus comme sources. Aucun changement de sauvegarde ou gameplay.
