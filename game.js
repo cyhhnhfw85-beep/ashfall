@@ -547,27 +547,31 @@ $('tutorialPrev').addEventListener('click',()=>{tutorialIndex=Math.max(0,tutoria
 $('tutorialNext').addEventListener('click',()=>{if(tutorialIndex<tutorialSteps.length-1){tutorialIndex++;tutorialRender()}else{tutorialClose();start()}});
 $('tutorialSkip').addEventListener('click',tutorialClose);
 
-if(!data.equipped&&!data.run)data.equipped=starter();region();render();if(!data.run&&data.runs===0){try{if(!localStorage.getItem(TUTORIAL_KEY))tutorialShow(0)}catch(e){}}if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
-})();
-
-
-// 0.8.9.6: navigation is presentation-only; never stored in save data.
+// 0.8.9.8 — Navigation du refuge dans la même portée que l'état du jeu.
 let refugeActivePage='home';
 function refugeNavigate(tab){
- if(data.run)return;
- if(tab==='merchant'){
-   refugeActivePage='merchant';document.body.classList.add('refuge-merchant');
-   merchantOpen();
-   document.getElementById('tools').scrollIntoView({block:'start',behavior:'instant'});
-   return;
- }
- refugeActivePage=tab;document.body.classList.remove('refuge-merchant');
- const modal=document.getElementById('tools');
- if(modal&&!modal.hidden)modal.hidden=true;
+ if(data.run || !['home','character','merchant','progress'].includes(tab))return;
+ refugeActivePage=tab;
+ const isMerchant=tab==='merchant';
+ document.body.classList.toggle('refuge-merchant',isMerchant);
  document.querySelectorAll('[data-refuge-page]').forEach(p=>{p.hidden=p.dataset.refugePage!==tab});
- document.querySelectorAll('.refuge-tab').forEach(b=>{const active=b.dataset.refugeTab===tab;b.classList.toggle('active',active);b.setAttribute('aria-current',active?'page':'false')});
- if(tab==='progress'){const target=document.getElementById('refuge-progress-mirror'),source=document.getElementById('regionStatus');if(target&&source)target.textContent=source.textContent}
- window.scrollTo({top:0,behavior:'instant'});
+ document.querySelectorAll('.refuge-tab').forEach(b=>{
+  const active=b.dataset.refugeTab===tab;
+  b.classList.toggle('active',active);
+  b.setAttribute('aria-current',active?'page':'false');
+ });
+ const tools=$('tools');
+ if(isMerchant){merchantOpen();}
+ else if(tools&&!tools.hidden){tools.hidden=true;}
+ if(tab==='progress'){
+  const target=$('refuge-progress-mirror'),source=$('regionStatus');
+  if(target&&source)target.textContent=source.textContent;
+ }
+ // Keep navigation visible while switching between refuge pages.
+ $('home').scrollIntoView({block:'start',behavior:'instant'});
 }
 document.querySelectorAll('[data-refuge-tab]').forEach(b=>b.addEventListener('click',()=>refugeNavigate(b.dataset.refugeTab)));
-document.getElementById('toolsClose').addEventListener('click',()=>{if(refugeActivePage==='merchant')refugeNavigate('home')});
+$('toolsClose').addEventListener('click',()=>{if(refugeActivePage==='merchant')refugeNavigate('home')});
+
+if(!data.equipped&&!data.run)data.equipped=starter();region();render();if(!data.run&&data.runs===0){try{if(!localStorage.getItem(TUTORIAL_KEY))tutorialShow(0)}catch(e){}}if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+})();
