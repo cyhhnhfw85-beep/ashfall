@@ -430,3 +430,8 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 /* 0.8.9.29 — Nomade rétro : rendu volontairement plat et lisible */
 .tactical-showcase .retro-nomad{filter:drop-shadow(0 6px 3px #0008)}
 .tactical-showcase .premium-portrait{background:radial-gradient(ellipse at 50% 60%,#203d47 0%,#0a1c28 76%)}
+
+/* 0.8.9.30 : le Nomade tient intégralement dans le portrait, jambes visibles. */
+#refuge-page-character .premium-portrait{overflow:hidden!important}
+#refuge-page-character svg.retro-nomad{display:block;width:100%!important;height:100%!important;max-height:100%;overflow:hidden!important;object-fit:contain}
+#refuge-page-character .portrait-label{z-index:2}

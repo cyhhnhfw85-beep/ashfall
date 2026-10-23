@@ -310,7 +310,7 @@ function weaponHeldArt(w){
   rifle:`<path d="M5 37h17v-7h42v7h12v10H56l-7 19H33l5-19H5z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M19 25h37v5H19z" fill="#243745" stroke="${stroke}" stroke-width="2"/><path d="M22 34h32" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M60 45v9" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`,
   carbine:`<path d="M7 36h20v-8h36v8h11v10H53l-7 18H31l6-18H7z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M16 32h32" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M29 25h21M59 36v11" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`
  };
- return `<g class="held-weapon" transform="translate(60 142) rotate(-17 40 22)"><ellipse cx="32" cy="25" rx="38" ry="13" fill="#08141b" opacity=".18"/><path d="M16 43h54" stroke="${accent}" stroke-width="2" opacity=".2"/><g>${shapes[kind]}</g></g>`;
+ return `<g class="held-weapon" transform="translate(90 151) rotate(-19 40 22)"><ellipse cx="32" cy="25" rx="38" ry="13" fill="#08141b" opacity=".18"/><path d="M16 43h54" stroke="${accent}" stroke-width="2" opacity=".2"/><g>${shapes[kind]}</g></g>`;
 }
 function itemRow(w,i,source){return uiWeaponCard(w,i,source,false)}
 function uniqueCheck(){let seen=new Set(),items=[data.equipped,...data.stash];if(data.run)items=[data.run.equipped,...data.run.bag];for(let w of items){if(!w)continue;if(seen.has(w.id))return false;seen.add(w.id)}return true}
