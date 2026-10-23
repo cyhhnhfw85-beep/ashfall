@@ -1,7 +1,7 @@
-ASHFALL Alpha 0.8.2 — Dash corrigé.
-Déployer les 8 fichiers à la racine du dépôt GitHub Pages.
-Avant la mise à jour, exporter une sauvegarde depuis le jeu.
-Dash : 95 px, 2,2 s de recharge, choc sur les obstacles, halo visuel.
-La clé de sauvegarde ashfall_pwa_v1 est conservée.
-
-Alpha 0.8.3 : DASH multitouch sur pointerdown (deuxieme doigt pendant joystick), sans changer les sauvegardes.
+ASHFALL Alpha 0.8.4 — Portes tactiques.
+Les portes vers les salles inconnues restent fermees jusqu’a securisation de la salle actuelle.
+Retour vers les salles visitees autorise, sauf verrouillage total des arenes et boss.
+Alerte retiree des regles et de l’interface; porte rouge si inaccessible, verte si ouverte.
+Salles vides, entree et avant-postes securises automatiquement.
+Sauvegarde existante (ashfall_pwa_v1), dash multitouch, collisions, extraction conserves.
+Exporter une sauvegarde avant toute mise a jour.
