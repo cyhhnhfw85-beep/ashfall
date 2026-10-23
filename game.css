@@ -76,3 +76,27 @@ body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 83px)}
 .merchant-tabs{display:flex;gap:8px;margin:12px 0;position:sticky;top:0;background:#152537;padding:8px 0;z-index:2}
 .merchant-tabs button{flex:1;min-width:0;padding:12px 4px;font-size:14px}.merchant-tabs .active{background:#dba960;color:#101a26}
 #toolsBody .ui-weapon{margin:11px 0}#toolsBody .ui-weapon>button{margin-top:10px;width:100%}#toolsBody button:disabled{opacity:.45}
+
+/* 0.8.9.6 — Refuge en pages, sans modification de la simulation */
+.refuge-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;margin-bottom:12px;position:sticky;top:0;z-index:8;padding:5px 0;background:#182635}
+.refuge-tab{font-size:10px;line-height:1.3;min-height:48px;padding:7px 2px;white-space:normal;color:#c4d6e4}
+.refuge-tab.active{background:#e5ac60;border-color:#f5ce93;color:#142230}
+.refuge-page[hidden]{display:none!important}
+.refuge-page{min-height:260px}
+.refuge-overview{font-size:13px;line-height:1.5;color:#aabfd0;margin:4px 3px 14px}
+.refuge-quick{background:#172b3b;border:1px solid #466277;border-radius:13px;padding:12px}
+.refuge-quick h3{margin:1px 0 14px;color:#f0c184;letter-spacing:.08em}
+.refuge-quick .ui-title{border:0;margin:2px 0 7px;padding:0}
+.refuge-quick .ui-launch{margin:14px 0 0}
+.refuge-shortcuts{display:grid;gap:7px;margin:16px 0 8px}
+.refuge-shortcuts button{text-align:left;min-height:44px;background:#263f53}
+.refuge-section-head h2{color:#f0bf7f;letter-spacing:.08em}.refuge-section-head p{font-size:13px;color:#aec0d0;line-height:1.5}
+.refuge-character-card{background:linear-gradient(120deg,#254458,#152b3b);border:1px solid #557489;border-radius:13px;display:flex;align-items:center;gap:16px;padding:16px;margin:12px 0}
+.refuge-avatar{display:grid;place-items:center;font-size:56px;color:#e9bc78;background:radial-gradient(circle,#34627a,#132637);width:105px;height:130px;border:1px solid #517a8e;border-radius:13px;text-shadow:0 0 22px #daa96275}
+.refuge-character-card p{font-size:12px}.refuge-progress-card{background:#1e3748;border:1px solid #49667b;border-radius:14px;padding:18px;margin:12px 0}
+.refuge-progress-detail{background:#132636;padding:14px;border-radius:10px;font-size:14px;line-height:1.7}
+body.refuge-merchant #home{display:none!important}
+body.refuge-merchant #tools{display:block;border-color:#aa8352}
+body.refuge-merchant #toolsTitle{color:#edc18a}
+#refuge-legacy-merchant[hidden]{display:none}
+@media(max-width:390px){.refuge-tab{font-size:9px}.refuge-character-card{padding:10px}.refuge-avatar{width:85px;height:105px}}

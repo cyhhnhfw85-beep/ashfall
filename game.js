@@ -532,3 +532,25 @@ $('tutorialSkip').addEventListener('click',tutorialClose);
 
 if(!data.equipped&&!data.run)data.equipped=starter();region();render();if(!data.run&&data.runs===0){try{if(!localStorage.getItem(TUTORIAL_KEY))tutorialShow(0)}catch(e){}}if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
 })();
+
+
+// 0.8.9.6: navigation is presentation-only; never stored in save data.
+let refugeActivePage='home';
+function refugeNavigate(tab){
+ if(data.run)return;
+ if(tab==='merchant'){
+   refugeActivePage='merchant';document.body.classList.add('refuge-merchant');
+   merchantOpen();
+   document.getElementById('tools').scrollIntoView({block:'start',behavior:'instant'});
+   return;
+ }
+ refugeActivePage=tab;document.body.classList.remove('refuge-merchant');
+ const modal=document.getElementById('tools');
+ if(modal&&!modal.hidden)modal.hidden=true;
+ document.querySelectorAll('[data-refuge-page]').forEach(p=>{p.hidden=p.dataset.refugePage!==tab});
+ document.querySelectorAll('.refuge-tab').forEach(b=>{const active=b.dataset.refugeTab===tab;b.classList.toggle('active',active);b.setAttribute('aria-current',active?'page':'false')});
+ if(tab==='progress'){const target=document.getElementById('refuge-progress-mirror'),source=document.getElementById('regionStatus');if(target&&source)target.textContent=source.textContent}
+ window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-refuge-tab]').forEach(b=>b.addEventListener('click',()=>refugeNavigate(b.dataset.refugeTab)));
+document.getElementById('toolsClose').addEventListener('click',()=>{if(refugeActivePage==='merchant')refugeNavigate('home')});
