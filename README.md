@@ -18,3 +18,5 @@ Correction du double positionnement SVG/CSS qui rendait l’arme tenue invisible
 - Tutoriel : retrait de la référence au bouton ACTION et clarification du joystick.
 
 0.8.9.30 : arme devant le torse et mains au premier plan, sans changement de gameplay ni de sauvegarde.
+
+0.8.9.31 : silhouette du survivant simplifiée ; arme tenue et mains retirées du portrait ; slots latéraux allégés ; aucun changement gameplay/sauvegarde.

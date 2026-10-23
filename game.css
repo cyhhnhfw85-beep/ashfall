@@ -430,3 +430,25 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 /* 0.8.9.30 – weapon grip without stacked transforms */
 #refuge-page-character #characterHeldWeaponArt{transform:none!important;transform-origin:0 0!important}
 #refuge-page-character .weapon-grip-hands{pointer-events:none;filter:drop-shadow(0 2px 2px #03141b)}
+
+
+/* 0.8.9.31 — silhouette épurée */
+#refuge-page-character .tactical-showcase{grid-template-columns:64px minmax(0,1fr) 64px;gap:12px;align-items:start}
+#refuge-page-character .premium-portrait{height:248px;max-width:228px;background:radial-gradient(circle at 50% 30%,#295767 0%,#163746 43%,#091e2d 88%)!important}
+#refuge-page-character .equip-square{min-height:66px;padding:8px 5px;border-radius:14px;background:linear-gradient(180deg,#10212d,#0b1721);border:1px dashed #456072;color:#90a7b6;box-shadow:none}
+#refuge-page-character .equip-square span{font-size:22px;opacity:.82}
+#refuge-page-character .equip-square small{font-size:10px;letter-spacing:.08em;opacity:.82}
+#refuge-page-character .equip-square.active-slot{border-style:solid;border-color:#d5a455;background:linear-gradient(180deg,#1c2a39,#112131);color:#f3d08a;box-shadow:0 0 0 1px #00000022 inset}
+#refuge-page-character .future-slot{opacity:.58}
+#refuge-page-character .portrait-label{background:linear-gradient(180deg,#132838,#102131);border-color:#5d7788;color:#dce6ea}
+#refuge-page-character #characterHeldWeaponArt{display:none!important}
+#refuge-page-character .weapon-grip-hands{display:none!important}
+#refuge-page-character .survivor-meta{padding-top:4px}
+#refuge-page-character .survivor-badges{justify-content:center;gap:8px}
+#refuge-page-character .survivor-badges span{background:#122535;border-color:#4d6576}
+@media(max-width:390px){
+  #refuge-page-character .tactical-showcase{grid-template-columns:50px minmax(0,1fr) 50px;gap:6px;padding:8px}
+  #refuge-page-character .premium-portrait{height:212px}
+  #refuge-page-character .equip-square{min-height:52px;padding:6px 4px}
+  #refuge-page-character .equip-square small{font-size:9px}
+}
