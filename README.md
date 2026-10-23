@@ -37,3 +37,10 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 - Images embarquees dans index.html afin d'eviter l'absence de sprites sur hebergement PWA.
 - Selection selon la classe d'arme equipee; les autres armes ont une silhouette de fusil par defaut.
 - Gameplay et clefs de sauvegarde non modifies.
+
+## 0.8.9.36 — Arsenal rétro (16 références graphiques)
+- Icônes extraites de la planche d'arsenal validée ; une icône pour chaque arme fixe et une pour chacune des 5 familles d'armes générées.
+- Inventaire, emplacement équipé, cartes d'armes, marchand et sacs utilisent la même fonction graphique.
+- Rareté conservée via la bordure actuelle ; noms, statistiques, inventaire, gameplay, sauvegarde et Nomade du menu inchangés.
+- Sprites PNG fournis dans assets/weapons et aussi directement intégrés en base64 dans game.js pour éviter les images manquantes au déploiement.
+- Détourage automatique (non identique aux fichiers sources éditables) : la lisibilité finale doit être vérifiée sur iPhone.

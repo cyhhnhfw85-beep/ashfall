@@ -443,3 +443,12 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 
 /* 0.8.9.35: remplacement des bras decoupes par deux silhouettes completes. */
 #refuge-page-character .nomade-stage .nomade-complete{display:block;position:absolute;inset:0;width:100%;height:calc(100% - 18px);object-fit:contain;object-position:center center;filter:drop-shadow(0 5px 6px rgba(0,0,0,.45));}
+
+/* ASHFALL 0.8.9.36 — Arsenal illustré, sans modifier la grille ni le gameplay */
+.weapon-art-img{display:block;box-sizing:border-box;object-fit:contain;object-position:center;background:transparent;max-width:none;max-height:none;filter:drop-shadow(0 2px 3px #000c)}
+.inventory-symbol .weapon-art-img{width:61px;height:39px;max-width:100%;max-height:100%}
+.ui-weapon-icon .weapon-art-img{width:70px;height:52px;max-width:100%;max-height:100%}
+#refuge-page-character .inventory-selected-art .weapon-art-img{width:84px;height:65px;max-width:100%;max-height:100%}
+.equipped-slot-art .weapon-art-img{width:63px;height:45px;max-width:100%;max-height:100%}
+#activeWeaponArt .weapon-art-img{width:64px;height:44px;max-width:100%;max-height:100%}
+@media(max-width:390px){.inventory-symbol .weapon-art-img{width:49px;height:34px}}
