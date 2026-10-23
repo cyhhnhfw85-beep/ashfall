@@ -422,3 +422,7 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
   #refuge-page-character .premium-portrait{height:228px}
   #refuge-page-character .equip-square{min-height:46px;max-height:78px}
 }
+
+/* 0.8.9.28 — Correctif: le calque parent ne doit pas redéplacer le groupe SVG */
+#refuge-page-character #characterHeldWeaponArt{transform:none!important;transform-origin:0 0!important;filter:drop-shadow(0 3px 3px #000b)}
+#refuge-page-character #characterHeldWeaponArt .held-weapon{transform-origin:unset}

@@ -7,3 +7,6 @@ Changements principaux :
 - les colonnes d'équipement ont été légèrement réduites pour laisser plus de place au portrait.
 
 Aucun changement de sauvegarde.
+
+## 0.8.9.28
+Correction du double positionnement SVG/CSS qui rendait l’arme tenue invisible. Aucune modification du schéma de sauvegarde ni des statistiques.
