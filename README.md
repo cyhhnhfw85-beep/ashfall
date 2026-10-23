@@ -16,3 +16,8 @@ Correction du double positionnement SVG/CSS qui rendait l’arme tenue invisible
 - Réalignement du calque d'arme tenue.
 - Cache applicatif mis à jour pour forcer le rafraîchissement des assets.
 
+
+## 0.8.9.32 — Nomade modulaire dans le menu
+Trois sprites PNG transparents intégrés dans le menu Personnage, avec corps immobile et pose commutée automatiquement selon l'arme.
+Le gameplay, les sauvegardes et les statistiques ne sont pas modifiés.
+Limite actuelle : les armes disponibles sont classées visuellement en deux silhouettes (pistolet / fusil), et la jonction aux épaules sur les images sources reste perfectible.
