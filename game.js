@@ -18,7 +18,7 @@ function isGuarded(id,r=data.run){return isLarge(r)?(r.rooms[id].kind==='guarded
 function value(w){return Math.max(20,Math.round(w.dmg*17*(w.rar==='Épique'?2.3:w.rar==='Rare'?1.5:1)))}
 function premium(){return Math.max(20,Math.ceil(value(data.equipped)*.12))}
 function price(){return Math.round(value(data.equipped)*.55)}
-function tint(w){return w.rar==='Épique'?'#d29cff':w.rar==='Rare'?'#88b9ff':'#e3edf2'}
+function tint(w){return ({'Commun':'#d9e2e9','Inhabituel':'#60de98','Rare':'#5aa9ff','Épique':'#c184ff','Légendaire':'#ffbd4c','Mythique':'#ff667c'})[w.rar]||'#d9e2e9'}
 function makeWeapon(level=0){let r=Math.random(),rar=r<.075?'Épique':r<.32?'Rare':'Commun';return{id:uid(),name:['Nomade','Vektor','Spectre','Ion','Cendre'][pick(0,4)]+'-'+pick(1,9),rar,dmg:pick(15,23)+level*2+(rar==='Rare'?8:rar==='Épique'?17:0),rate:Math.round((1.3+Math.random()*1.4)*10)/10}}
 const maxHp=()=>100+data.hpLv*15;
 const damage=()=>data.run.equipped.dmg+data.dmgLv*3;
@@ -57,8 +57,49 @@ function environment(room){if(!room)return;let sec=sectorOf(room);if(room.envPha
 function enemiesFor(id){let r=data.run,room=r?.rooms[id];if(id===0||room?.kind==='outpost')return[];let arena=isArena(id,r),boss=isBoss(id,r),sec=sectorOf(room);let count=boss?3:arena?4:isExit(id,r)?2:pick(2,3);return Array.from({length:count},(_,k)=>{let type=(boss||arena)&&k===count-1?'sentinel':sec===0?(k%2?'ranged':'chaser'):sec===1?(k%3?'ranged':'drone'):sec===2?(k%2?'brute':'ranged'):(k%2?'sentinel':'drone');let hp=(type==='sentinel'?(boss?250:125):type==='brute'?125:type==='drone'?65:type==='ranged'?60:75)*(1+sec*.12);return{id:uid(),type,x:pick(78,275),y:pick(85,255),hp,max:hp,cd:Math.random()+.6,wind:0,aim:0}})}
 function spawnReinforcement(room,count){let n=room.enemies.length;for(let k=0;k<count;k++){let type=k%2===0?'ranged':'chaser',hp=type==='ranged'?60:75;room.enemies.push({id:uid(),type,x:k%2?292:67,y:85+35*(k%3),hp,max:hp,cd:1,wind:0,aim:0})}}
 
-function createRun(){let m=makeLargeMap();region().expeditions++;return {...m,current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}}}
+function createRun(){let m=makeLargeMap();region().expeditions++;return {...m,current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,xp:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}}}
 function setPlayer(){player=data.run?.player||null}
+// Butin propre à chaque salle : persiste avec l'expédition, jamais téléporté au sac.
+function ground(room){if(!Array.isArray(room.drops))room.drops=[];return room.drops}
+function lootSpawn(room,kind,x,y,item=null,amount=1){
+ const drops=ground(room);let theta=Math.random()*Math.PI*2,rad=10+Math.random()*17;
+ let px=clamp(x+Math.cos(theta)*rad,32,328),py=clamp(y+Math.sin(theta)*rad,40,358);
+ // Éviter de laisser un objet à l'intérieur d'un décor solide.
+ if(collidesSolid(px,py,8,room)){px=clamp(x,32,328);py=clamp(y,40,358)}
+ drops.push({id:uid(),kind,item,amount,x:px,y:py,age:0,bounce:.32,got:false});
+}
+function lootUpdate(room,dt){
+ const drops=ground(room);for(const d of drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt);
+  const dist=Math.hypot(player.x-d.x,player.y-d.y);const range=d.kind==='xp'?104:68;
+  if(dist<range&&d.bounce<=0){const speed=d.kind==='xp'?340:250;const t=Math.min(1,speed*dt/Math.max(1,dist));d.x+=(player.x-d.x)*t;d.y+=(player.y-d.y)*t}
+  if(Math.hypot(player.x-d.x,player.y-d.y)<18&&d.bounce<=0){
+   if(d.kind==='xp'){data.run.xp=(data.run.xp||0)+d.amount;d.got=true}
+   else if(d.kind==='credits'){data.run.earnedCredits+=d.amount;d.got=true}
+   else if(d.kind==='weapon'){
+    if(data.run.bag.length<6){data.run.bag.push(d.item);msg('✦ '+d.item.rar+' : '+d.item.name+' ramassé !');d.got=true}
+    else if(!d.warned){d.warned=true;msg('🎒 Sac plein : arme au sol conservée. Libère une place dans SAC.')}
+   }
+  }
+ }
+ room.drops=drops.filter(d=>!d.got);
+}
+function lootDraw(room){
+ const now=performance.now()/1000;
+ for(const d of ground(room)){
+  const isXp=d.kind==='xp',isCredit=d.kind==='credits',col=isXp?'#74eced':isCredit?'#ffcb6e':tint(d.item||{});
+  const bob=Math.sin(now*4+d.x*.04)*2-(d.bounce||0)*22;
+  cx.save();cx.globalAlpha=.15;cx.fillStyle=col;cx.beginPath();cx.ellipse(d.x,d.y+5,isXp?10:19,isXp?7:12,0,0,Math.PI*2);cx.fill();cx.restore();
+  if(d.kind==='weapon'&&['Épique','Légendaire','Mythique'].includes(d.item?.rar)){
+    cx.save();cx.globalAlpha=.17+.07*Math.sin(now*4);cx.fillStyle=col;cx.fillRect(d.x-4,Math.max(24,d.y-45),8,43);cx.restore();
+  }
+  cx.fillStyle=col;cx.strokeStyle='#0c1522';cx.lineWidth=2;cx.beginPath();
+  if(isXp){cx.moveTo(d.x,d.y-6+bob);cx.lineTo(d.x+6,d.y+bob);cx.lineTo(d.x,d.y+6+bob);cx.lineTo(d.x-6,d.y+bob)}
+  else if(isCredit){cx.arc(d.x,d.y+bob,6,0,Math.PI*2)}
+  else{cx.moveTo(d.x,d.y-11+bob);cx.lineTo(d.x+10,d.y+bob);cx.lineTo(d.x,d.y+11+bob);cx.lineTo(d.x-10,d.y+bob)}
+  cx.closePath();cx.fill();cx.stroke();
+ }
+}
+
 function enter(id,from){let r=data.run,room=r.rooms[id];r.current=id;room.seen=true;if(!r.visited.includes(id))r.visited.push(id);
 if(isLarge(r)){let reg=region();reg.maxSector=Math.max(reg.maxSector,room.sector);}
 environment(room);if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(id);}
@@ -82,8 +123,8 @@ function autoSecure(room){if(room&&!room.cleared&&room.spawned&&room.enemies.len
 function canPassDoor(to){let r=data.run;if(!r||locked())return false;let room=r.rooms[r.current];return !!(room.cleared||r.visited.includes(to)||r.rooms[to].seen)}
 
 function interaction(){let r=data.run;if(!r)return null;let room=r.rooms[r.current];if(room.chest==='closed'&&Math.hypot(player.x-180,player.y-110)<62)return'chest';if(isExit(r.current,r)&&!r.exitStarted&&Math.hypot(player.x-180,player.y-195)<66)return'exit';if(room.kind==='outpost'&&Math.hypot(player.x-180,player.y-195)<72)return'outpost';return null}
-function action(){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current],act=interaction();if(act==='outpost'){activateOutpost();return}if(act==='chest'){if(isGuarded(r.current,r)&&room.enemies.length){msg('🔒 COFFRE PROTÉGÉ : élimine les gardiens avant ouverture.');return}if(r.bag.length>=6){msg('Sac plein : abandonne un objet dans le SAC.');return}room.chest='opened';let g=makeWeapon(r.current===6?3:r.current===7?2:r.current===5?1:0);if(isArena(r.current,r)){g.rar='Épique';g.dmg=Math.max(43,g.dmg+16)}if(isGuarded(r.current,r)&&g.rar==='Commun'){g.rar='Rare';g.dmg+=8};r.bag.push(g);r.earnedCredits+=pick(25,55);msg(`${g.rar} trouvé : ${g.name} ! Ouvre ton sac.`)}else if(act==='exit'){r.exitStarted=true;r.exitTime=12;r.exitWave=1;spawnReinforcement(room,2);msg('EXTRACTION : 12 s de contrôle ! Renforts annoncés, zone contestable.')}else msg('Approche-toi d’un coffre ou d’un terminal.');persist();render()}
-function finish(won){let r=data.run;if(!r)return;let equipped=r.equipped,oldHome=null;let objects=[equipped,...r.bag].filter(Boolean);if(won){data.equipped=equipped;data.stash.push(...r.bag);data.credits+=r.earnedCredits+90;data.research+=r.objectives.length+Math.floor(r.visited.length/3);data.stats.extractions++;msg(`EXTRACTION ! ${r.bag.length} objet(s) rapporté(s), +${r.earnedCredits+90} crédits.`)}else{let insured=objects.find(w=>w.id===r.insuredId);data.equipped=insured||starter();data.research+=Math.min(2,Math.floor(r.visited.length/3));data.stats.deaths++;msg(insured?'Mort : l’objet assuré a été récupéré.':'Mort : équipement perdu.')}data.runs++;data.insured=null;data.run=null;player=null;bullets=[];closeOverlay();persist();render()}
+function action(){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current],act=interaction();if(act==='outpost'){activateOutpost();return}if(act==='chest'){if(isGuarded(r.current,r)&&room.enemies.length){msg('🔒 COFFRE PROTÉGÉ : élimine les gardiens avant ouverture.');return}room.chest='opened';let g=makeWeapon(r.current===6?3:r.current===7?2:r.current===5?1:0);if(isArena(r.current,r)){g.rar='Épique';g.dmg=Math.max(43,g.dmg+16)}if(isGuarded(r.current,r)&&g.rar==='Commun'){g.rar='Rare';g.dmg+=8};lootSpawn(room,'weapon',180,118,g);lootSpawn(room,'credits',177,122,null,pick(25,55));msg(`✨ Coffre ouvert : ${g.rar} ${g.name} au sol ! Approche-toi pour ramasser.`)}else if(act==='exit'){r.exitStarted=true;r.exitTime=12;r.exitWave=1;spawnReinforcement(room,2);msg('EXTRACTION : 12 s de contrôle ! Renforts annoncés, zone contestable.')}else msg('Approche-toi d’un coffre ou d’un terminal.');persist();render()}
+function finish(won){let r=data.run;if(!r)return;let equipped=r.equipped,oldHome=null;let objects=[equipped,...r.bag].filter(Boolean);if(won){data.equipped=equipped;data.stash.push(...r.bag);data.credits+=r.earnedCredits+90;data.research+=r.objectives.length+Math.floor(r.visited.length/3);data.stats.extractions++;msg(`EXTRACTION ! ${r.bag.length} objet(s) rapporté(s), +${r.earnedCredits+90} crédits · ${r.xp||0} XP récoltée.`)}else{let insured=objects.find(w=>w.id===r.insuredId);data.equipped=insured||starter();data.research+=Math.min(2,Math.floor(r.visited.length/3));data.stats.deaths++;msg(insured?'Mort : l’objet assuré a été récupéré.':'Mort : équipement perdu.')}data.runs++;data.insured=null;data.run=null;player=null;bullets=[];closeOverlay();persist();render()}
 function itemRow(w,i,source){const safe=x=>String(x).replace(/[<>&"']/g,'');return `<div class="item"><b style="color:${tint(w)}">${safe(w.name)}</b><div class="muted">${safe(w.rar)} · ${w.dmg} dégâts · ${w.rate}/s · valeur ${value(w)} ¤ ${data.run&&w.id===data.run.insuredId?'· 🛡️ ASSURÉ':''}</div><div class="line"><button data-op="${source==='stash'?'equipHome':'equipBag'}" data-idx="${i}">Équiper</button><button data-op="${source==='stash'?'sell':'drop'}" data-idx="${i}">${source==='stash'?'Vendre':'Abandonner'}</button></div></div>`}
 function uniqueCheck(){let seen=new Set(),items=[data.equipped,...data.stash];if(data.run)items=[data.run.equipped,...data.run.bag];for(let w of items){if(!w)continue;if(seen.has(w.id))return false;seen.add(w.id)}return true}
 function equipHome(i){let w=data.stash[i];if(!w)return;let old=data.equipped;data.stash.splice(i,1);data.equipped=w;if(old)data.stash.push(old);data.insured=null;persist();render();msg(`${w.name} équipé. Assurance à renouveler.`)}
@@ -178,7 +219,7 @@ if(sec===3){cx.strokeStyle='#b478a9';cx.lineWidth=3;for(let x of [47,313]){cx.st
 cx.restore();cx.font='bold 10px sans-serif';cx.fillStyle=theme.accent;cx.textAlign='left';cx.fillText('SECTEUR '+(sec+1)+' · '+theme.name,27,32);
 cx.fillStyle='#495864';cx.fillRect(0,0,360,20);cx.fillRect(0,380,360,20);cx.fillRect(0,0,20,400);cx.fillRect(340,0,20,400);for(let d of doors(r.current)){let[x,y,w,h]=doorRect(d.side);const arenaEntry=(isArena(d.to,r)||isBoss(d.to,r))&&!r.rooms[d.to].cleared;cx.fillStyle=!canPassDoor(d.to)?'#d76b63':arenaEntry?'#d9933f':'#55b8a3';cx.fillRect(x,y,w,h);if(!canPassDoor(d.to)){cx.strokeStyle='#ffaaa4';cx.lineWidth=2;cx.strokeRect(x+2,y+2,w-4,h-4)}if(arenaEntry){cx.strokeStyle='#ffe0a2';cx.lineWidth=3;cx.strokeRect(x+2,y+2,w-4,h-4)}cx.fillStyle='#122832';if(d.side==='top'||d.side==='bottom')cx.fillRect(x+6,y,w-12,h);else cx.fillRect(x,y+6,w,h-12);if(arenaEntry){cx.font='bold 10px sans-serif';cx.textAlign='center';cx.fillStyle='#fff2d0';let tx=d.side==='left'?39:d.side==='right'?319:180,ty=d.side==='top'?42:d.side==='bottom'?365:204;cx.fillText(isBoss(d.to,r)?'☠ BOSS':'⚠ ARÈNE',tx,ty)}}
 if(room.chest==='closed'){cx.fillStyle='#b98b4d';cx.fillRect(159,91,42,35);cx.fillStyle='#f0c878';cx.fillRect(177,91,7,35);cx.font='10px sans-serif';cx.textAlign='center';cx.fillText(isGuarded(r.current,r)?room.enemies.length?'🔒 GARDÉ':'DÉVERROUILLÉ':'COFFRE',180,79)}if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost'){cx.strokeStyle='#81cafd';cx.lineWidth=3;cx.strokeRect(145,159,70,70);cx.fillStyle='#b8e9ff';cx.textAlign='center';cx.font='bold 11px sans-serif';cx.fillText('📡 AVANT-POSTE',180,192);cx.font='9px sans-serif';cx.fillText(region().outposts.includes(room.sector)?'ACTIVÉ':'ACTION POUR ACTIVER',180,208)}if(isExit(r.current,r)){cx.strokeStyle='#6ddfc3';cx.lineWidth=4;cx.beginPath();cx.arc(180,195,39,0,7);cx.stroke();cx.fillStyle='#c1f9e8';cx.font='bold 11px sans-serif';cx.textAlign='center';cx.fillText('EXTRACTION',180,199)}
-for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}cx.fillStyle=e.type==='ranged'?'#edb65b':e.type==='drone'?'#68c9f4':e.type==='brute'?'#e98d4d':e.type==='sentinel'?'#b18aff':'#e37681';cx.beginPath();cx.arc(e.x,e.y,e.type==='ranged'?12:14,0,7);cx.fill();cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-22,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-22,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){cx.fillStyle='#8ce0c9';cx.beginPath();cx.arc(player.x,player.y,12,0,7);cx.fill();cx.fillStyle='#244b5c';cx.fillRect(player.x-7,player.y-8,14,9)}cx.strokeStyle='#558898';cx.lineWidth=2;cx.beginPath();cx.arc(75,315,42,0,7);cx.stroke();cx.fillStyle='#4e8390a9';cx.beginPath();cx.arc(75+joy.x*26,315+joy.y*26,19,0,7);cx.fill()}
+lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}cx.fillStyle=e.type==='ranged'?'#edb65b':e.type==='drone'?'#68c9f4':e.type==='brute'?'#e98d4d':e.type==='sentinel'?'#b18aff':'#e37681';cx.beginPath();cx.arc(e.x,e.y,e.type==='ranged'?12:14,0,7);cx.fill();cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-22,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-22,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){cx.fillStyle='#8ce0c9';cx.beginPath();cx.arc(player.x,player.y,12,0,7);cx.fill();cx.fillStyle='#244b5c';cx.fillRect(player.x-7,player.y-8,14,9)}cx.strokeStyle='#558898';cx.lineWidth=2;cx.beginPath();cx.arc(75,315,42,0,7);cx.stroke();cx.fillStyle='#4e8390a9';cx.beginPath();cx.arc(75+joy.x*26,315+joy.y*26,19,0,7);cx.fill()}
 function hurt(amount){if(player.inv>0)return;player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){if(locked())return false;let r=data.run,id=r.current;for(let d of doors(id)){let s=d.side,hit=s==='top'?player.y<=23&&Math.abs(player.x-180)<30:s==='bottom'?player.y>=377&&Math.abs(player.x-180)<30:s==='left'?player.x<=23&&Math.abs(player.y-203)<32:player.x>=337&&Math.abs(player.y-203)<32;if(hit){if(!canPassDoor(d.to)){if(!locked()){msg('🔒 Nouvelle salle bloquée : termine le combat pour avancer. Retour libre.');}return false}enter(d.to,id);return true}}return false}
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
@@ -199,8 +240,8 @@ for(let b of bullets){
   if(collidesSolid(b.x,b.y,4,room)){b.ttl=0;break}
  }
  if(b.ttl<=0)continue;
- b.ttl-=dt;if(b.enemy){if(length(b,player)<16){hurt(b.dmg);b.ttl=0}}else{for(let e of room.enemies){if(length(b,e)<15){e.hp-=b.dmg;b.ttl=0;if(e.hp<=0){r.earnedCredits+=pick(8,20);if(Math.random()<.1&&r.bag.length<6){r.bag.push(makeWeapon());msg('Un ennemi a laissé tomber une arme !')}}break}}}}
-room.enemies=room.enemies.filter(e=>e.hp>0);bullets=bullets.filter(b=>b.ttl>0&&b.x>-10&&b.x<370&&b.y>-10&&b.y<410);
+ b.ttl-=dt;if(b.enemy){if(length(b,player)<16){hurt(b.dmg);b.ttl=0}}else{for(let e of room.enemies){if(length(b,e)<15){e.hp-=b.dmg;b.ttl=0;if(e.hp<=0&&!e.lootDropped){e.lootDropped=true;lootSpawn(room,'xp',e.x,e.y,null,pick(2,5));lootSpawn(room,'credits',e.x,e.y,null,pick(8,20));if(Math.random()<.1){lootSpawn(room,'weapon',e.x,e.y,makeWeapon(sectorOf(room)))}}break}}}}
+room.enemies=room.enemies.filter(e=>e.hp>0);lootUpdate(room,dt);bullets=bullets.filter(b=>b.ttl>0&&b.x>-10&&b.x<370&&b.y>-10&&b.y<410);
 if(r.exitStarted){let contested=room.enemies.some(e=>length(e,{x:180,y:195})<105);if(!contested)r.exitTime-=dt;if(r.exitWave===1&&r.exitTime<=6){r.exitWave=2;spawnReinforcement(room,2);msg('⚠ DEUXIÈME VAGUE : défends le terminal !')}if(r.exitTime<=0){finish(true);return}}
 drawTime+=dt;if(drawTime>.12){drawTime=0;render()}tickSave+=dt;if(tickSave>4){tickSave=0;persist()}}
 function down(e){if(!data.run||overlay)return;let rect=cv.getBoundingClientRect(),x=(e.clientX-rect.left)*360/rect.width,y=(e.clientY-rect.top)*400/rect.height;if(x>200||y<240)return;joy.pointer=e.pointerId;move(e);cv.setPointerCapture(e.pointerId)}
