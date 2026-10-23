@@ -426,3 +426,7 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 /* 0.8.9.28 — Correctif: le calque parent ne doit pas redéplacer le groupe SVG */
 #refuge-page-character #characterHeldWeaponArt{transform:none!important;transform-origin:0 0!important;filter:drop-shadow(0 3px 3px #000b)}
 #refuge-page-character #characterHeldWeaponArt .held-weapon{transform-origin:unset}
+
+/* 0.8.9.30 – weapon grip without stacked transforms */
+#refuge-page-character #characterHeldWeaponArt{transform:none!important;transform-origin:0 0!important}
+#refuge-page-character .weapon-grip-hands{pointer-events:none;filter:drop-shadow(0 2px 2px #03141b)}

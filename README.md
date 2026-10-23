@@ -16,3 +16,5 @@ Correction du double positionnement SVG/CSS qui rendait l’arme tenue invisible
 - Fin d’expédition : arrêt du tick dès que les PV sont nuls.
 - Sauvegardes : validation renforcée du personnage, des armes, de la carte et des ennemis, format inchangé.
 - Tutoriel : retrait de la référence au bouton ACTION et clarification du joystick.
+
+0.8.9.30 : arme devant le torse et mains au premier plan, sans changement de gameplay ni de sauvegarde.
