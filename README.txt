@@ -1,5 +1,5 @@
-ASHFALL ALPHA 0.8.1 — COLLISIONS SOLIDES
-
-Correctif de l’Alpha 0.8 : collisions décors pour joueur, dash, ennemis et projectiles. Sauvegarde et progression conservées.
-
-Installation : exporter sauvegarde, remplacer fichiers du dépôt GitHub a la racine et attendre Pages.
+ASHFALL Alpha 0.8.2 — Dash corrigé.
+Déployer les 8 fichiers à la racine du dépôt GitHub Pages.
+Avant la mise à jour, exporter une sauvegarde depuis le jeu.
+Dash : 95 px, 2,2 s de recharge, choc sur les obstacles, halo visuel.
+La clé de sauvegarde ashfall_pwa_v1 est conservée.
