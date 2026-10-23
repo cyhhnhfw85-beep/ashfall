@@ -6,9 +6,35 @@ const starter=()=>({id:uid(),name:'Pistolet usé',rar:'Commun',dmg:13,rate:1.8})
 const fresh=()=>({version:1,credits:400,research:0,hpLv:0,dmgLv:0,runs:0,equipped:starter(),stash:[],insured:null,run:null,stats:{extractions:0,deaths:0}});
 let data=fresh(), player=null, bullets=[],sparks=[],joy={x:0,y:0,pointer:null},keyState={},overlay='',last=0,drawTime=0,tickSave=0;
 function msg(v){$('log').textContent=v}
-function valid(d){return d&&d.version===1&&Number.isFinite(d.credits)&&Number.isFinite(d.research)&&Array.isArray(d.stash)&&d.equipped&&typeof d.equipped.id==='string'&&(!d.run||Array.isArray(d.run.rooms))}
-function persist(silent=true){if(data.run&&player)data.run.player={...player};try{localStorage.setItem(KEY,JSON.stringify(data));if(!silent)msg('Sauvegarde effectuée.');return true}catch(e){msg('Sauvegarde locale indisponible. Utilise l’export de secours.');return false}}
-try{let d=JSON.parse(localStorage.getItem(KEY)||'null');if(valid(d))data=d}catch(e){}
+function valid(d){return d&&d.version===1&&Number.isFinite(d.credits)&&Number.isFinite(d.research)&&Array.isArray(d.stash)&&((d.equipped&&typeof d.equipped.id==='string')||(d.run&&d.run.equipped&&typeof d.run.equipped.id==='string'))&&(!d.run||(Array.isArray(d.run.rooms)&&d.run.rooms.length>0&&Number.isInteger(d.run.current)&&d.run.rooms[d.run.current]&&d.run.player))}
+// Two verified snapshots protect against incomplete or invalid primary saves.
+const RECOVERY_KEY=KEY+'_recovery', SAVE_STATUS_KEY=KEY+'_lastok';
+let persistenceWarning=false;
+function readSnapshot(k){try{const raw=localStorage.getItem(k);if(!raw)return null;const obj=JSON.parse(raw);return valid(obj)?obj:null}catch(e){return null}}
+function hasActiveRun(d){return !!(d&&d.run&&Array.isArray(d.run.rooms)&&d.run.rooms.length&&d.run.player)}
+function persist(silent=true){
+ if(data.run&&player)data.run.player={...player};
+ try{
+  const serialized=JSON.stringify(data);
+  if(!valid(JSON.parse(serialized)))throw Error('invalid snapshot');
+  const previous=readSnapshot(KEY);
+  // Keep a recoverable expedition even if a subsequent run cannot be restored.
+  if(previous&&hasActiveRun(previous))localStorage.setItem(RECOVERY_KEY,JSON.stringify(previous));
+  localStorage.setItem(KEY,serialized);
+  if(!readSnapshot(KEY))throw Error('save verification failed');
+  localStorage.setItem(SAVE_STATUS_KEY,String(Date.now()));
+  persistenceWarning=false;
+  if(!silent)msg('✓ Sauvegarde locale vérifiée.');return true;
+ }catch(e){persistenceWarning=true;msg('⚠ Sauvegarde impossible : exporte ton code de secours dès maintenant.');return false}
+}
+try{
+ const main=readSnapshot(KEY),recovery=readSnapshot(RECOVERY_KEY);
+ if(main&&recovery){
+  // In particular do not silently throw away an interrupted run when main has no run.
+  data=hasActiveRun(recovery)&&!hasActiveRun(main)?recovery:main;
+ }else if(main||recovery)data=main||recovery;
+}catch(e){}
+
 function region(){if(!data.regions)data.regions={k17:{maxSector:0,bossDefeated:false,expeditions:0}};if(!data.regions.k17)data.regions.k17={maxSector:0,bossDefeated:false,expeditions:0};if(!Array.isArray(data.regions.k17.outposts))data.regions.k17.outposts=[];return data.regions.k17}
 function isLarge(r=data.run){return !!(r&&r.rooms&&r.rooms.length===50)}
 function isArena(id,r=data.run){return isLarge(r)?r.arenaIds.includes(id):id===4}
@@ -383,7 +409,9 @@ function move(e){if(e.pointerId!==joy.pointer)return;let rect=cv.getBoundingClie
 function up(e){if(joy.pointer===e.pointerId){joy={x:0,y:0,pointer:null}}}
 cv.addEventListener('pointerdown',down);cv.addEventListener('pointermove',move);cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
 window.addEventListener('keydown',e=>{if(e.target.tagName==='TEXTAREA')return;keyState[e.key]=true;if(e.key===' '){e.preventDefault();action()}});window.addEventListener('keyup',e=>keyState[e.key]=false);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(data.run&&!overlay)openOverlay('pause')}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(data.run&&!overlay)openOverlay('pause');persist(false)}});
+window.addEventListener('pagehide',()=>persist());
+window.addEventListener('freeze',()=>persist());
 if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
 if(data.run){runProgress();data.run.exitWave=data.run.exitWave||(data.run.exitStarted?1:0);setPlayer();sanitizeEnemyPositions(data.run.rooms[data.run.current]);if(isArena(data.run.current,data.run))enforceArena();else{let cr=data.run.rooms[data.run.current];if(cr&&cr.spawned&&!isBoss(data.run.current,data.run))autoSecure(cr)}if(!player||!data.run.rooms[data.run.current]){data.run=null;data.equipped=data.equipped||starter();msg('Ancienne expédition incompatible : refuge récupéré.')}else{openOverlay('pause');msg('Expédition retrouvée : appuie sur Reprendre.')}}
 
