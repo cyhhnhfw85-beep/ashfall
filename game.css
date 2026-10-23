@@ -378,3 +378,16 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 .equipped-slot-art .weapon-art{width:54px;height:54px;max-width:100%;max-height:54px;filter:drop-shadow(0 2px 6px #000b)}
 .held-weapon-art{transform:translate(67px,140px) rotate(-14deg) scale(2.05);transform-origin:0 0;filter:drop-shadow(0 2px 3px #000b)}
 .held-weapon-art .weapon-art{overflow:visible}
+
+/* 0.8.9.24 — Inventaire direct et emplacements non disponibles */
+#refuge-page-character .future-slot{opacity:.45;filter:saturate(.35);border-style:dashed}
+#refuge-page-character .future-slot small{color:#a0b1bc}
+#refuge-page-character .inventory-selection{background:linear-gradient(140deg,#1c3b4e,#0c2635);border:1px solid #d9a45d;box-shadow:0 8px 20px #0005;padding:16px}
+#refuge-page-character .inventory-selected-head{display:flex;align-items:center;justify-content:flex-start;gap:13px}
+#refuge-page-character .inventory-selected-head>div{display:grid;gap:5px}
+#refuge-page-character .inventory-selected-head b{font-size:19px;color:#f5f5ef}
+#refuge-page-character .inventory-selected-art{width:86px;min-width:86px;height:68px;border-radius:11px;background:#0c2434;border:1px solid #59778d;display:grid;place-items:center}
+#refuge-page-character .inventory-selected-art svg{width:77px;max-height:60px}
+#refuge-page-character .inventory-selected-actions button{min-height:48px;font-weight:800}
+#refuge-page-character .inventory-selected-actions button:first-child{background:linear-gradient(#f8c579,#dea451);color:#121e27}
+#refuge-page-character .inventory-pagination button{min-height:40px}

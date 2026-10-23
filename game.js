@@ -365,7 +365,7 @@ function renderInventorySelection(){
  if(i<0){host.hidden=true;host.innerHTML='';return}
  const w=data.stash[i], delta=w.dmg-(data.equipped?.dmg||0), rate=w.rate-(data.equipped?.rate||0);
  host.hidden=false;
- host.innerHTML=`<div class="inventory-selected-head"><b>${uiSafe(w.name)}</b><span style="color:${tint(w)}">${uiSafe(w.rar)}</span></div><p>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s · ${salvagePrice(w)} ¤ revente</p><p>Face à l’arme active : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></p><div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE · ${salvagePrice(w)} ¤</button></div>`;
+ host.innerHTML=`<div class="inventory-selected-head"><span class="inventory-selected-art">${weaponArt(w)}</span><div><b>${uiSafe(w.name)}</b><span style="color:${tint(w)}">${uiSafe(w.rar)}</span></div></div><p>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s · ${salvagePrice(w)} ¤ revente</p><p>Face à l’arme active : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></p><div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE · ${salvagePrice(w)} ¤</button></div>`;
 }
 function renderRefugeCharacter(){
  const stats=data.stats||{};
@@ -389,6 +389,7 @@ function renderRefugeCharacter(){
  if($('loadoutDmgBonus'))$('loadoutDmgBonus').textContent=`+${data.dmgLv*3} dégâts permanents`;
  const preview=$('characterReservePreview');
  if(preview){
+  if(data.stash.length && !data.stash.some(w=>w.id===selectedInventoryId)) selectedInventoryId=data.stash[0].id;
   const pages=Math.max(1,Math.ceil(data.stash.length/INVENTORY_PAGE_SIZE));
   inventoryPage=Math.max(0,Math.min(inventoryPage,pages-1));
   const offset=inventoryPage*INVENTORY_PAGE_SIZE,items=data.stash.slice(offset,offset+INVENTORY_PAGE_SIZE);
