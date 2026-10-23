@@ -141,3 +141,36 @@ header h1{letter-spacing:.13em;text-shadow:0 2px 17px #e2bd7e22}
 .progress-sector{border-radius:14px}.progress-sector.unlocked{background:linear-gradient(110deg,#1d3d4d,#182f42)}.progress-sector.current{border-color:#dfb26b;box-shadow:0 0 0 1px #ddb37455,0 10px 20px #0003}.progress-sector.current:before{background:#eac07d}
 .progress-sector:after{pointer-events:none}.progress-summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.progress-summary-grid .mini-panel{padding:9px}.progress-summary-grid .mini-panel b{font-size:16px;overflow-wrap:anywhere}
 @media(max-width:390px){.premium-portrait{width:116px;min-width:116px;height:198px}.survivor-meta b{font-size:17px}.survivor-badges span{font-size:10px}.hub-tile{padding:10px 7px;min-height:105px}.hub-tile b{font-size:10px}.hub-tile small{font-size:9px}}
+
+/* 0.8.9.11 — HUD d'expédition : séparation claire, respect de la safe area iOS */
+body.ashfall-expedition .gamebar{
+ display:grid;grid-template-columns:minmax(0,1fr) auto auto auto;
+ grid-template-rows:auto auto;align-items:center;column-gap:7px;row-gap:9px;
+ top:0;left:0;right:0;min-height:0;
+ padding:calc(env(safe-area-inset-top) + 12px) 12px 11px;
+ border-bottom:1px solid #43647799;
+ background:linear-gradient(180deg,#081521fa 0%,#0c2230f2 90%,#0c2230e6 100%);
+ box-shadow:0 12px 26px #0008;pointer-events:auto;
+}
+body.ashfall-expedition .gamebar .lifewrap{grid-column:1/-1;grid-row:1;min-width:0;display:grid;grid-template-columns:1fr;gap:2px}
+body.ashfall-expedition .lifewrap>.line{margin:0 0 4px;gap:12px;align-items:baseline}
+body.ashfall-expedition #roomTitle{font-size:13px;line-height:1.3;letter-spacing:.025em;overflow-wrap:anywhere;color:#f2f7fc;text-shadow:none}
+body.ashfall-expedition #hpText{font-size:13px;font-weight:800;color:#9bedc8;white-space:nowrap;font-variant-numeric:tabular-nums}
+body.ashfall-expedition .health{height:8px;margin:0;background:#3b3543;border:1px solid #53677a;border-radius:20px}
+body.ashfall-expedition .xp-label{font-size:11px;font-weight:700;letter-spacing:.02em;margin-top:3px;color:#9be1ef}
+body.ashfall-expedition .xp-track{height:5px;margin:1px 0 0;background:#244052}
+body.ashfall-expedition #bagBtn{grid-column:2;grid-row:2}
+body.ashfall-expedition #mapBtn{grid-column:3;grid-row:2}
+body.ashfall-expedition #pauseBtn{grid-column:4;grid-row:2}
+body.ashfall-expedition .gamebar::before{content:'ÉTAT DE LA MISSION';grid-row:2;grid-column:1;color:#adc2d1;letter-spacing:.12em;font-size:10px;font-weight:800;align-self:center}
+body.ashfall-expedition .gamebar button{min-height:40px;min-width:44px;padding:9px 11px;font-size:12px;background:#243b4f;color:#f4f9ff;border:1px solid #66829b;border-radius:10px;box-shadow:0 2px 6px #0004}
+body.ashfall-expedition .ui-mission{
+ position:absolute;z-index:23;top:calc(env(safe-area-inset-top) + 151px);left:12px;right:12px;
+ transform:none;width:auto;max-width:none;min-height:34px;display:flex;align-items:center;justify-content:center;
+ font-size:12px;line-height:1.3;padding:7px 10px;text-align:center;background:#0e2935e8;
+ border:1px solid #57798c;border-radius:10px;color:#e4f4ed;box-shadow:0 3px 12px #0007;
+ pointer-events:none;
+}
+body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 196px);left:12px;font-size:10px;max-width:calc(100% - 24px);opacity:.85}
+@media(max-width:370px){body.ashfall-expedition .gamebar{column-gap:5px;padding-left:8px;padding-right:8px}body.ashfall-expedition .gamebar button{min-width:40px;padding:8px 7px;font-size:11px}body.ashfall-expedition .gamebar::before{font-size:9px;letter-spacing:.03em}body.ashfall-expedition #roomTitle{font-size:12px}}
+@media(orientation:landscape){body.ashfall-expedition .gamebar{padding-top:calc(env(safe-area-inset-top) + 4px);grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-rows:1fr;gap:6px}body.ashfall-expedition .gamebar .lifewrap{grid-column:1;grid-row:1}body.ashfall-expedition #bagBtn,body.ashfall-expedition #mapBtn,body.ashfall-expedition #pauseBtn{grid-row:1}body.ashfall-expedition .gamebar::before{display:none}body.ashfall-expedition .ui-mission{top:calc(env(safe-area-inset-top) + 85px)}body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 124px)}}
