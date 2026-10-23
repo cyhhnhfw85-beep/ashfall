@@ -380,5 +380,26 @@ window.addEventListener('keydown',e=>{if(e.target.tagName==='TEXTAREA')return;ke
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(data.run&&!overlay)openOverlay('pause')}});
 if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
 if(data.run){runProgress();data.run.exitWave=data.run.exitWave||(data.run.exitStarted?1:0);setPlayer();sanitizeEnemyPositions(data.run.rooms[data.run.current]);if(isArena(data.run.current,data.run))enforceArena();else{let cr=data.run.rooms[data.run.current];if(cr&&cr.spawned&&!isBoss(data.run.current,data.run))autoSecure(cr)}if(!player||!data.run.rooms[data.run.current]){data.run=null;data.equipped=data.equipped||starter();msg('Ancienne expédition incompatible : refuge récupéré.')}else{openOverlay('pause');msg('Expédition retrouvée : appuie sur Reprendre.')}}
-if(!data.equipped&&!data.run)data.equipped=starter();region();render();if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+
+// Initial training: self-contained guide. The flag is intentionally separate from ashfall_pwa_v1.
+const TUTORIAL_KEY='ashfall_tutorial_v1';
+const tutorialSteps=[
+ {title:'Bienvenue dans ASHFALL',scene:'🏚️  🎮',desc:'Tu es un survivant dans K-17. Chaque expédition consiste à explorer des salles, récupérer du butin, puis ressortir vivant.',tip:'Ta première mission : apprendre les commandes. Rien de ce tutoriel ne met ton équipement en danger.'},
+ {title:'Bouger et tirer',scene:'🕹️  🔫',desc:'Maintiens le joystick à gauche pour te déplacer. Ton personnage tire automatiquement sur les ennemis à portée : pas besoin d’appuyer sur un bouton de tir.',tip:'Bouger réduit la précision : ralentir un instant peut aider à viser.'},
+ {title:'DASH = esquive',scene:'💨  🛡️',desc:'Maintiens le joystick dans une direction, puis touche DASH avec ton autre pouce pour bondir. Tu peux aussi utiliser DASH à l’arrêt.',tip:'Le DASH a un temps de recharge. Évite de le gaspiller avant une grosse attaque.'},
+ {title:'Portes rouges et vertes',scene:'🔒  🚪',desc:'Les portes rouges vers des salles inconnues s’ouvrent après sécurisation de la salle. Tu peux généralement revenir par les portes vertes déjà visitées.',tip:'Exception : une arène ou un boss verrouille toutes les sorties jusqu’à la victoire.'},
+ {title:'Ramasse XP et équipement',scene:'💎  ✨  🎒',desc:'Les ennemis et les coffres laissent tomber de l’XP, des crédits et parfois des armes. Approche-toi pour les aspirer et les ramasser.',tip:'Les couleurs montrent la rareté. Si ton sac est plein, une arme reste au sol : reviens après avoir libéré une place.'},
+ {title:'Niveaux et bouton ACTION',scene:'⭐  🔘',desc:'L’XP fait monter ton niveau d’expédition : choisis un bonus temporaire parmi trois. Le bouton ACTION sert notamment à ouvrir les coffres et activer les terminaux.',tip:'Tes bonus de niveau disparaissent à la fin de l’expédition. Tes talents achetés au refuge restent.'},
+ {title:'Extraire pour tout garder',scene:'📡  🏃',desc:'Trouve une salle d’extraction, approche du terminal et appuie sur ACTION. Défends la zone jusqu’à la fin du compte à rebours pour rentrer avec ton butin.',tip:'Si tu meurs, tu perds ton matériel non assuré. Avant de partir, tu peux assurer UN objet équipé au refuge.'}
+];
+let tutorialIndex=0;
+function tutorialShow(index=0){if(data.run)return;tutorialIndex=clamp(index,0,tutorialSteps.length-1);$('tutorialModal').hidden=false;tutorialRender();}
+function tutorialClose(){try{localStorage.setItem(TUTORIAL_KEY,'seen')}catch(e){}$('tutorialModal').hidden=true;}
+function tutorialRender(){const s=tutorialSteps[tutorialIndex];$('tutorialTitle').textContent=s.title;$('tutorialDesc').textContent=s.desc;$('tutorialTip').textContent=s.tip;$('tutorialScene').textContent=s.scene;$('tutorialProgress').innerHTML=`<div style="width:${(tutorialIndex+1)/tutorialSteps.length*100}%"></div>`;$('tutorialPrev').disabled=tutorialIndex===0;$('tutorialNext').textContent=tutorialIndex===tutorialSteps.length-1?'▶ Jouer maintenant':'Suivant →';}
+$('tutorialLaunch').addEventListener('click',()=>tutorialShow(0));
+$('tutorialPrev').addEventListener('click',()=>{tutorialIndex=Math.max(0,tutorialIndex-1);tutorialRender()});
+$('tutorialNext').addEventListener('click',()=>{if(tutorialIndex<tutorialSteps.length-1){tutorialIndex++;tutorialRender()}else{tutorialClose();start()}});
+$('tutorialSkip').addEventListener('click',tutorialClose);
+
+if(!data.equipped&&!data.run)data.equipped=starter();region();render();if(!data.run&&data.runs===0){try{if(!localStorage.getItem(TUTORIAL_KEY))tutorialShow(0)}catch(e){}}if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
 })();

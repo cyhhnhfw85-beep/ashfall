@@ -53,3 +53,14 @@ body.ashfall-expedition #canvas{
 }
 /* Canvas-centered joystick retains its circular geometry and its touch zone. */
 body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 83px)}
+
+/* ASHFALL 0.8.8.4: onboarding guide that never touches game or save state */
+.ash-tutorial[hidden]{display:none!important}
+.ash-tutorial{position:fixed;inset:0;z-index:10000;background:#07111beF;display:flex;align-items:center;justify-content:center;padding:max(16px,env(safe-area-inset-top)) 16px max(20px,env(safe-area-inset-bottom));box-sizing:border-box;overflow-y:auto}
+.ash-tutorial-card{width:min(100%,430px);max-height:96%;overflow-y:auto;border:1px solid #446276;border-radius:20px;background:linear-gradient(155deg,#233446,#122231);box-shadow:0 20px 80px #0008;padding:20px;color:#ebf5f8;box-sizing:border-box}
+.ash-tutorial-header{display:flex;justify-content:space-between;align-items:center;gap:8px;color:#edb663;font-size:.84rem;letter-spacing:.08em}
+.ash-tutorial-header button{border:1px solid #50647c;background:transparent;color:#cfdae4;border-radius:9px;padding:8px;font-size:.78rem}
+.ash-tutorial-progress{height:7px;background:#405364;border-radius:20px;overflow:hidden;margin:18px 0}.ash-tutorial-progress>div{height:100%;background:#62d2b0;transition:width .2s}
+.ash-tutorial-scene{min-height:135px;border:1px solid #476175;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:3.9rem;background:radial-gradient(circle at center,#29505a,#132631);letter-spacing:.12em;text-align:center}
+.ash-tutorial-card h2{font-size:1.3rem;margin:20px 0 10px;color:#fff}.ash-tutorial-card p{font-size:.98rem;line-height:1.6;color:#dce6eb}.ash-tutorial-tip{background:#0a1c29;border-left:3px solid #dfac60;border-radius:7px;padding:12px;font-size:.85rem;line-height:1.55;color:#c4d7e3}
+.ash-tutorial-actions{display:flex;gap:12px;margin-top:20px}.ash-tutorial-actions button{flex:1;min-height:49px;border-radius:11px}.ash-tutorial-actions button:disabled{opacity:.25}
