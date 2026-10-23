@@ -1,7 +1,8 @@
-ASHFALL Alpha PWA 0.7 - Avant-postes et insertion regionale
+ASHFALL Alpha PWA 0.8 — Les quatre secteurs
 
-50 salles par expedition, formes irregulieres.
-NOUVEAU : 3 avant-postes (secteurs 2,3,4) a activer avec ACTION a proximite. Apres activation, selectionner le secteur de depart dans le refuge pour les futures expeditions; la carte est regeneree.
-La progression des secteurs, les avant-postes et la victoire du boss persistent. Helix est debloquee narrativement mais pas encore jouable.
-Archive destinee au depot GitHub Pages: remplacer les 8 fichiers a la racine, conserver une sauvegarde exportee avant toute mise a jour.
-Test syntactique effectue, gameplay Safari reste a valider.
+Téléverser les huit fichiers à la racine du dépôt GitHub Pages, en remplaçant les anciennes versions.
+Avant remplacement : exporter le code de sauvegarde du refuge dans Notes.
+Conserve la clé localStorage ashfall_pwa_v1 et les données de progression Alpha 0.7.
+Nouveautés : thèmes graphiques par secteur, variantes d’ennemis drones et brutes, lasers de laboratoire et évents de fonderie annoncés, combats différenciés.
+Dangers testables dans les secteurs 2 et 3 ; éviter les lignes et zones éclairées pendant leur activation.
+Limites : pas encore de seconde région Helix jouable, ni de vrais sprites animés.
