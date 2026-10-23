@@ -42,6 +42,26 @@ function isExit(id,r=data.run){return isLarge(r)?r.exitIds.includes(id):id===8}
 function isBoss(id,r=data.run){return isLarge(r)?id===r.bossId:false}
 function isGuarded(id,r=data.run){return isLarge(r)?(r.rooms[id].kind==='guarded'||isArena(id,r)||isBoss(id,r)):[4,5,6,7].includes(id)}
 function value(w){return Math.max(20,Math.round(w.dmg*17*(w.rar==='Épique'?2.3:w.rar==='Rare'?1.5:1)))}
+// Prix de récupération indépendants du prix théorique des armes : les stats élevées
+// ne peuvent plus transformer le butin en source disproportionnée de crédits.
+const SALVAGE_BANDS={Commun:[25,50],Inhabituel:[50,100],Rare:[100,200],'Épique':[200,350],'Légendaire':[400,650],Mythique:[500,750]};
+function salvagePrice(w){
+ if(!w)return 0;
+ const [lo,hi]=SALVAGE_BANDS[w.rar]||SALVAGE_BANDS.Commun;
+ const dmg=Number.isFinite(Number(w.dmg))?Math.max(0,Number(w.dmg)):0;
+ const rate=Number.isFinite(Number(w.rate))?Math.max(0,Number(w.rate)):0;
+ const score=Math.min(1,Math.max(0,(dmg-12)/55*.72+(rate-1)/3*.28));
+ let amount=Math.round((lo+(hi-lo)*score)/5)*5;
+ // Pièces achetées : au plus 25 % du coût historique si connu.
+ if(Number.isFinite(w.purchasePrice)&&w.purchasePrice>0)amount=Math.min(amount,Math.floor(w.purchasePrice*.25));
+ // Compatibilité des anciens achats non étiquetés (0.8.9.2–0.8.9.4).
+ // Leur éventuel prix du catalogue empêche un aller-retour profitable.
+ if(!Number.isFinite(w.purchasePrice)){
+  const catalog=typeof MERCHANT_CATALOG!=='undefined'?MERCHANT_CATALOG.find(x=>x.name===w.name&&x.rar===w.rar&&x.dmg===w.dmg&&x.rate===w.rate):null;
+  if(catalog)amount=Math.min(amount,Math.floor(merchantPrice(catalog)*.25));
+ }
+ return Math.max(0,Math.floor(amount));
+}
 function premium(){return Math.max(20,Math.ceil(value(data.equipped)*.12))}
 function price(){return Math.round(value(data.equipped)*.55)}
 function tint(w){return ({'Commun':'#d9e2e9','Inhabituel':'#60de98','Rare':'#5aa9ff','Épique':'#c184ff','Légendaire':'#ffbd4c','Mythique':'#ff667c'})[w.rar]||'#d9e2e9'}
@@ -234,7 +254,7 @@ function action(){if(!data.run||overlay)return;enforceArena();let r=data.run,roo
 function finish(won){let r=data.run;if(!r)return;let equipped=r.equipped,oldHome=null;let objects=[equipped,...r.bag].filter(Boolean);if(won){data.equipped=equipped;data.stash.push(...r.bag);data.credits+=r.earnedCredits+60;data.lastEconomy={...r.economy,total:r.earnedCredits+60,extraction:60,run:data.runs+1};data.research+=r.objectives.length+Math.floor(r.visited.length/3);data.stats.extractions++;msg(`EXTRACTION ! ${r.bag.length} objet(s) rapporté(s), +${r.earnedCredits+60} crédits · ${r.xpTotal||r.xp||0} XP récoltée.`)}else{let insured=objects.find(w=>w.id===r.insuredId);data.equipped=insured||starter();data.research+=Math.min(2,Math.floor(r.visited.length/3));data.stats.deaths++;msg(insured?'Mort : l’objet assuré a été récupéré.':'Mort : équipement perdu.')}data.runs++;data.insured=null;data.run=null;ensureMerchant();player=null;bullets=[];closeOverlay();persist();render()}
 function uiSafe(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function uiWeaponCard(w,i,source,eq){let own=data.run?data.run.equipped:data.equipped;let delta=own&&w!==own?Number(w.dmg)-Number(own.dmg):0;let rate=own&&w!==own?(Number(w.rate)-Number(own.rate)):0;let insured=data.run?w.id===data.run.insuredId:w.id===data.insured;
-return `<article class="ui-weapon" style="--item-rarity:${tint(w)}"><div class="ui-weapon-head"><span class="ui-weapon-icon">⚔</span><div><b>${uiSafe(w.name)}</b><small>${uiSafe(w.rar)} ${insured?'· 🛡 Assurée':''}</small></div>${eq?'<span class="ui-tag">ÉQUIPÉE</span>':''}</div><div class="ui-weapon-stats"><span>⚔ ${Number(w.dmg)||0} dégâts</span><span>◉ ${Number(w.rate)||0} tirs/s</span><span>¤ ${value(w)}</span></div>${!eq&&own?`<div class="ui-compare">Comparé à l'arme équipée : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></div>`:''}${!eq?`<div class="ui-weapon-actions"><button data-op="${source==='stash'?'equipHome':'equipBag'}" data-idx="${i}">ÉQUIPER</button><button class="ui-secondary" data-op="${source==='stash'?'sell':'drop'}" data-idx="${i}">${source==='stash'?'VENDRE':'ABANDONNER'}</button></div>`:''}</article>`;}
+return `<article class="ui-weapon" style="--item-rarity:${tint(w)}"><div class="ui-weapon-head"><span class="ui-weapon-icon">⚔</span><div><b>${uiSafe(w.name)}</b><small>${uiSafe(w.rar)} ${insured?'· 🛡 Assurée':''}</small></div>${eq?'<span class="ui-tag">ÉQUIPÉE</span>':''}</div><div class="ui-weapon-stats"><span>⚔ ${Number(w.dmg)||0} dégâts</span><span>◉ ${Number(w.rate)||0} tirs/s</span><span>¤ ${source==='stash'?salvagePrice(w):value(w)} ${source==='stash'?'revente':'valeur'}</span></div>${!eq&&own?`<div class="ui-compare">Comparé à l'arme équipée : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></div>`:''}${!eq?`<div class="ui-weapon-actions"><button data-op="${source==='stash'?'equipHome':'equipBag'}" data-idx="${i}">ÉQUIPER</button><button class="ui-secondary" data-op="${source==='stash'?'sell':'drop'}" data-idx="${i}">${source==='stash'?'VENDRE':'ABANDONNER'}</button></div>`:''}</article>`;}
 function uiMission(){let r=data.run;if(!r)return '';let z=r.rooms[r.current];if(isBoss(r.current,r))return '⚠ BOSS — Vaincre le Gardien K-17';if(isArena(r.current,r))return '⚔ ARÈNE — Terminer les vagues';if(isExit(r.current,r))return r.exitStarted?'⏳ Défends la zone d’extraction':'↥ Extraction — Approche du terminal';if(z.enemies&&z.enemies.length)return '⚔ Sécurise la salle pour ouvrir les nouvelles portes';if(z.kind==='outpost')return '📡 Active l’avant-poste avec ACTION';return '✓ Salle sécurisée — Explore les sorties';}
 function uiActionName(){if(!data.run)return 'ACTION';let act=interaction();return act==='chest'?'OUVRIR':act==='outpost'?'ACTIVER':act==='exit'?'EXTRAIRE':'ACTION';}
 function itemRow(w,i,source){return uiWeaponCard(w,i,source,false)}
@@ -242,7 +262,7 @@ function uniqueCheck(){let seen=new Set(),items=[data.equipped,...data.stash];if
 function equipHome(i){let w=data.stash[i];if(!w)return;let old=data.equipped;data.stash.splice(i,1);data.equipped=w;if(old)data.stash.push(old);data.insured=null;persist();render();msg(`${w.name} équipé. Assurance à renouveler.`)}
 function equipBag(i){let r=data.run,w=r.bag[i];if(!w)return;let old=r.equipped;r.bag.splice(i,1);r.equipped=w;if(old){r.bag.push(old)}if(!uniqueCheck())msg('Erreur d’inventaire détectée.');else msg(`${w.name} équipé. Assurance non transférée.`);persist();render();openOverlay('bag')}
 function drop(i){let r=data.run,w=r.bag[i];if(!w)return;if(w.id===r.insuredId&&!confirm('Abandonner cet objet annulera son assurance. Confirmer ?'))return;if(w.id===r.insuredId)r.insuredId=null;r.bag.splice(i,1);persist();render();openOverlay('bag');msg(`${w.name} abandonné.`)}
-function sell(i){let w=data.stash[i];if(!w)return;data.stash.splice(i,1);let gain=Math.round(value(w)*.55);data.credits+=gain;persist();render();msg(`${w.name} vendu : +${gain} crédits.`)}
+function sell(i){if(data.run)return;let w=data.stash[i];if(!w)return;if(w.id===data.insured){msg("Objet assuré : vente refusée.");return}let gain=salvagePrice(w);if(!confirm(`Vendre définitivement ${w.name} pour ${gain} crédits ?`))return;data.stash.splice(i,1);data.credits+=gain;persist();render();msg(`${w.name} vendu : +${gain} crédits.`)}
 // Marchand évolutif — stock sauvegardé, jamais régénéré sur simple ouverture.
 const MERCHANT_CATALOG=[
  {name:'Pistolet de secours',rar:'Commun',dmg:17,rate:2.1},
@@ -288,8 +308,8 @@ function merchantRender(){
    return `<article class="ui-weapon" style="--item-rarity:${tint(w)}"><div class="ui-weapon-head"><span class="ui-weapon-icon">⚔</span><div><b>${uiSafe(w.name)}</b><small>${uiSafe(w.rar)}</small></div></div><div class="ui-weapon-stats"><span>⚔ ${w.dmg} dégâts</span><span>◉ ${w.rate} tirs/s</span></div><div class="ui-compare">Face à l'arme équipée : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${speed>=0?'ui-up':'ui-down'}">${speed>=0?'+':''}${speed.toFixed(1)} tirs/s</strong></div><button data-merchant-buy="${i}" ${w.sold||data.credits<w.price?'disabled':''}>${w.sold?'VENDU':data.credits<w.price?'Crédits insuffisants · ': 'ACHETER · '}${w.sold?'':w.price+' ¤'}</button></article>`;
   }).join('');
  }else if(merchantTab==='sell'){
-  html+='<p class="ui-help">Vente définitive depuis la réserve. L’arme équipée n’est jamais proposée à la vente.</p>';
-  html+=data.stash.length?data.stash.map((w,i)=>`<article class="ui-weapon" style="--item-rarity:${tint(w)}"><b>${uiSafe(w.name)}</b><div class="ui-weapon-stats"><span>${uiSafe(w.rar)}</span><span>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s</span></div><button data-merchant-sell="${i}">VENDRE · ${Math.round(value(w)*.55)} ¤</button></article>`).join(''):'<p class="ui-empty">Réserve vide : rapporte des équipements en t’extrayant.</p>';
+  html+='<p class="ui-help">Valeur de récupération réduite selon la rareté. Les objets achetés sont repris au maximum à 25 % de leur prix. Vente définitive avec confirmation ; équipement assuré protégé.</p>';
+  html+=data.stash.length?data.stash.map((w,i)=>`<article class="ui-weapon" style="--item-rarity:${tint(w)}"><b>${uiSafe(w.name)}</b><div class="ui-weapon-stats"><span>${uiSafe(w.rar)}</span><span>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s</span></div><button data-merchant-sell="${i}" ${w.id===data.insured?'disabled':''}>${w.id===data.insured?'🛡 ASSURÉE':'VENDRE · '+salvagePrice(w)+' ¤'}</button></article>`).join(''):'<p class="ui-empty">Réserve vide : rapporte des équipements en t’extrayant.</p>';
  }else{
   html+=`<div class="ui-empty"><b>Arrivage ${m.cycle}</b><p>Offres restantes : ${m.stock.filter(x=>!x.sold).length}/7</p><p>Prochain renouvellement après ${Math.max(0,2-(data.runs-m.lastRefreshRun))} expédition(s) terminée(s), ou au déblocage d'un secteur.</p><p>Plus tu explores K-17, plus les équipements rares deviennent accessibles. Les objets légendaires restent exceptionnellement coûteux.</p></div>`;
  }
@@ -300,14 +320,14 @@ function merchantBuy(i){
  if(!w||w.sold||!Number.isFinite(w.price)||data.credits<w.price)return;
  if(!confirm(`Acheter ${w.name} (${w.rar}) pour ${w.price} crédits ?`))return;
  // Atomic state transition, persisted together: money, stock, item ownership.
- const item={id:uid(),name:w.name,rar:w.rar,dmg:w.dmg,rate:w.rate};
+ const item={id:uid(),name:w.name,rar:w.rar,dmg:w.dmg,rate:w.rate,purchasePrice:w.price,origin:"merchant"};
  data.credits-=w.price;data.stash.push(item);w.sold=true;
  persist();render();merchantRender();msg(`${item.name} acheté et placé dans la réserve.`);
 }
 function merchantSell(i){
  if(data.run)return;const w=data.stash[i];if(!w)return;
  if(w.id===data.insured){msg('Cet objet est assuré. Annule d’abord son assurance.');return}
- const price=Math.round(value(w)*.55);
+ const price=salvagePrice(w);
  if(!confirm(`Vendre définitivement ${w.name} pour ${price} crédits ?`))return;
  data.stash.splice(i,1);data.credits+=price;persist();render();merchantRender();msg(`${w.name} vendu · +${price} crédits.`);
 }
