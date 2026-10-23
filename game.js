@@ -358,6 +358,7 @@ function merchantRender(){
 }
 let selectedInventoryId=null;
 let inventoryPage=0;
+let inventorySortMode="default";
 const INVENTORY_PAGE_SIZE=20;
 function renderInventorySelection(){
  const host=$('inventorySelection');if(!host)return;
@@ -365,7 +366,7 @@ function renderInventorySelection(){
  if(i<0){host.hidden=true;host.innerHTML='';return}
  const w=data.stash[i], delta=w.dmg-(data.equipped?.dmg||0), rate=w.rate-(data.equipped?.rate||0);
  host.hidden=false;
- host.innerHTML=`<div class="inventory-selected-head"><span class="inventory-selected-art">${weaponArt(w)}</span><div><b>${uiSafe(w.name)}</b><span style="color:${tint(w)}">${uiSafe(w.rar)}</span></div></div><p>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s · ${salvagePrice(w)} ¤ revente</p><p>Face à l’arme active : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></p><div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE · ${salvagePrice(w)} ¤</button></div>`;
+ host.innerHTML=`<span class="inventory-detail-label">ARME SÉLECTIONNÉE</span><div class="inventory-selected-head"><span class="inventory-selected-art">${weaponArt(w)}</span><div><b>${uiSafe(w.name)}</b><span style="color:${tint(w)}">${uiSafe(w.rar)}</span></div></div><p>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s · ${salvagePrice(w)} ¤ revente</p><p>Face à l’arme active : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></p><div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE · ${salvagePrice(w)} ¤</button></div>`;
 }
 function renderRefugeCharacter(){
  const stats=data.stats||{};
@@ -387,13 +388,18 @@ function renderRefugeCharacter(){
  if($('loadoutHpBonus'))$('loadoutHpBonus').textContent=`+${data.hpLv*15} PV permanents`;
  if($('loadoutDmgLevel'))$('loadoutDmgLevel').textContent=`Niveau ${data.dmgLv}`;
  if($('loadoutDmgBonus'))$('loadoutDmgBonus').textContent=`+${data.dmgLv*3} dégâts permanents`;
+ if($('inventoryEquippedLabel'))$('inventoryEquippedLabel').textContent=data.equipped?`${data.equipped.name} · ${data.equipped.rar}`:'Aucune arme';
  const preview=$('characterReservePreview');
  if(preview){
   if(data.stash.length && !data.stash.some(w=>w.id===selectedInventoryId)) selectedInventoryId=data.stash[0].id;
   const pages=Math.max(1,Math.ceil(data.stash.length/INVENTORY_PAGE_SIZE));
   inventoryPage=Math.max(0,Math.min(inventoryPage,pages-1));
-  const offset=inventoryPage*INVENTORY_PAGE_SIZE,items=data.stash.slice(offset,offset+INVENTORY_PAGE_SIZE);
-  const cards=items.map((w,i)=>`<button type="button" class="inventory-cell ${w.id===selectedInventoryId?'inventory-active':''}" data-inventory-index="${offset+i}" aria-pressed="${w.id===selectedInventoryId}" aria-label="Voir ${uiSafe(w.name)}" style="--item-rarity:${tint(w)}"><span class="inventory-symbol">${weaponArt(w)}</span><span class="inventory-name">${uiSafe(w.name)}</span><span class="inventory-rarity">${uiSafe(w.rar)}</span></button>`).join('');
+  const rarityOrder={Commun:0,Inhabituel:1,Rare:2,'Épique':3,'Légendaire':4,Mythique:5};
+  const ranked=data.stash.map((w,i)=>({w,i}));
+  const sortable={rarity:w=>rarityOrder[w.rar]||0,damage:w=>Number(w.dmg)||0,rate:w=>Number(w.rate)||0,value:w=>salvagePrice(w)};
+  if(sortable[inventorySortMode])ranked.sort((a,b)=>sortable[inventorySortMode](b.w)-sortable[inventorySortMode](a.w)||a.i-b.i);
+  const offset=inventoryPage*INVENTORY_PAGE_SIZE,items=ranked.slice(offset,offset+INVENTORY_PAGE_SIZE);
+  const cards=items.map(({w,i})=>`<button type="button" class="inventory-cell ${w.id===selectedInventoryId?'inventory-active':''}" data-inventory-index="${i}" aria-pressed="${w.id===selectedInventoryId}" aria-label="Voir ${uiSafe(w.name)}" style="--item-rarity:${tint(w)}"><span class="inventory-symbol">${weaponArt(w)}</span><span class="inventory-name">${uiSafe(w.name)}</span><span class="inventory-rarity">${uiSafe(w.rar)}</span></button>`).join('');
   preview.innerHTML=cards+Array.from({length:Math.max(0,8-items.length)},()=>'<span class="inventory-cell inventory-empty" aria-hidden="true"></span>').join('');
   const controls=$('inventoryPages');if(controls){controls.hidden=pages<=1;controls.innerHTML=pages>1?`<button type="button" data-inventory-page="prev" ${inventoryPage===0?'disabled':''}>← Précédent</button><span>${inventoryPage+1} / ${pages} · ${data.stash.length} armes</span><button type="button" data-inventory-page="next" ${inventoryPage===pages-1?'disabled':''}>Suivant →</button>`:'';}
   renderInventorySelection();
@@ -457,6 +463,7 @@ $('characterReservePreview').addEventListener('click',e=>{
  const i=Number(cell.dataset.inventoryIndex),w=data.stash[i],host=$('inventorySelection');if(!w||!host)return;
  selectedInventoryId=w.id;renderRefugeCharacter();
 });
+$('inventorySort').addEventListener('change',e=>{inventorySortMode=e.target.value;inventoryPage=0;renderRefugeCharacter();});
 $('inventoryPages').addEventListener('click',e=>{const b=e.target.closest('[data-inventory-page]');if(!b)return;inventoryPage+=b.dataset.inventoryPage==='next'?1:-1;renderRefugeCharacter();});
 $('inventorySelection').addEventListener('click',e=>{
  const b=e.target.closest('[data-grid-equip],[data-grid-sell]');if(!b)return;
