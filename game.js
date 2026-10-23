@@ -54,8 +54,47 @@ function makeLargeMap(){
 const SECTORS=[{name:'PÉRIPHÉRIE',bg:'#202f31',grid:'#354846',accent:'#83d9b0',enemy:'mutant',hazard:'Débris et mutants rapides'},{name:'LABORATOIRES',bg:'#152d3c',grid:'#26516a',accent:'#60cef4',enemy:'drone',hazard:'Rayons de sécurité'},{name:'FONDERIE',bg:'#372921',grid:'#65402b',accent:'#ffae62',enemy:'brute',hazard:'Évents thermiques'},{name:'CITADELLE',bg:'#292334',grid:'#50374e',accent:'#e898de',enemy:'sentinel',hazard:'Défenses renforcées'}];
 function sectorOf(room){return clamp(room?.sector||0,0,3)}
 function environment(room){if(!room)return;let sec=sectorOf(room);if(room.envPhase===undefined)room.envPhase=0;if(room.hazardCooldown===undefined)room.hazardCooldown=2.5;if(room.hazardOn===undefined)room.hazardOn=false;if(room.hazardX===undefined)room.hazardX=sec===1?180:sec===2?240:180;}
-function enemiesFor(id){let r=data.run,room=r?.rooms[id];if(id===0||room?.kind==='outpost')return[];let arena=isArena(id,r),boss=isBoss(id,r),sec=sectorOf(room);let count=boss?3:arena?4:isExit(id,r)?2:pick(2,3);return Array.from({length:count},(_,k)=>{let type=(boss||arena)&&k===count-1?'sentinel':sec===0?(k%2?'ranged':'chaser'):sec===1?(k%3?'ranged':'drone'):sec===2?(k%2?'brute':'ranged'):(k%2?'sentinel':'drone');let hp=(type==='sentinel'?(boss?250:125):type==='brute'?125:type==='drone'?65:type==='ranged'?60:75)*(1+sec*.12);return{id:uid(),type,x:pick(78,275),y:pick(85,255),hp,max:hp,cd:Math.random()+.6,wind:0,aim:0}})}
-function spawnReinforcement(room,count){let n=room.enemies.length;for(let k=0;k<count;k++){let type=k%2===0?'ranged':'chaser',hp=type==='ranged'?60:75;room.enemies.push({id:uid(),type,x:k%2?292:67,y:85+35*(k%3),hp,max:hp,cd:1,wind:0,aim:0})}}
+// Les ennemis ne peuvent pas apparaitre dans une hitbox solide.
+// La geometrie utilisee ici est celle du moteur de collisions joueur/projectiles.
+function spawnSafe(room,others=[],preferred=null){
+ const allowed=(x,y)=>x>=42&&x<=318&&y>=48&&y<=345&&!collidesSolid(x,y,17,room)&&
+   !others.some(e=>Math.hypot(e.x-x,e.y-y)<35)&&
+   !(player&&data.run&&data.run.rooms[data.run.current]===room&&Math.hypot(player.x-x,player.y-y)<43);
+ if(preferred&&allowed(preferred.x,preferred.y))return preferred;
+ for(let attempt=0;attempt<100;attempt++){
+  const x=pick(49,311),y=pick(52,310);
+  if(allowed(x,y))return {x,y};
+ }
+ // Grille de secours deterministe : pas de spawn dans les obstacles si le hasard echoue.
+ for(let y=60;y<=310;y+=25)for(let x=55;x<=305;x+=25)if(allowed(x,y))return {x,y};
+ return null;
+}
+function sanitizeEnemyPositions(room){
+ if(!room||!Array.isArray(room.enemies))return false;
+ let changed=false,placed=[];
+ for(const e of room.enemies){
+  if(!Number.isFinite(e.x)||!Number.isFinite(e.y)||collidesSolid(e.x,e.y,14,room)){
+   const pos=spawnSafe(room,placed);
+   if(pos){e.x=pos.x;e.y=pos.y;e.wind=0;changed=true;}
+  }
+  placed.push(e);
+ }
+ return changed;
+}
+function enemiesFor(id){let r=data.run,room=r?.rooms[id];if(id===0||room?.kind==='outpost')return[];let arena=isArena(id,r),boss=isBoss(id,r),sec=sectorOf(room);let count=boss?3:arena?4:isExit(id,r)?2:pick(2,3);const enemies=[];
+ for(let k=0;k<count;k++){
+  let type=(boss||arena)&&k===count-1?'sentinel':sec===0?(k%2?'ranged':'chaser'):sec===1?(k%3?'ranged':'drone'):sec===2?(k%2?'brute':'ranged'):(k%2?'sentinel':'drone');
+  let hp=(type==='sentinel'?(boss?250:125):type==='brute'?125:type==='drone'?65:type==='ranged'?60:75)*(1+sec*.12);
+  const pos=spawnSafe(room,enemies);
+  if(pos)enemies.push({id:uid(),type,...pos,hp,max:hp,cd:Math.random()+.6,wind:0,aim:0});
+ }
+ return enemies;
+}
+function spawnReinforcement(room,count){for(let k=0;k<count;k++){
+ const type=k%2===0?'ranged':'chaser',hp=type==='ranged'?60:75;
+ const pos=spawnSafe(room,room.enemies,{x:k%2?292:67,y:85+35*(k%3)});
+ if(pos)room.enemies.push({id:uid(),type,...pos,hp,max:hp,cd:1,wind:0,aim:0});
+}}
 
 function createRun(){let m=makeLargeMap();region().expeditions++;return {...m,current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}}}
 function setPlayer(){player=data.run?.player||null}
@@ -140,7 +179,7 @@ function enter(id,from){let r=data.run,room=r.rooms[id];r.current=id;room.seen=t
 if(isLarge(r)){let reg=region();reg.maxSector=Math.max(reg.maxSector,room.sector);}
 environment(room);if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(id);}
 if(from!==null){let prev=r.rooms[from];let[a,b]=pos(from),[x,y]=pos(id);player.x=x>a?37:x<a?323:180;player.y=y>b?37:y<b?363:205}
-if(isArena(id,r)&&!room.cleared){enforceArena()}
+sanitizeEnemyPositions(room);if(isArena(id,r)&&!room.cleared){enforceArena()}
 else if(autoSecure(room)){persist()}
 if(isBoss(id,r)&&!room.cleared){room.activated=true;msg('⚠ BOSS K-17 : portes scellées !')}
 player.inv=.65;bullets=[];closeOverlay();persist();render();if(!isArena(id,r)&&!isBoss(id,r))msg(isExit(id,r)?'Terminal d’extraction détecté.':`K-17 · salle ${id+1}/50 · secteur ${room.sector+1}`)}
@@ -312,9 +351,9 @@ lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type===
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){if(locked())return false;let r=data.run,id=r.current;for(let d of doors(id)){let s=d.side,hit=s==='top'?player.y<=23&&Math.abs(player.x-180)<30:s==='bottom'?player.y>=377&&Math.abs(player.x-180)<30:s==='left'?player.x<=23&&Math.abs(player.y-203)<32:player.x>=337&&Math.abs(player.y-203)<32;if(hit){if(!canPassDoor(d.to)){if(!locked()){msg('🔒 Nouvelle salle bloquée : termine le combat pour avancer. Retour libre.');}return false}enter(d.to,id);return true}}return false}
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
-function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);let sec=sectorOf(room);room.envPhase+=dt; if(!room.cleared&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
+function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; if(!room.cleared&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
 let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+.09*perkCount('speed'))*dt,vy*150*(1+.09*perkCount('speed'))*dt,12,room);if(transition())return;
-if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3)room.enemies.push({...enemiesFor(r.current)[3],id:uid(),hp:160,max:160,x:180,y:105});player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.earnedCredits+=pick(250,400);objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre ÉPIQUE débloqué ! Approche du coffre et utilise ACTION.')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.earnedCredits+=800;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.earnedCredits+=35;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
+if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.earnedCredits+=pick(250,400);objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre ÉPIQUE débloqué ! Approche du coffre et utilise ACTION.')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.earnedCredits+=800;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.earnedCredits+=35;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
 if(room.enemies.length&&player.fire<=0){let target=room.enemies.reduce((a,b)=>length(player,a)<length(player,b)?a:b);let spread=mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09,ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,dmg:damage()*(1+.10*perkCount('power')),ttl:1.5});player.fire=1/(r.equipped.rate*(1+.12*perkCount('rapid')))}
 for(let e of room.enemies){let d=length(e,player),angle=Math.atan2(player.y-e.y,player.x-e.x);e.wind=e.wind||0;
 if(e.wind>0){e.wind-=dt;if(e.wind<=0){if(e.type==='chaser'||e.type==='brute'){let reach=length(e,player);if(reach<(e.type==='brute'?125:115)&&Math.abs(Math.atan2(Math.sin(angle-e.aim),Math.cos(angle-e.aim)))<.48)hurt(e.type==='brute'?25:18)}else{let count=e.type==='sentinel'?3:1;for(let j=0;j<count;j++){let a=e.aim+(j-(count-1)/2)*.18;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),vy:Math.sin(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),enemy:true,dmg:e.type==='sentinel'?22:e.type==='drone'?16:14,ttl:3})}}e.cd=e.type==='sentinel'?2.5:e.type==='drone'?1.45:e.type==='brute'?2.1:e.type==='ranged'?1.8:1.5}}
@@ -340,6 +379,6 @@ cv.addEventListener('pointerdown',down);cv.addEventListener('pointermove',move);
 window.addEventListener('keydown',e=>{if(e.target.tagName==='TEXTAREA')return;keyState[e.key]=true;if(e.key===' '){e.preventDefault();action()}});window.addEventListener('keyup',e=>keyState[e.key]=false);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(data.run&&!overlay)openOverlay('pause')}});
 if('serviceWorker'in navigator&&location.protocol==='https:')navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
-if(data.run){runProgress();data.run.exitWave=data.run.exitWave||(data.run.exitStarted?1:0);setPlayer();if(isArena(data.run.current,data.run))enforceArena();else{let cr=data.run.rooms[data.run.current];if(cr&&cr.spawned&&!isBoss(data.run.current,data.run))autoSecure(cr)}if(!player||!data.run.rooms[data.run.current]){data.run=null;data.equipped=data.equipped||starter();msg('Ancienne expédition incompatible : refuge récupéré.')}else{openOverlay('pause');msg('Expédition retrouvée : appuie sur Reprendre.')}}
+if(data.run){runProgress();data.run.exitWave=data.run.exitWave||(data.run.exitStarted?1:0);setPlayer();sanitizeEnemyPositions(data.run.rooms[data.run.current]);if(isArena(data.run.current,data.run))enforceArena();else{let cr=data.run.rooms[data.run.current];if(cr&&cr.spawned&&!isBoss(data.run.current,data.run))autoSecure(cr)}if(!player||!data.run.rooms[data.run.current]){data.run=null;data.equipped=data.equipped||starter();msg('Ancienne expédition incompatible : refuge récupéré.')}else{openOverlay('pause');msg('Expédition retrouvée : appuie sur Reprendre.')}}
 if(!data.equipped&&!data.run)data.equipped=starter();region();render();if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
 })();

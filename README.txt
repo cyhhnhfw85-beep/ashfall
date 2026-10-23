@@ -1,7 +1,4 @@
-ASHFALL Alpha 0.8.8.2 — Correction des proportions plein écran
-
-La zone de jeu conserve le ratio logique 360x400 (9:10) et reste centrée dans la hauteur disponible. Joystick et sprites ne sont plus allongés. Les bandes restantes servent de fond à l’interface : cette correction ne constitue pas encore une caméra à champ de vision étendu.
-
-Avant déploiement, exporter la sauvegarde dans Notes. Remplacer tous les fichiers à la racine du dépôt GitHub (9 fichiers) et vérifier la version affichée. Ne pas désinstaller la PWA.
-
-Tests: joystick rond, personnage non étiré, DASH en mouvement, portes latérales accessibles, sac/carte et reprise de sauvegarde.
+ASHFALL Alpha 0.8.8.3 — Spawn securise
+Correctif de placement ennemis: generation initiale, vagues arena, elite 3e vague, renforts extraction, et ennemi coince dans sauvegarde existante.
+Sauvegarde ashfall_pwa_v1 conservee.
+Exporter sa sauvegarde avant remplacement des 9 fichiers a la racine du depot GitHub.
