@@ -4,3 +4,6 @@
 
 /* Controles multitouch independants : joystick maintenu + DASH sur un second doigt. */
 #stage,#actions,#dodge{touch-action:none;-webkit-touch-callout:none;}
+
+/* XP & choix de niveau, iPhone tactile */
+.xp-label{font-size:10px;color:#89e8ef;margin-top:5px}.xp-track{height:5px;background:#234050;border-radius:6px;overflow:hidden;margin-top:2px}.xp-track div{height:100%;width:0;background:#6cdae9}.perk-option{display:flex;flex-direction:column;width:100%;text-align:left;gap:5px;padding:13px;margin:8px 0!important;border:1px solid #659ead;background:#243f4c}.perk-option b{font-size:15px}.perk-option small{font-size:12px}#overlay{overscroll-behavior:contain}
