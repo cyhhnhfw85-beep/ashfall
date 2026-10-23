@@ -1,7 +1,7 @@
-ASHFALL ALPHA 0.8.9.6 — REFUGE MULTI-PAGES
+ASHFALL ALPHA 0.8.9.7 — JOYSTICK FLOTTANT
 
-Basé sur 0.8.9.5 (économie et loot conservés).
-Onglets : Accueil (départ rapide), Personnage (équipement, réserve, assurance, talents), Marchand (comptoir existant), Progression (K-17).
-Aucune clé de sauvegarde modifiée ; ne pas supprimer la PWA.
-Installation : déposer les 8 fichiers applicatifs à la racine du dépôt GitHub Pages ; README informatif uniquement.
-Exporter la sauvegarde avant mise à jour.
+Base : 0.8.9.6, toutes les pages refuge, marchand et economie conservees.
+Pose le pouce dans la moitie inferieure gauche du terrain : le centre du joystick apparait exactement au toucher. Glisse pour avancer, relache pour arreter, repose ailleurs pour repositionner.
+DASH/ACTION restent compatibles avec le second pouce. Clavier inchangé.
+Cle de sauvegarde inchangee : ashfall_pwa_v1. Exporter une sauvegarde avant mise a jour, ne pas desinstaller la PWA.
+Installer les 8 fichiers applicatifs a la racine du depot GitHub Pages.
