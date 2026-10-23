@@ -50,3 +50,10 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 - Résumé d'arme, assurance, réserve et progression mis à jour depuis l'état existant.
 - Conservation des identifiants et boutons du jeu (`start`, `startSector`, `tutorialLaunch`, `merchantLaunch`).
 - Aucune modification du gameplay ou du schéma des sauvegardes.
+
+## 0.8.9.38 — Accueil clarifié
+- Deux ressources seulement dans la barre principale, avec pictogrammes SVG Crédit et Recherche sans images externes.
+- Le nombre d'expéditions est déplacé dans l'onglet Secteurs, tout en restant présent dans les statistiques Personnage.
+- Supprime les liens Postes du refuge en double : une seule navigation supérieure demeure.
+- La page Progression est renommée Secteurs et explique zones accessibles, avant-postes et Gardien sans faire croire à une carte géographique de combat.
+- Aucun changement du gameplay, de l'économie, des sauvegardes ni des graphismes déjà validés.

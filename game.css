@@ -514,3 +514,29 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 @media(max-width:355px){#refuge-page-home .home-command-hero .refuge-hero-copy{max-width:82%;}#refuge-page-home .home-hero-seal{width:53px;height:60px;}#refuge-page-home .home-hero-seal span{font-size:23px;}#refuge-page-home .refuge-status-ribbon span{font-size:8px;}#refuge-page-home .home-services .hub-tile{padding:7px!important;}}
 @media(max-width:355px){#refuge-page-home #start{font-size:12px;padding:10px 11px;white-space:nowrap;}#refuge-page-home #start span:last-child{font-size:16px;}}
 #refuge-page-home .home-kit-icon img.weapon-art{object-fit:contain;}
+
+/* ASHFALL 0.8.9.38 — Ressources du refuge et navigation simplifiée. */
+.stats.ash-resources{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.stats.ash-resources>.ash-resource-card{display:flex;align-items:center;gap:10px;min-width:0;min-height:73px;padding:12px 13px;border-radius:13px;background:linear-gradient(155deg,#1b3c50,#102838);border:1px solid #50768b;box-shadow:inset 0 1px #ffffff0c,0 7px 14px #0002}
+.ash-currency-logo{width:44px;height:44px;flex:0 0 44px;overflow:visible;stroke-linejoin:round;stroke-linecap:round}
+.ash-logo-credit{fill:#533920;stroke:#f6c37b;stroke-width:2.7;filter:drop-shadow(0 2px 5px #e4a45b38)}
+.ash-logo-credit path:nth-child(2){fill:#bb8340;stroke:#ffe0a5;stroke-width:1.8}
+.ash-logo-credit path:nth-child(3){fill:none;stroke:#fff2c8;stroke-width:3}
+.ash-logo-research{fill:#183d4d;stroke:#85e3d3;stroke-width:2.6;filter:drop-shadow(0 2px 6px #4ac8b62b)}
+.ash-logo-research path:nth-child(2){fill:#174f58}
+.ash-logo-research path:nth-child(3){fill:#52b8a6;stroke:#b7f1e1;stroke-width:1.5}
+.ash-logo-research path:nth-child(4){fill:none;stroke:#d7fff5;stroke-width:3.4}
+.stats.ash-resources .ash-resource-info{display:grid;gap:4px;min-width:0}
+.stats.ash-resources small{font-size:10px;letter-spacing:.105em;color:#bcd3dc;font-weight:700}
+.stats.ash-resources b{font-size:23px;line-height:1.1;font-weight:900;color:#f4f8fa;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+#refuge-page-home .home-sector-explanation{font-size:11px;color:#aac5d3;line-height:1.45;margin:0 0 11px}
+#refuge-page-home .refuge-status-ribbon{grid-template-columns:repeat(3,minmax(0,1fr))}
+#refuge-page-progress .progress-summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#refuge-page-progress .progress-summary-grid .mini-panel{padding:12px;min-height:68px}
+#refuge-page-progress .progress-summary-grid .mini-panel small{font-size:10px}
+#refuge-page-progress .progress-summary-grid .mini-panel b{font-size:21px;line-height:1.25}
+#refuge-page-progress .ash-sector-guide{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:7px 0 14px}
+#refuge-page-progress .ash-sector-guide>div{padding:8px 6px;background:#142d3a;border:1px solid #375366;border-radius:8px;display:grid;gap:3px;min-width:0}
+#refuge-page-progress .ash-sector-guide strong{color:#f0c082;font-size:9px;letter-spacing:.04em}
+#refuge-page-progress .ash-sector-guide small{color:#a9c6d4;font-size:9px;line-height:1.25}
+@media(max-width:355px){.stats.ash-resources>.ash-resource-card{padding:9px 7px;gap:7px;min-height:66px}.ash-currency-logo{width:33px;height:33px;flex-basis:33px}.stats.ash-resources b{font-size:20px}#refuge-page-progress .ash-sector-guide{grid-template-columns:1fr}#refuge-page-progress .ash-sector-guide>div{display:flex;align-items:center;gap:8px}}
