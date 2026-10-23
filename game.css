@@ -174,3 +174,11 @@ body.ashfall-expedition .ui-mission{
 body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 196px);left:12px;font-size:10px;max-width:calc(100% - 24px);opacity:.85}
 @media(max-width:370px){body.ashfall-expedition .gamebar{column-gap:5px;padding-left:8px;padding-right:8px}body.ashfall-expedition .gamebar button{min-width:40px;padding:8px 7px;font-size:11px}body.ashfall-expedition .gamebar::before{font-size:9px;letter-spacing:.03em}body.ashfall-expedition #roomTitle{font-size:12px}}
 @media(orientation:landscape){body.ashfall-expedition .gamebar{padding-top:calc(env(safe-area-inset-top) + 4px);grid-template-columns:minmax(0,1fr) auto auto auto;grid-template-rows:1fr;gap:6px}body.ashfall-expedition .gamebar .lifewrap{grid-column:1;grid-row:1}body.ashfall-expedition #bagBtn,body.ashfall-expedition #mapBtn,body.ashfall-expedition #pauseBtn{grid-row:1}body.ashfall-expedition .gamebar::before{display:none}body.ashfall-expedition .ui-mission{top:calc(env(safe-area-inset-top) + 85px)}body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 124px)}}
+
+/* 0.8.9.12 — Contrôle de déplacement unique, bas-centre */
+#joystickZone{position:absolute;z-index:16;width:178px;height:144px;bottom:calc(30px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);touch-action:none;user-select:none;display:flex;align-items:center;justify-content:center;border-radius:70px;background:radial-gradient(circle,#2b566055,#18354222 70%,transparent);border:1px dashed #6eafae66}
+#joyBase{width:94px;height:94px;display:flex;align-items:center;justify-content:center;border-radius:50%;border:3px solid #9bcbd1aa;background:#204c58a8;box-shadow:inset 0 0 24px #0006;pointer-events:none;transition:none}
+#joyKnob{width:50px;height:50px;border-radius:50%;background:linear-gradient(145deg,#edc47e,#b27c40);border:2px solid #ffe1a9;box-shadow:0 4px 16px #0007;pointer-events:none}
+body.ashfall-expedition #log{right:12px;bottom:calc(190px + env(safe-area-inset-bottom));max-height:42px}
+body.ashfall-expedition #game>.line:not(.gamebar){bottom:calc(7px + env(safe-area-inset-bottom))}
+@media(orientation:landscape){#joystickZone{bottom:calc(8px + env(safe-area-inset-bottom));width:140px;height:110px}#joyBase{width:77px;height:77px}#joyKnob{width:42px;height:42px}body.ashfall-expedition #log{bottom:calc(120px + env(safe-area-inset-bottom))}}
