@@ -1,5 +1,7 @@
-ASHFALL 0.8.9.2 — Marchand évolutif B
-Base : Alpha 0.8.9.1 sauvegardes fiables.
-Fichiers du jeu à remplacer à la racine GitHub : index.html, game.js, game.css, immersion.js, manifest.webmanifest, service-worker.js, icon-192.png, icon-512.png.
-Nouveautés : comptoir achat/vente, 7 offres, rotation après 2 expéditions ou découverte de secteur, équipement envoyé à la réserve, confirmation de transaction, prévisualisation.
-ATTENTION : exporter sa sauvegarde avant déploiement ; tester une reprise en expédition.
+ASHFALL Alpha 0.8.9.4 — ECONOMY & COMBAT BALANCE
+
+Version complète depuis 0.8.9.2.
+Toujours exporter votre sauvegarde avant installation. Ne pas supprimer la PWA.
+Nouveautés : crédits et récompenses réduits, coûts des talents permanents progressifs, cumul des bonus temporaires plafonné avec rendement décroissant, statistiques économiques enregistrées.
+Les crédits et objets possédés restent inchangés. Les bonus déjà cumulés au-dessus de leur nouveau plafond sont limités en EFFET, sans supprimer les données de la sauvegarde.
+Remplacer les fichiers à la racine GitHub et attendre le déploiement.
