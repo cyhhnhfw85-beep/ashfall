@@ -24,3 +24,9 @@ Limite actuelle : les armes disponibles sont classées visuellement en deux silh
 
 ## 0.8.9.33 — Correctif des images manquantes
 Les images du personnage sont directement embarquées dans index.html afin de fonctionner même si un hébergement n’expose pas les sous-dossiers. Les PNG restent inclus comme sources. Aucun changement de sauvegarde ou gameplay.
+
+## 0.8.9.34 — Nomade affiné
+- Positions des bras retouchées.
+- Pistolet usé et Nomade-9 plus lisibles dans le menu.
+- Images embarquées conservées pour éviter les erreurs de chargement sur iPhone.
+- Aucun changement de gameplay ni de sauvegarde.

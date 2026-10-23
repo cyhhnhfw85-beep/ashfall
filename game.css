@@ -431,10 +431,12 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 #refuge-page-character .premium-survivor.tactical-survivor-v2 path{shape-rendering:geometricPrecision}
 #refuge-page-character #characterHeldWeaponArt{filter:drop-shadow(0 5px 4px #000c)}
 
-/* 0.8.9.32 — assets du Nomade 3/4, même repère pour corps et pose */
+/* 0.8.9.34 — Nomade affiné: poses d'armes retravaillées */
 #refuge-page-character .nomade-stage{position:relative;width:100%;height:100%;overflow:hidden}
 #refuge-page-character .nomade-stage img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center center;pointer-events:none}
 #refuge-page-character .premium-portrait{overflow:hidden}
 #refuge-page-character .nomade-stage{padding-bottom:18px}
 #refuge-page-character .nomade-stage img{height:calc(100% - 18px)}
 #refuge-page-character .portrait-label{z-index:1}
+
+#refuge-page-character .nomade-pose{filter:drop-shadow(0 6px 6px rgba(0,0,0,.26))}
