@@ -7,3 +7,29 @@
 
 /* XP & choix de niveau, iPhone tactile */
 .xp-label{font-size:10px;color:#89e8ef;margin-top:5px}.xp-track{height:5px;background:#234050;border-radius:6px;overflow:hidden;margin-top:2px}.xp-track div{height:100%;width:0;background:#6cdae9}.perk-option{display:flex;flex-direction:column;width:100%;text-align:left;gap:5px;padding:13px;margin:8px 0!important;border:1px solid #659ead;background:#243f4c}.perk-option b{font-size:15px}.perk-option small{font-size:12px}#overlay{overscroll-behavior:contain}
+
+/* 0.8.8.1: expedition immersive portrait. The simulation still uses 360 x 400 coordinates. */
+body.ashfall-expedition{overflow:hidden;overscroll-behavior:none;height:100dvh}
+body.ashfall-expedition #app{max-width:none;width:100%;height:100dvh;min-height:0;padding:0;overflow:hidden}
+body.ashfall-expedition header,body.ashfall-expedition .stats,
+body.ashfall-expedition .foot,body.ashfall-expedition .footer{display:none!important}
+body.ashfall-expedition .layout{display:block;padding:0}
+body.ashfall-expedition #game{display:block!important;position:fixed;inset:0;z-index:15;background:#101a25;overflow:hidden}
+body.ashfall-expedition #stage{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:0;background:#101e25;overflow:hidden}
+body.ashfall-expedition #canvas{width:100%;height:100%;display:block;touch-action:none}
+body.ashfall-expedition .gamebar{position:absolute;z-index:22;left:0;right:0;top:0;min-height:70px;margin:0;padding:calc(env(safe-area-inset-top) + 7px) 10px 7px;background:linear-gradient(to bottom,#09151eea,#09151eb7 78%,transparent);gap:6px;pointer-events:none}
+body.ashfall-expedition .gamebar>*{pointer-events:auto}
+body.ashfall-expedition .gamebar button{padding:9px 8px;min-height:38px;background:#243747dc}
+body.ashfall-expedition .lifewrap b{font-size:12px}
+body.ashfall-expedition #hint{left:8px;top:calc(env(safe-area-inset-top) + 78px);font-size:10px;z-index:3;max-width:calc(100% - 16px)}
+body.ashfall-expedition #actions{right:calc(10px + env(safe-area-inset-right));bottom:calc(28px + env(safe-area-inset-bottom));z-index:8}
+body.ashfall-expedition #dodge{width:74px;height:74px;font-size:14px}
+body.ashfall-expedition #action{min-width:94px;height:52px;font-size:14px}
+body.ashfall-expedition #game>.line:not(.gamebar){position:absolute;bottom:calc(env(safe-area-inset-bottom) + 4px);left:8px;right:8px;z-index:18;pointer-events:none;font-size:10px;text-shadow:0 1px 3px #000}
+body.ashfall-expedition #game>.line:not(.gamebar) small:first-child{visibility:hidden}
+body.ashfall-expedition #game>.line:not(.gamebar) small:last-child{margin-left:auto;margin-right:0}
+body.ashfall-expedition #log{position:fixed;z-index:19;bottom:calc(20px + env(safe-area-inset-bottom));left:10px;right:120px;pointer-events:none;padding:6px 8px;min-height:0;background:#122232c7;font-size:11px;line-height:1.3;max-height:45px;overflow:hidden}
+body.ashfall-expedition #overlay{z-index:30;padding:calc(env(safe-area-inset-top) + 20px) 15px calc(env(safe-area-inset-bottom) + 24px);background:#0b1422f2}
+body.ashfall-expedition #tools:not([hidden]){position:fixed;z-index:50;inset:calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 8px);overflow:auto}
+/* Landscape maintains visible controls and sufficient touch targets. */
+@media (orientation:landscape){body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 57px)}body.ashfall-expedition .gamebar{padding-top:calc(env(safe-area-inset-top) + 2px)}body.ashfall-expedition #actions{grid-auto-flow:column;align-items:end}body.ashfall-expedition #dodge{height:58px;width:58px}}

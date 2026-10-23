@@ -1,8 +1,8 @@
-ASHFALL ALPHA 0.8.8 — IMMERSION (VERSION COMPLÈTE)
+ASHFALL ALPHA 0.8.8.1 — EXPÉDITION PLEIN ÉCRAN
 
-9 fichiers à placer directement à la racine du dépôt GitHub.
-Basée sur Alpha 0.8.7 : personnages pixel-art et sauvegardes préservés.
-Nouveautés : sons facultatifs, effets d’impact localisés, particules, lumière discrète, réglages Son/Effets/Réduit.
-IMPORTANT : exporter la sauvegarde via le jeu avant mise à jour. Ne pas supprimer la PWA installée.
-Le son est désactivé par défaut et demande un appui utilisateur.
-Tests : syntaxe JavaScript + intégrité du ZIP. Test iPhone nécessaire.
+Version complète construite sur 0.8.8.
+Mode immersion automatique pendant expédition ; retour au refuge normal.
+Avant mise à jour, sauvegarder/exporter le code depuis le jeu.
+Remplacer les 9 fichiers à la racine du dépôt GitHub Pages.
+Ne pas effacer les données de la PWA sur iPhone.
+Moteur 360 x 400 : l’image s’adapte à la surface de l’écran et peut être étirée selon le ratio du téléphone ; commandes tactiles conservent leur mapping.
