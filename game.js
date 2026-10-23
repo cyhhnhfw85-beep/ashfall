@@ -370,6 +370,8 @@ function renderInventorySelection(){
 function renderRefugeCharacter(){
  const stats=data.stats||{};
  if($('activeWeaponArt'))$('activeWeaponArt').innerHTML=weaponArt(data.equipped);
+ if($('characterEquippedSlotArt'))$('characterEquippedSlotArt').innerHTML=weaponArt(data.equipped);
+ if($('characterHeldWeaponArt'))$('characterHeldWeaponArt').innerHTML=weaponArt(data.equipped);
  if($('characterWeaponBadge'))$('characterWeaponBadge').textContent=data.equipped?`${data.equipped.rar} · ${data.equipped.name}`:'Aucune arme';
  if($('characterPowerBadge'))$('characterPowerBadge').textContent=data.equipped?`${data.equipped.dmg+data.dmgLv*3} DGT · ${data.equipped.rate} tirs/s`:'Puissance nulle';
  if($('characterInsuranceBadge'))$('characterInsuranceBadge').textContent=data.insured===data.equipped?.id?'🛡 Objet assuré':'⚠ Sans assurance';

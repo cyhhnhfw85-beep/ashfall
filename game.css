@@ -372,3 +372,9 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 #activeWeaponArt{display:grid;place-items:center;width:100%;height:44px}
 #activeWeaponArt .weapon-art{width:56px;height:45px}
 @media(max-width:390px){.inventory-symbol{width:42px;height:42px}.inventory-cell .inventory-symbol .weapon-art{max-width:42px;max-height:42px}}
+
+/* 0.8.9.23 — arme équipée synchronisée avec le survivant */
+.equipped-slot-art{display:flex;align-items:center;justify-content:center;min-width:0;min-height:40px}
+.equipped-slot-art .weapon-art{width:54px;height:54px;max-width:100%;max-height:54px;filter:drop-shadow(0 2px 6px #000b)}
+.held-weapon-art{transform:translate(67px,140px) rotate(-14deg) scale(2.05);transform-origin:0 0;filter:drop-shadow(0 2px 3px #000b)}
+.held-weapon-art .weapon-art{overflow:visible}
