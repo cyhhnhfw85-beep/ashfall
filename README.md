@@ -30,3 +30,10 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 - Pistolet usé et Nomade-9 plus lisibles dans le menu.
 - Images embarquées conservées pour éviter les erreurs de chargement sur iPhone.
 - Aucun changement de gameplay ni de sauvegarde.
+
+## 0.8.9.35 — Nomade complet / correction des bras
+- Remplacement de la construction corps + bras fragmentes par deux sprites complets pour menu (pistolet / fusil).
+- Corrige les trous visuels aux epaules, le sac et les membres detaches.
+- Images embarquees dans index.html afin d'eviter l'absence de sprites sur hebergement PWA.
+- Selection selon la classe d'arme equipee; les autres armes ont une silhouette de fusil par defaut.
+- Gameplay et clefs de sauvegarde non modifies.

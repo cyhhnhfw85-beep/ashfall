@@ -440,3 +440,6 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 #refuge-page-character .portrait-label{z-index:1}
 
 #refuge-page-character .nomade-pose{filter:drop-shadow(0 6px 6px rgba(0,0,0,.26))}
+
+/* 0.8.9.35: remplacement des bras decoupes par deux silhouettes completes. */
+#refuge-page-character .nomade-stage .nomade-complete{display:block;position:absolute;inset:0;width:100%;height:calc(100% - 18px);object-fit:contain;object-position:center center;filter:drop-shadow(0 5px 6px rgba(0,0,0,.45));}
