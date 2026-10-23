@@ -70,3 +70,9 @@ body.ashfall-expedition #hint{top:calc(env(safe-area-inset-top) + 83px)}
 
 /* Refuge: less repetition and less scrolling on smaller phones */
 #home .ui-hero{margin-bottom:8px;padding:12px}#home .ui-title{margin-top:12px;padding-top:12px}#home .ui-empty,#home .ui-help{padding:8px 10px;margin:5px 0;font-size:12px}#home .ui-launch{position:relative}#home .ui-hero-icon{font-size:30px}
+
+/* Marchand évolutif */
+.merchant-launch{background:#304b61;color:#f5d29a;border:1px solid #a78555;font-weight:750;margin:10px 0 18px;padding:16px;border-radius:14px}
+.merchant-tabs{display:flex;gap:8px;margin:12px 0;position:sticky;top:0;background:#152537;padding:8px 0;z-index:2}
+.merchant-tabs button{flex:1;min-width:0;padding:12px 4px;font-size:14px}.merchant-tabs .active{background:#dba960;color:#101a26}
+#toolsBody .ui-weapon{margin:11px 0}#toolsBody .ui-weapon>button{margin-top:10px;width:100%}#toolsBody button:disabled{opacity:.45}

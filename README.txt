@@ -1,6 +1,5 @@
-ASHFALL Alpha 0.8.9.1 - Correctif sauvegarde
-
-Sauvegarde locale principale et copie de reprise verifiee. La reprise ouvre le menu Pause si une expedition valide existe. Sauvegarde aussi en pagehide et en arriere-plan.
-IMPORTANT : une sauvegarde locale ne peut pas etre garantie contre suppression des donnees Safari/PWA, changement de contexte navigateur ou iOS. Conserver un export dans Notes.
-Mettre les fichiers a la racine du depot GitHub. Ne pas supprimer la PWA installee.
-Tester : lancer expedition, avancer, Sauver, fermer COMPLETEMENT, ouvrir, Reprendre, verifier salle, HP et butin.
+ASHFALL 0.8.9.2 — Marchand évolutif B
+Base : Alpha 0.8.9.1 sauvegardes fiables.
+Fichiers du jeu à remplacer à la racine GitHub : index.html, game.js, game.css, immersion.js, manifest.webmanifest, service-worker.js, icon-192.png, icon-512.png.
+Nouveautés : comptoir achat/vente, 7 offres, rotation après 2 expéditions ou découverte de secteur, équipement envoyé à la réserve, confirmation de transaction, prévisualisation.
+ATTENTION : exporter sa sauvegarde avant déploiement ; tester une reprise en expédition.
