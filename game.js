@@ -17,22 +17,22 @@ function persist(silent=true){
  try{
   const serialized=JSON.stringify(data);
   if(!valid(JSON.parse(serialized)))throw Error('invalid snapshot');
-  const previous=readSnapshot(KEY);
-  // Keep a recoverable expedition even if a subsequent run cannot be restored.
-  if(previous&&hasActiveRun(previous))localStorage.setItem(RECOVERY_KEY,JSON.stringify(previous));
+  // Commit the current state first; a completed run is authoritative too.
   localStorage.setItem(KEY,serialized);
   if(!readSnapshot(KEY))throw Error('save verification failed');
-  localStorage.setItem(SAVE_STATUS_KEY,String(Date.now()));
+  // Recovery mirrors the last verified state, never a stale unfinished run.
+  try{localStorage.setItem(RECOVERY_KEY,serialized)}catch(_){}
+  try{localStorage.setItem(SAVE_STATUS_KEY,String(Date.now()))}catch(_){}
   persistenceWarning=false;
   if(!silent)msg('✓ Sauvegarde locale vérifiée.');return true;
  }catch(e){persistenceWarning=true;msg('⚠ Sauvegarde impossible : exporte ton code de secours dès maintenant.');return false}
 }
 try{
  const main=readSnapshot(KEY),recovery=readSnapshot(RECOVERY_KEY);
- if(main&&recovery){
-  // In particular do not silently throw away an interrupted run when main has no run.
-  data=hasActiveRun(recovery)&&!hasActiveRun(main)?recovery:main;
- }else if(main||recovery)data=main||recovery;
+ // A valid primary state always wins, including run:null after death/extraction.
+ // Only use recovery when the primary is absent or corrupt.
+ if(main)data=main;
+ else if(recovery)data=recovery;
 }catch(e){}
 
 function region(){if(!data.regions)data.regions={k17:{maxSector:0,bossDefeated:false,expeditions:0}};if(!data.regions.k17)data.regions.k17={maxSector:0,bossDefeated:false,expeditions:0};if(!Array.isArray(data.regions.k17.outposts))data.regions.k17.outposts=[];return data.regions.k17}
