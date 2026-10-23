@@ -452,3 +452,65 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 .equipped-slot-art .weapon-art-img{width:63px;height:45px;max-width:100%;max-height:100%}
 #activeWeaponArt .weapon-art-img{width:64px;height:44px;max-width:100%;max-height:100%}
 @media(max-width:390px){.inventory-symbol .weapon-art-img{width:49px;height:34px}}
+
+/* 0.8.9.37 — ACCUEIL REFUGE // refonte ciblée. Aucun style gameplay modifié. */
+#refuge-page-home.refuge-home-dashboard{display:grid;gap:12px;}
+#refuge-page-home .home-command-hero{margin:0!important;min-height:171px;align-items:center!important;padding:18px!important;isolation:isolate;}
+#refuge-page-home .home-command-hero:before{opacity:.25;}
+#refuge-page-home .home-command-hero .refuge-hero-copy{max-width:78%;}
+#refuge-page-home .home-command-hero .ui-eyebrow{font-size:10px;letter-spacing:.16em;color:#edbc7e;}
+#refuge-page-home .home-command-hero h2{font-size:clamp(27px,7vw,35px);margin:6px 0!important;letter-spacing:.025em;}
+#refuge-page-home .home-command-hero h2 span{color:#f1bb6a;}
+#refuge-page-home .home-command-hero p{font-size:12px;line-height:1.45;margin:8px 0 0;max-width:250px;}
+#refuge-page-home .home-operation-status{display:flex;align-items:center;gap:7px;margin-top:10px;color:#a8e1c6;font-size:10px;letter-spacing:.105em;font-weight:750;}
+#refuge-page-home .home-operation-status i{width:7px;height:7px;display:block;background:#85e0af;border-radius:50%;box-shadow:0 0 9px #85e0af77;}
+#refuge-page-home .home-hero-seal{position:absolute;z-index:1;right:14px;top:20px;width:69px;height:76px;border:1px solid #5b8293;background:linear-gradient(145deg,#28475a,#0e2330);clip-path:polygon(50% 0%,100% 19%,100% 75%,50% 100%,0% 75%,0% 19%);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:0;box-shadow:0 3px 10px #0008;}
+#refuge-page-home .home-hero-seal span{font-size:30px;font-weight:950;color:#efbd77;line-height:1;}
+#refuge-page-home .home-hero-seal small{font-size:9px;letter-spacing:.13em;color:#e3ebed;}
+#refuge-page-home .refuge-hero-caption{opacity:.7;}
+#refuge-page-home .home-deployment{padding:15px 15px 13px!important;border:1px solid #d4a05e!important;background:linear-gradient(150deg,#203e4b,#102939 70%)!important;box-shadow:0 9px 24px #0005,inset 0 1px #ffdfa61c!important;}
+#refuge-page-home .home-deploy-eyebrow{display:flex;align-items:center;gap:9px;color:#f2c184;font-size:10px;font-weight:850;letter-spacing:.12em;}
+#refuge-page-home .home-step{font-size:11px;font-weight:900;display:grid;place-items:center;width:25px;height:25px;color:#1d2931;background:#e7b468;border-radius:6px;letter-spacing:0;}
+#refuge-page-home .home-deployment h3{margin:9px 0 4px;color:#f5f7f6;font-size:22px;letter-spacing:-.015em;line-height:1.12;}
+#refuge-page-home .home-deployment p:not(.home-screen-reader){font-size:12px;line-height:1.4;color:#b9cfda;margin:0 0 12px;}
+#refuge-page-home .home-insertion-field{display:flex;flex-direction:column;gap:5px;margin-bottom:11px;}
+#refuge-page-home .home-insertion-field label{font-size:10px;color:#b4cfda;letter-spacing:.1em;}
+#refuge-page-home #startSector{display:block;max-width:none!important;min-width:0;width:100%;min-height:42px;background:#112736;border:1px solid #55788c;border-radius:9px;padding:9px 12px;font-size:13px;font-weight:700;color:#eff5f7;}
+#refuge-page-home #start{min-height:52px;width:100%;display:flex;align-items:center;justify-content:space-between;padding:12px 15px;margin:0;letter-spacing:.03em;font-size:14px;}
+#refuge-page-home #start span:last-child{font-size:19px;}
+#refuge-page-home .home-deploy-note{display:block;font-size:10px;line-height:1.35;color:#9bb8c6;margin-top:9px;text-align:center;}
+#refuge-page-home .home-screen-reader{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important;}
+#refuge-page-home .home-loadout-card,#refuge-page-home .home-progress-card{background:linear-gradient(145deg,#193545,#0e2432);border:1px solid #4a7185;border-radius:13px;padding:13px;box-shadow:inset 0 1px #ffffff08;}
+#refuge-page-home .home-section-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+#refuge-page-home .home-section-eyebrow{font-size:10px;color:#e7b77b;font-weight:900;letter-spacing:.1em;}
+#refuge-page-home .home-text-link{font-size:10px;font-weight:850;letter-spacing:.04em;min-height:28px;padding:3px 6px;background:transparent;border:0;color:#a6d0e0;}
+#refuge-page-home .home-text-link span{font-size:15px;}
+#refuge-page-home .home-kit-main{display:flex;align-items:center;gap:12px;margin-top:8px;margin-bottom:10px;}
+#refuge-page-home .home-kit-icon{width:79px;height:68px;flex:0 0 79px;display:flex;align-items:center;justify-content:center;border:1px solid #456b80;border-radius:10px;background:radial-gradient(circle at 50% 33%,#2b4e63,#102433);overflow:hidden;}
+#refuge-page-home .home-kit-icon .weapon-art{display:block;width:68px;height:62px;max-width:100%;}
+#refuge-page-home .home-kit-copy{display:flex;flex-direction:column;gap:4px;min-width:0;}
+#refuge-page-home .home-kit-copy>span{color:#9dbbcd;font-size:9px;letter-spacing:.12em;}
+#refuge-page-home .home-kit-copy strong{font-size:16px;line-height:1.25;color:#f1f4f5;overflow-wrap:anywhere;}
+#refuge-page-home .home-kit-copy small{color:#cedee5;font-size:11px;}
+#refuge-page-home .home-kit-footer{display:flex;justify-content:space-between;gap:7px;flex-wrap:wrap;padding-top:10px;border-top:1px solid #416276;color:#c4d8e0;font-size:11px;}
+#refuge-page-home .home-kit-footer span:first-child{color:#efc18b;}
+#refuge-page-home .home-progress-card{padding-bottom:13px;}
+#refuge-page-home .home-region-title{margin:9px 0 8px;display:flex;justify-content:space-between;gap:8px;font-size:15px;font-weight:850;}
+#refuge-page-home .home-region-title span{font-size:11px;color:#a7c5d1;font-weight:650;align-self:center;}
+#refuge-page-home .home-progress-track{height:7px;border-radius:8px;overflow:hidden;background:#0a1a26;border:1px solid #3c5a6a;margin-bottom:10px;}
+#refuge-page-home .home-progress-track span{display:block;height:100%;background:linear-gradient(90deg,#a5d8bc,#78d1b9);border-radius:8px;transition:width .2s ease;}
+#refuge-page-home .refuge-status-ribbon{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin:0;}
+#refuge-page-home .refuge-status-ribbon span{display:flex;justify-content:center;align-items:center;min-height:29px;padding:5px 4px;border:1px solid #3f6579;border-radius:6px;background:#122d3d;color:#c7dde6;box-shadow:none;font-size:9px;text-align:center;line-height:1.2;white-space:normal;}
+#refuge-page-home .home-services{padding:0 1px;}
+#refuge-page-home .home-services .home-section-top{margin-bottom:9px;}
+#refuge-page-home .home-services .home-section-top small{color:#95b1c1;font-size:10px;}
+#refuge-page-home .home-services .premium-hub-grid{margin:0;gap:6px;}
+#refuge-page-home .home-services .hub-tile{position:relative;min-height:100px;padding:10px 9px!important;gap:4px;border-radius:11px;background:linear-gradient(155deg,#1a3a4a,#0e2636);box-shadow:none;}
+#refuge-page-home .home-services .hub-glyph{width:26px;height:26px;font-size:17px;border-radius:7px;}
+#refuge-page-home .home-services .hub-tile b{font-size:10px;line-height:1.2;}
+#refuge-page-home .home-services .hub-tile small{color:#a9c1ce;font-size:9px;line-height:1.2;}
+#refuge-page-home .home-hub-arrow{position:absolute;right:8px;top:9px;color:#7295a7;font-size:13px;}
+#refuge-page-home .home-tutorial-link{min-height:38px;margin:0;padding:7px;background:transparent;border:1px dashed #466678;color:#a8c3d2;font-size:12px;}
+@media(max-width:355px){#refuge-page-home .home-command-hero .refuge-hero-copy{max-width:82%;}#refuge-page-home .home-hero-seal{width:53px;height:60px;}#refuge-page-home .home-hero-seal span{font-size:23px;}#refuge-page-home .refuge-status-ribbon span{font-size:8px;}#refuge-page-home .home-services .hub-tile{padding:7px!important;}}
+@media(max-width:355px){#refuge-page-home #start{font-size:12px;padding:10px 11px;white-space:nowrap;}#refuge-page-home #start span:last-child{font-size:16px;}}
+#refuge-page-home .home-kit-icon img.weapon-art{object-fit:contain;}

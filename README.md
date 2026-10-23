@@ -44,3 +44,9 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 - Rareté conservée via la bordure actuelle ; noms, statistiques, inventaire, gameplay, sauvegarde et Nomade du menu inchangés.
 - Sprites PNG fournis dans assets/weapons et aussi directement intégrés en base64 dans game.js pour éviter les images manquantes au déploiement.
 - Détourage automatique (non identique aux fichiers sources éditables) : la lisibilité finale doit être vérifiée sur iPhone.
+
+## 0.8.9.37 — Accueil Refuge
+- Nouvelle hiérarchie : hero, départ, équipement, progression, accès rapide.
+- Résumé d'arme, assurance, réserve et progression mis à jour depuis l'état existant.
+- Conservation des identifiants et boutons du jeu (`start`, `startSector`, `tutorialLaunch`, `merchantLaunch`).
+- Aucune modification du gameplay ou du schéma des sauvegardes.
