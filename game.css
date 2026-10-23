@@ -402,3 +402,10 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 #inventorySelection .inventory-selected-head{margin-bottom:12px}
 #inventorySelection .inventory-selected-actions button{min-height:48px}
 @media(max-width:380px){.inventory-toolbar select{max-width:166px}}
+
+/* 0.8.9.26 - Tactical survivor illustration */
+#refuge-page-character .premium-survivor.tactical-survivor-v2{width:100%;height:100%;overflow:visible;filter:drop-shadow(0 10px 8px #03111caa)}
+#refuge-page-character .premium-portrait{background:radial-gradient(circle at 50% 30%,#295767 0%,#143443 42%,#091e2d 90%)!important}
+#refuge-page-character .premium-portrait:after{content:'';position:absolute;inset:auto 14px 18px;height:4px;border-radius:50%;background:#49c2be55;filter:blur(7px);pointer-events:none}
+@media(prefers-reduced-motion:no-preference){#refuge-page-character .premium-portrait:after{animation:af26glow 3.2s ease-in-out infinite alternate}}
+@keyframes af26glow{from{opacity:.35}to{opacity:.85}}
