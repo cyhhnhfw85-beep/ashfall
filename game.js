@@ -301,7 +301,7 @@ function merchantOpen(tab='buy'){
 }
 function merchantRender(){
  const m=ensureMerchant(), tabs=['buy','sell','info'];
- let html=`<p class="ui-help">¤ ${data.credits} crédits · stock renouvelé après 2 expéditions ou un nouveau secteur débloqué. Les achats vont dans la réserve.</p><div class="merchant-tabs">${tabs.map((t,i)=>`<button data-merchant-tab="${t}" class="${merchantTab===t?'active':''}">${['Acheter','Vendre','Arrivages'][i]}</button>`).join('')}</div>`;
+ let html=`<div class="merchant-shop"><p class="ui-help">¤ ${data.credits} crédits · stock renouvelé après 2 expéditions ou un nouveau secteur débloqué. Les achats vont dans la réserve.</p><div class="merchant-tabs">${tabs.map((t,i)=>`<button data-merchant-tab="${t}" class="${merchantTab===t?'active':''}">${['Acheter','Vendre','Arrivages'][i]}</button>`).join('')}</div>`;
  if(merchantTab==='buy'){
   html+=m.stock.map((w,i)=>{
    const delta=w.dmg-(data.equipped?.dmg||0),speed=w.rate-(data.equipped?.rate||0);
@@ -313,7 +313,39 @@ function merchantRender(){
  }else{
   html+=`<div class="ui-empty"><b>Arrivage ${m.cycle}</b><p>Offres restantes : ${m.stock.filter(x=>!x.sold).length}/7</p><p>Prochain renouvellement après ${Math.max(0,2-(data.runs-m.lastRefreshRun))} expédition(s) terminée(s), ou au déblocage d'un secteur.</p><p>Plus tu explores K-17, plus les équipements rares deviennent accessibles. Les objets légendaires restent exceptionnellement coûteux.</p></div>`;
  }
- tool('¤ LE COMPTOIR — MARCHAND',html);
+ html+='</div>';
+ const host=$('merchantPageContent');
+ if(host){host.innerHTML=html; if($('merchantCreditsMirror'))$('merchantCreditsMirror').textContent=data.credits; if($('merchantReserveCount'))$('merchantReserveCount').textContent=data.stash.length; if($('merchantOffersCount'))$('merchantOffersCount').textContent=m.stock.filter(x=>!x.sold).length; if($('merchantRefreshHint'))$('merchantRefreshHint').textContent=`Arrivage ${m.cycle} · prochain renouvellement dans ${Math.max(0,2-(data.runs-m.lastRefreshRun))} expédition(s), ou au déblocage d’un nouveau secteur.`; }
+ else tool('¤ LE COMPTOIR — MARCHAND',html);
+}
+function renderRefugeCharacter(){
+ const stats=data.stats||{};
+ if($('characterWeaponBadge'))$('characterWeaponBadge').textContent=data.equipped?`${data.equipped.rar} · ${data.equipped.name}`:'Aucune arme';
+ if($('characterPowerBadge'))$('characterPowerBadge').textContent=data.equipped?`${data.equipped.dmg+data.dmgLv*3} DGT · ${data.equipped.rate} tirs/s`:'Puissance nulle';
+ if($('characterInsuranceBadge'))$('characterInsuranceBadge').textContent=data.insured===data.equipped?.id?'🛡 Objet assuré':'⚠ Sans assurance';
+ if($('charExtractions'))$('charExtractions').textContent=stats.extractions||0;
+ if($('charDeaths'))$('charDeaths').textContent=stats.deaths||0;
+ if($('charStashCount'))$('charStashCount').textContent=data.stash.length;
+ if($('charRunCount'))$('charRunCount').textContent=data.runs;
+}
+function renderRefugeProgress(){
+ const reg=region();
+ if($('progressSectorCount'))$('progressSectorCount').textContent=`${reg.maxSector+1}/4`;
+ if($('progressOutpostCount'))$('progressOutpostCount').textContent=`${reg.outposts.length}/3`;
+ if($('progressBossState'))$('progressBossState').textContent=reg.bossDefeated?'Vaincu':'À découvrir';
+ if($('progressObjectiveHint'))$('progressObjectiveHint').textContent=reg.bossDefeated?'Le Gardien est vaincu. Continue à améliorer ton refuge et ton équipement.':(reg.outposts.length<3?'Active de nouveaux avant-postes pour sécuriser tes points d’insertion.':'Explore plus profondément pour atteindre le Gardien.');
+ const names=['PÉRIPHÉRIE','LABORATOIRES','FONDERIE','CITADELLE'];
+ document.querySelectorAll('[data-sector-card]').forEach(card=>{
+   const i=Number(card.dataset.sectorCard);
+   const unlocked=i<=reg.maxSector;
+   const outpost=reg.outposts.includes(i);
+   card.classList.toggle('unlocked',unlocked);
+   card.classList.toggle('locked',!unlocked);
+   card.classList.toggle('outpost',outpost);
+   card.classList.toggle('current',i===reg.maxSector);
+   const state=card.querySelector('[data-sector-state]');
+   if(state)state.textContent=!unlocked?'Zone verrouillée':outpost?`Avant-poste actif · ${names[i]}`:(i===reg.maxSector?(reg.bossDefeated&&i===3?'Secteur nettoyé':'Secteur accessible'):'Secteur sécurisé');
+ });
 }
 function merchantBuy(i){
  if(data.run)return;const w=ensureMerchant().stock[i];
@@ -336,7 +368,7 @@ function upgrade(t){let lv=t==='hp'?data.hpLv:data.dmgLv,cost=4+lv*4;if(lv>=8||d
 function insure(){if(!data.equipped||data.insured===data.equipped.id||data.credits<premium())return;data.credits-=premium();data.insured=data.equipped.id;persist();render();msg('Objet assuré pour la prochaine expédition.')}
 function render(){let r=data.run;document.body.classList.toggle('ashfall-expedition',!!r);$('home').hidden=!!r;$('game').hidden=!r;$('phase').textContent=r?'EXPÉDITION':'REFUGE';$('credits').textContent=data.credits;$('research').textContent=data.research;$('runs').textContent=data.runs;if(!r){if($('xpDisplay'))$('xpDisplay').style.display='none';$('hpLevel').textContent='Nv. '+data.hpLv;$('dmgLevel').textContent='Nv. '+data.dmgLv;$('upHp').textContent=`+15 PV · ${4+data.hpLv*4} ✦`;$('upDmg').textContent=`+3 DGT · ${4+data.dmgLv*4} ✦`;$('upHp').disabled=data.hpLv>=8||data.research<4+data.hpLv*4;$('upDmg').disabled=data.dmgLv>=8||data.research<4+data.dmgLv*4;$('equipped').textContent=data.equipped?`${data.equipped.name} · ${data.equipped.rar} · ${data.equipped.dmg} dégâts · ${data.equipped.rate} tirs/s`:'Aucune';$('insurance').textContent=data.insured===data.equipped?.id?'🛡 ASSURÉE':'⚠ Non assurée';$('insure').textContent=`Assurer · ${premium()} ¤`;$('insure').disabled=data.insured===data.equipped.id||data.credits<premium();$('stash').innerHTML='<p class="ui-help">Armes stockées au refuge · appuie sur ÉQUIPER pour changer d’arme.</p>'+(data.stash.length?data.stash.map((g,i)=>itemRow(g,i,'stash')).join(''):'<p class="ui-empty">Réserve vide : extrais des armes pour remplir ton stock.</p>');if($('merchantLaunch'))$('merchantLaunch').textContent='¤ OUVRIR LE COMPTOIR · '+data.credits+' crédits';$('log').dataset.region=region().maxSector;
  const sel=$('startSector');if(sel){let enabled=[0,...region().outposts];sel.innerHTML=enabled.map(i=>`<option value="${i}">${i===0?'Entrée de K-17':'Avant-poste du secteur '+(i+1)}</option>`).join('');if(enabled.includes(Number(data.chosenSector)))sel.value=String(data.chosenSector);else sel.value='0'}
- const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission();if($('action'))$('action').textContent=uiActionName();$('roomTitle').textContent=isBoss(r.current,r)?'⚠ BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'📡 AVANT-POSTE':`K-17 · ${r.current+1}/50 · ${SECTORS[sectorOf(room)].name}`;$('hpText').textContent=`${Math.ceil(player.hp)}/${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;runProgress();$('bagCount').textContent=`Sac ${r.bag.length}/6 · Nv.${r.runLevel}`;const xp=$('xpDisplay');if(xp){xp.textContent=`✦ Nv.${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)} XP`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}const dashButton=$('dodge');if(dashButton){let cooldown=player.dashCooldown||0;dashButton.textContent=cooldown>.05?`${cooldown.toFixed(1)}s`:'DASH';dashButton.classList.toggle('cooling',cooldown>.05)}$('hint').textContent=locked()?'⚠ ARÈNE/BOSS · PORTES VERROUILLÉES':r.exitStarted?`EXTRACTION ${Math.max(0,Math.ceil(r.exitTime))}s · ${room.enemies.some(e=>length(e,{x:180,y:195})<105)?'CONTESTÉE':'DÉFENDS'}`:interaction()?'ACTION disponible':room.cleared?'✓ SALLE SÉCURISÉE · portes ouvertes':`🔒 FINIS LA SALLE POUR AVANCER · retour libre`}
+ const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');renderRefugeCharacter();renderRefugeProgress();if(refugeActivePage==='merchant')merchantRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission();if($('action'))$('action').textContent=uiActionName();$('roomTitle').textContent=isBoss(r.current,r)?'⚠ BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'📡 AVANT-POSTE':`K-17 · ${r.current+1}/50 · ${SECTORS[sectorOf(room)].name}`;$('hpText').textContent=`${Math.ceil(player.hp)}/${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;runProgress();$('bagCount').textContent=`Sac ${r.bag.length}/6 · Nv.${r.runLevel}`;const xp=$('xpDisplay');if(xp){xp.textContent=`✦ Nv.${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)} XP`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}const dashButton=$('dodge');if(dashButton){let cooldown=player.dashCooldown||0;dashButton.textContent=cooldown>.05?`${cooldown.toFixed(1)}s`:'DASH';dashButton.classList.toggle('cooling',cooldown>.05)}$('hint').textContent=locked()?'⚠ ARÈNE/BOSS · PORTES VERROUILLÉES':r.exitStarted?`EXTRACTION ${Math.max(0,Math.ceil(r.exitTime))}s · ${room.enemies.some(e=>length(e,{x:180,y:195})<105)?'CONTESTÉE':'DÉFENDS'}`:interaction()?'ACTION disponible':room.cleared?'✓ SALLE SÉCURISÉE · portes ouvertes':`🔒 FINIS LA SALLE POUR AVANCER · retour libre`}
 function closeOverlay(){if(overlay==='level'&&data.run?.pendingLevels>0)return;overlay='';$('overlay').hidden=true;$('overlay').innerHTML=''}
 function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html='<button class="close" data-op="close">✕ Fermer</button>';if(mode==='bag'){html+=`<h3>🎒 SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">💡 Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
 }else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx));if(coords.length){let minx=Math.min(...coords.map(z=>z.gx)),miny=Math.min(...coords.map(z=>z.gy)),maxx=Math.max(...coords.map(z=>z.gx)),maxy=Math.max(...coords.map(z=>z.gy));let width=maxx-minx+1,height=maxy-miny+1,cell=Math.max(12,Math.min(26,Math.floor(310/Math.max(width,height))));let tiles=r.rooms.filter(z=>z.seen).map(z=>`<div style="position:absolute;left:${(z.gx-minx)*cell}px;top:${(z.gy-miny)*cell}px;width:${cell-2}px;height:${cell-2}px;background:${z.id===r.current?'#dfac58':isBoss(z.id,r)?'#a45770':isArena(z.id,r)?'#945d36':isExit(z.id,r)?'#3d9b8b':z.kind==='outpost'?'#5092c4':'#35576b'};border:1px solid #97a4b6;border-radius:3px;color:white;font-size:9px;text-align:center;line-height:${cell-3}px">${z.id===r.current?'●':isBoss(z.id,r)?'B':isArena(z.id,r)?'A':isExit(z.id,r)?'E':z.kind==='outpost'?'P':''}</div>`).join('');html+='<h3>🗺 CARTE TACTIQUE — K-17</h3><p class="muted">🟡 Position actuelle · seuls les lieux explorés sont affichés.</p><div style="overflow:auto;max-width:100%"><div style="position:relative;width:'+(width*cell)+'px;height:'+(height*cell)+'px;min-height:150px;background:#101a26">'+tiles+'</div></div><p class="muted">'+r.visited.length+'/50 découvertes · secteurs débloqués : '+(region().maxSector+1)+'/4 · B boss · A arène · E extraction · P avant-poste. Les salles se régénèrent à chaque nouvelle expédition.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else html+='<h3>PAUSE</h3><p>La partie est suspendue. La sauvegarde inclut l’expédition.</p><button data-op="resume">Reprendre</button><button data-op="retreat">Abandonner l’expédition (mort)</button>';$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
@@ -360,7 +392,8 @@ dashButton.addEventListener('click', e=>{
  performDash();
 });
 $('overlay').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let op=b.dataset.op,idx=Number(b.dataset.idx);if(op==='choosePerk')choosePerk(b.dataset.perk);else if(op==='close'||op==='resume')closeOverlay();else if(op==='equipBag')equipBag(idx);else if(op==='drop')drop(idx);else if(op==='retreat'){if(confirm('Abandonner ? Tout le matériel non assuré sera perdu.'))finish(false)}});
-$('toolsBody').addEventListener('click',e=>{let b=e.target.closest('[data-merchant-tab],[data-merchant-buy],[data-merchant-sell]');if(!b)return;if(b.hasAttribute('data-merchant-tab')){merchantTab=b.dataset.merchantTab;merchantRender()}else if(b.hasAttribute('data-merchant-buy'))merchantBuy(Number(b.dataset.merchantBuy));else if(b.hasAttribute('data-merchant-sell'))merchantSell(Number(b.dataset.merchantSell));});
+function merchantClickHandler(e){let b=e.target.closest('[data-merchant-tab],[data-merchant-buy],[data-merchant-sell]');if(!b)return;if(b.hasAttribute('data-merchant-tab')){merchantTab=b.dataset.merchantTab;merchantRender()}else if(b.hasAttribute('data-merchant-buy'))merchantBuy(Number(b.dataset.merchantBuy));else if(b.hasAttribute('data-merchant-sell'))merchantSell(Number(b.dataset.merchantSell));}
+$('toolsBody').addEventListener('click',merchantClickHandler);if($('merchantPageContent'))$('merchantPageContent').addEventListener('click',merchantClickHandler);
 $('stash').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let i=Number(b.dataset.idx);if(b.dataset.op==='equipHome')equipHome(i);else if(b.dataset.op==='sell')sell(i)});
 $('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Pose le pouce en bas à gauche pour créer un joystick flottant, puis glisse pour te déplacer. Relâche et repose le pouce pour le repositionner. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange ⚠ ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Approche des coffres ou terminaux avant de toucher ACTION. SAC et CARTE mettent le combat en pause.</p><p>DASH : impulsion de 95 pixels dans la direction du joystick (ou dernière direction), recharge 2,2 secondes. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
 // DASH : impulsion immédiate et indépendante du tick d'animation.
@@ -552,22 +585,20 @@ let refugeActivePage='home';
 function refugeNavigate(tab){
  if(data.run || !['home','character','merchant','progress'].includes(tab))return;
  refugeActivePage=tab;
- const isMerchant=tab==='merchant';
- document.body.classList.toggle('refuge-merchant',isMerchant);
  document.querySelectorAll('[data-refuge-page]').forEach(p=>{p.hidden=p.dataset.refugePage!==tab});
  document.querySelectorAll('.refuge-tab').forEach(b=>{
   const active=b.dataset.refugeTab===tab;
   b.classList.toggle('active',active);
   b.setAttribute('aria-current',active?'page':'false');
  });
- const tools=$('tools');
- if(isMerchant){merchantOpen();}
- else if(tools&&!tools.hidden){tools.hidden=true;}
+ const tools=$('tools'); if(tools&&!tools.hidden)tools.hidden=true;
+ if(tab==='merchant')merchantOpen();
  if(tab==='progress'){
   const target=$('refuge-progress-mirror'),source=$('regionStatus');
   if(target&&source)target.textContent=source.textContent;
+  renderRefugeProgress();
  }
- // Keep navigation visible while switching between refuge pages.
+ if(tab==='character')renderRefugeCharacter();
  $('home').scrollIntoView({block:'start',behavior:'instant'});
 }
 document.querySelectorAll('[data-refuge-tab]').forEach(b=>b.addEventListener('click',()=>refugeNavigate(b.dataset.refugeTab)));
