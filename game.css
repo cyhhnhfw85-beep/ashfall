@@ -351,3 +351,12 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 .inventory-selection{background:#193548;border:1px solid #547b90;border-radius:13px;padding:12px}.inventory-selection[hidden]{display:none}.inventory-selected-head{display:flex;gap:8px;justify-content:space-between;align-items:center}.inventory-selection p{color:#c4d8e2;font-size:13px}.inventory-selected-actions{display:flex;gap:9px}.inventory-selected-actions button{flex:1}
 .inventory-details{border:1px solid #365d72;border-radius:12px;padding:10px;background:#102433}.inventory-details>summary{cursor:pointer;color:#e9bb79;font-weight:750}
 @media(max-width:390px){#refuge-page-character .tactical-showcase{grid-template-columns:52px minmax(120px,1fr) 52px;gap:5px;padding:8px}.tactical-showcase .premium-portrait{height:225px}.equip-square{min-height:50px}.inventory-name{font-size:9px}.tactical-inventory{gap:5px;padding:8px}}
+
+/* 0.8.9.21 inventory usability */
+.tactical-inventory .inventory-cell.inventory-active{outline:2px solid #f5c579;outline-offset:2px;background:linear-gradient(150deg,#254f61,#1b2e40);box-shadow:0 0 16px #f1bc5a44}
+.tactical-inventory .inventory-cell:focus-visible{outline:2px solid #7be6f3;outline-offset:2px}
+.inventory-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 0}
+.inventory-pagination[hidden]{display:none}
+.inventory-pagination button{padding:9px 10px;min-height:40px;font-size:12px}
+.inventory-pagination span{font-size:12px;color:#d6e6ee;text-align:center}
+.inventory-selected-actions button{min-height:44px}

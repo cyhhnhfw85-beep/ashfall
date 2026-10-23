@@ -340,6 +340,17 @@ function merchantRender(){
  if(host){host.innerHTML=html; if($('merchantCreditsMirror'))$('merchantCreditsMirror').textContent=data.credits; if($('merchantReserveCount'))$('merchantReserveCount').textContent=data.stash.length; if($('merchantOffersCount'))$('merchantOffersCount').textContent=m.stock.filter(x=>!x.sold).length; if($('merchantRefreshHint'))$('merchantRefreshHint').textContent=`Arrivage ${m.cycle} · prochain renouvellement dans ${Math.max(0,2-(data.runs-m.lastRefreshRun))} expédition(s), ou au déblocage d’un nouveau secteur.`; }
  else tool('¤ LE COMPTOIR — MARCHAND',html);
 }
+let selectedInventoryId=null;
+let inventoryPage=0;
+const INVENTORY_PAGE_SIZE=20;
+function renderInventorySelection(){
+ const host=$('inventorySelection');if(!host)return;
+ const i=data.stash.findIndex(w=>w.id===selectedInventoryId);
+ if(i<0){host.hidden=true;host.innerHTML='';return}
+ const w=data.stash[i], delta=w.dmg-(data.equipped?.dmg||0), rate=w.rate-(data.equipped?.rate||0);
+ host.hidden=false;
+ host.innerHTML=`<div class="inventory-selected-head"><b>${uiSafe(w.name)}</b><span style="color:${tint(w)}">${uiSafe(w.rar)}</span></div><p>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s · ${salvagePrice(w)} ¤ revente</p><p>Face à l’arme active : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></p><div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE · ${salvagePrice(w)} ¤</button></div>`;
+}
 function renderRefugeCharacter(){
  const stats=data.stats||{};
  if($('characterWeaponBadge'))$('characterWeaponBadge').textContent=data.equipped?`${data.equipped.rar} · ${data.equipped.name}`:'Aucune arme';
@@ -359,10 +370,13 @@ function renderRefugeCharacter(){
  if($('loadoutDmgBonus'))$('loadoutDmgBonus').textContent=`+${data.dmgLv*3} dégâts permanents`;
  const preview=$('characterReservePreview');
  if(preview){
-  const items=data.stash.slice(0,20);
-  const cards=items.map((w,i)=>`<button type="button" class="inventory-cell" data-inventory-index="${i}" aria-label="Voir ${uiSafe(w.name)}" style="--item-rarity:${tint(w)}"><span class="inventory-symbol">⚔</span><span class="inventory-name">${uiSafe(w.name)}</span><span class="inventory-rarity">${uiSafe(w.rar)}</span></button>`).join('');
+  const pages=Math.max(1,Math.ceil(data.stash.length/INVENTORY_PAGE_SIZE));
+  inventoryPage=Math.max(0,Math.min(inventoryPage,pages-1));
+  const offset=inventoryPage*INVENTORY_PAGE_SIZE,items=data.stash.slice(offset,offset+INVENTORY_PAGE_SIZE);
+  const cards=items.map((w,i)=>`<button type="button" class="inventory-cell ${w.id===selectedInventoryId?'inventory-active':''}" data-inventory-index="${offset+i}" aria-pressed="${w.id===selectedInventoryId}" aria-label="Voir ${uiSafe(w.name)}" style="--item-rarity:${tint(w)}"><span class="inventory-symbol">⚔</span><span class="inventory-name">${uiSafe(w.name)}</span><span class="inventory-rarity">${uiSafe(w.rar)}</span></button>`).join('');
   preview.innerHTML=cards+Array.from({length:Math.max(0,8-items.length)},()=>'<span class="inventory-cell inventory-empty" aria-hidden="true"></span>').join('');
-  const selected=$('inventorySelection');if(selected)selected.hidden=true;
+  const controls=$('inventoryPages');if(controls){controls.hidden=pages<=1;controls.innerHTML=pages>1?`<button type="button" data-inventory-page="prev" ${inventoryPage===0?'disabled':''}>← Précédent</button><span>${inventoryPage+1} / ${pages} · ${data.stash.length} armes</span><button type="button" data-inventory-page="next" ${inventoryPage===pages-1?'disabled':''}>Suivant →</button>`:'';}
+  renderInventorySelection();
  }
 
 }
@@ -421,8 +435,9 @@ $('toolsBody').addEventListener('click',merchantClickHandler);if($('merchantPage
 $('characterReservePreview').addEventListener('click',e=>{
  const cell=e.target.closest('[data-inventory-index]');if(!cell)return;
  const i=Number(cell.dataset.inventoryIndex),w=data.stash[i],host=$('inventorySelection');if(!w||!host)return;
- host.hidden=false;host.innerHTML=`<div class="inventory-selected-head"><b>${uiSafe(w.name)}</b><span style="color:${tint(w)}">${uiSafe(w.rar)}</span></div><p>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s · ${salvagePrice(w)} ¤ revente</p><div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE</button></div>`;
+ selectedInventoryId=w.id;renderRefugeCharacter();
 });
+$('inventoryPages').addEventListener('click',e=>{const b=e.target.closest('[data-inventory-page]');if(!b)return;inventoryPage+=b.dataset.inventoryPage==='next'?1:-1;renderRefugeCharacter();});
 $('inventorySelection').addEventListener('click',e=>{
  const b=e.target.closest('[data-grid-equip],[data-grid-sell]');if(!b)return;
  if(b.hasAttribute('data-grid-equip'))equipHome(Number(b.dataset.gridEquip));
