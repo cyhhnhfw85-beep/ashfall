@@ -310,7 +310,7 @@ function weaponHeldArt(w){
   rifle:`<path d="M5 37h17v-7h42v7h12v10H56l-7 19H33l5-19H5z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M19 25h37v5H19z" fill="#243745" stroke="${stroke}" stroke-width="2"/><path d="M22 34h32" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M60 45v9" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`,
   carbine:`<path d="M7 36h20v-8h36v8h11v10H53l-7 18H31l6-18H7z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M16 32h32" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M29 25h21M59 36v11" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`
  };
- return `<g class="held-weapon" transform="translate(90 151) rotate(-19 40 22)"><ellipse cx="32" cy="25" rx="38" ry="13" fill="#08141b" opacity=".18"/><path d="M16 43h54" stroke="${accent}" stroke-width="2" opacity=".2"/><g>${shapes[kind]}</g></g>`;
+ return `<g class="held-weapon" transform="translate(82 136) rotate(-12 40 22)"><ellipse cx="34" cy="27" rx="39" ry="12" fill="#08141b" opacity=".16"/><path d="M16 43h56" stroke="${accent}" stroke-width="2" opacity=".16"/><g>${shapes[kind]}</g></g>`;
 }
 function itemRow(w,i,source){return uiWeaponCard(w,i,source,false)}
 function uniqueCheck(){let seen=new Set(),items=[data.equipped,...data.stash];if(data.run)items=[data.run.equipped,...data.run.bag];for(let w of items){if(!w)continue;if(seen.has(w.id))return false;seen.add(w.id)}return true}
@@ -544,21 +544,13 @@ function pixelActor(x,y,kind,phase=0,facingX=1,facingY=0){
  const t=Math.sin(phase*10),step=t>0?2:-2;
  cx.save();cx.translate(Math.round(x),Math.round(y));cx.imageSmoothingEnabled=false;
  if(kind==='player'){
-  // Nomade rétro K-17 : aplats peu détaillés, capuche sable, visage noir et sac.
-  // Silhouette et collision restent identiques ; orientation de l'arme conservée.
-  px(-12,12,24,4,'#081a22');
-  px(-7,7,6,8+step,'#383b3b');px(2,7,6,8-step,'#383b3b');
-  px(-8,12+step,8,3,'#947652');px(2,12-step,8,3,'#947652');
-  px(-12,-7,24,18,'#2d3031'); // sac visible derrière le manteau
-  px(-10,-7,20,18,'#a78458');
-  px(-5,-7,10,17,'#80674a');
-  px(-13,-5,4,12,'#aa875b');px(9,-5,4,12,'#aa875b');
-  px(-10,-16,20,8,'#ad895b');px(-7,-19,14,4,'#c29d69');
-  px(-7,-11,14,7,'#1b2225');px(-5,-5,10,3,'#303436');
-  px(-10,2,3,7,'#34383a');px(7,2,3,7,'#34383a');
-  let ax=Math.abs(facingX)>Math.abs(facingY)?(facingX>=0?10:-20):0;
-  let ay=Math.abs(facingY)>=Math.abs(facingX)?(facingY>=0?9:-17):-2;
-  px(ax,ay,13,5,'#182329');px(ax+2,ay+1,10,2,'#879398');
+  // Ombre, jambes articulées, sac et casque avec visière orientée vers la cible.
+  px(-10,12,20,4,'#081c24');px(-7,7,5,7+step,'#34535f');px(2,7,5,7-step,'#34535f');
+  px(-11,-7,22,16,'#183b47');px(-7,-9,14,17,'#79c9ae');px(-5,-12,10,5,'#c4e9d5');
+  px(-7,-13,14,3,'#284f5b');px(-5,-8,10,5,'#243b54');px(-10,-5,4,10,'#aacbb8');px(7,-5,4,10,'#aacbb8');
+  px(-9,0,3,8,'#596c49');px(8,0,3,8,'#596c49');
+  let ax=Math.abs(facingX)>Math.abs(facingY)?(facingX>=0?10:-20):0,ay=Math.abs(facingY)>=Math.abs(facingX)?(facingY>=0?9:-17):-2;
+  px(ax,ay,13,5,'#152734');px(ax+2,ay+1,10,2,'#bed4db');
  }else if(kind==='drone'){
   px(-15,-2,30,5,'#305b7a');px(-15,-6,5,13,'#83c7ee');px(10,-6,5,13,'#83c7ee');
   px(-10,-9,20,18,'#2e6484');px(-7,-6,14,11,'#79c6ec');px(-4,-4,8,5,'#0b263d');px(-2,-4,4,3,'#ecf6ff');
