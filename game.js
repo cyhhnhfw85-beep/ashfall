@@ -295,6 +295,23 @@ function weaponArt(w){
  };
  return `<svg class="weapon-art weapon-${kind}" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="--weapon-accent:${accent}"><path d="M5 53h54" fill="none" stroke="${accent}" opacity=".18" stroke-width="2"/><g fill="#455767" stroke="#a5b6bc" stroke-width="2" stroke-linejoin="round">${paths[kind]}</g><path d="M11 27h41" stroke="${accent}" stroke-width="3" opacity=".9"/><circle cx="48" cy="26" r="3" fill="${accent}"/><path d="M9 38h12" stroke="${accent}" stroke-width="2" opacity=".6"/></svg>`;
 }
+
+function weaponHeldArt(w){
+ const n=String(w?.name||'').toLowerCase();
+ const kind=/pistolet|secours/.test(n)?'pistol':/smg|vektor|mitrail/.test(n)?'smg':/nomade|précision|viseur/.test(n)?'marksman':/lanceur|impulsion|prototype|reliquat/.test(n)?'energy':/fusil|industriel/.test(n)?'rifle':'carbine';
+ const rarity=String(w?.rar||'Commun');
+ const accent=({'Commun':'#d7dee6','Inhabituel':'#69e0a0','Rare':'#68b1ff','Épique':'#bb88ff','Légendaire':'#f5bf69','Mythique':'#ff8099'})[rarity]||'#d7dee6';
+ const body='#334a56', stroke='#d0dde0', dark='#1a2730';
+ const shapes={
+  pistol:`<path d="M15 35h44v-8h14v14H54l-8 22H31l7-22H15z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M26 31h26" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M32 44l-4 13" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`,
+  smg:`<path d="M8 33h21v-8h31v7h12v13H52l-7 20H28l5-20H8z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M18 27h28" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M38 35v10M57 33v13" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`,
+  marksman:`<path d="M5 36h16v-7h46v11H52l-7 19H30l5-19H5z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M25 23h29v6H25z" fill="#29404d" stroke="${stroke}" stroke-width="2"/><path d="M17 32h37" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M58 42h18" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`,
+  energy:`<path d="M8 34h18l9-10h30l10 14-10 15H35l-9-10H8z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M37 31h21l8 7-8 7H37l-6-7z" fill="${accent}" opacity=".95" stroke="${accent}" stroke-width="2"/><path d="M39 53l-5 12h16l4-12" fill="#223541" stroke="${stroke}" stroke-width="2"/>`,
+  rifle:`<path d="M5 37h17v-7h42v7h12v10H56l-7 19H33l5-19H5z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M19 25h37v5H19z" fill="#243745" stroke="${stroke}" stroke-width="2"/><path d="M22 34h32" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M60 45v9" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`,
+  carbine:`<path d="M7 36h20v-8h36v8h11v10H53l-7 18H31l6-18H7z" fill="${body}" stroke="${stroke}" stroke-width="3" stroke-linejoin="round"/><path d="M16 32h32" stroke="${accent}" stroke-width="3" opacity=".95"/><path d="M29 25h21M59 36v11" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>`
+ };
+ return `<g class="held-weapon" transform="translate(60 142) rotate(-17 40 22)"><ellipse cx="32" cy="25" rx="38" ry="13" fill="#08141b" opacity=".18"/><path d="M16 43h54" stroke="${accent}" stroke-width="2" opacity=".2"/><g>${shapes[kind]}</g></g>`;
+}
 function itemRow(w,i,source){return uiWeaponCard(w,i,source,false)}
 function uniqueCheck(){let seen=new Set(),items=[data.equipped,...data.stash];if(data.run)items=[data.run.equipped,...data.run.bag];for(let w of items){if(!w)continue;if(seen.has(w.id))return false;seen.add(w.id)}return true}
 function equipHome(i){let w=data.stash[i];if(!w)return;let old=data.equipped;data.stash.splice(i,1);data.equipped=w;if(old)data.stash.push(old);data.insured=null;persist();render();msg(`${w.name} équipé. Assurance à renouveler.`)}
@@ -372,7 +389,7 @@ function renderRefugeCharacter(){
  const stats=data.stats||{};
  if($('activeWeaponArt'))$('activeWeaponArt').innerHTML=weaponArt(data.equipped);
  if($('characterEquippedSlotArt'))$('characterEquippedSlotArt').innerHTML=weaponArt(data.equipped);
- if($('characterHeldWeaponArt'))$('characterHeldWeaponArt').innerHTML=weaponArt(data.equipped);
+ if($('characterHeldWeaponArt'))$('characterHeldWeaponArt').innerHTML=weaponHeldArt(data.equipped);
  if($('characterWeaponBadge'))$('characterWeaponBadge').textContent=data.equipped?`${data.equipped.rar} · ${data.equipped.name}`:'Aucune arme';
  if($('characterPowerBadge'))$('characterPowerBadge').textContent=data.equipped?`${data.equipped.dmg+data.dmgLv*3} DGT · ${data.equipped.rate} tirs/s`:'Puissance nulle';
  if($('characterInsuranceBadge'))$('characterInsuranceBadge').textContent=data.insured===data.equipped?.id?'🛡 Objet assuré':'⚠ Sans assurance';

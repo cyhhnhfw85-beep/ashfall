@@ -1,2 +1,9 @@
-# ashfall
-0.8.9.23 : la silhouette de l'arme équipée est maintenant synchronisée avec le personnage et l'emplacement ARME.
+# ASHFALL 0.8.9.27 — Arme visible sur le survivant
+
+Changements principaux :
+- l'arme équipée est maintenant affichée directement dans les mains du survivant sur l'écran Personnage ;
+- le rendu dépend du type d'arme (pistolet, SMG, carabine, fusil, arme d'énergie, précision) ;
+- la couleur d'accent suit la rareté ;
+- les colonnes d'équipement ont été légèrement réduites pour laisser plus de place au portrait.
+
+Aucun changement de sauvegarde.
