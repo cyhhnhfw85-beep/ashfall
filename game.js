@@ -151,7 +151,7 @@ const PERKS=[{id:'rapid',name:'Tir rapide',desc:'+8 %, +6 %, +4 % (max 3)',icon:
  {id:'speed',name:'Semelles tactiques',desc:'+7 % vitesse (max 3)',icon:'➤'},
  {id:'magnet',name:'Collecteur magnétique',desc:'+25 % portée (max 2)',icon:'◈'},
  {id:'vital',name:'Patch médical',desc:'+15 PV max et soin (max 3)',icon:'♥'},
- {id:'cool',name:'Condensateur DASH',desc:'-8 % recharge (max 3)',icon:'⇢'}];
+ ];
 function runProgress(){let r=data.run;if(!r)return null;
  if(!Number.isFinite(r.runLevel))r.runLevel=1;
  if(!Number.isFinite(r.xp))r.xp=0;
@@ -166,7 +166,7 @@ function collectXp(amount){let r=runProgress();if(!r)return;
  let safety=0;while(r.xp>=xpThreshold(r.runLevel)&&safety++<50){r.xp-=xpThreshold(r.runLevel);r.runLevel++;r.pendingLevels++}
  if(r.pendingLevels>0&&overlay!=='level')openLevelChoice();
 }
-const PERK_CAPS={rapid:3,power:3,speed:3,magnet:2,vital:3,cool:3};
+const PERK_CAPS={rapid:3,power:3,speed:3,magnet:2,vital:3};
 function perkCount(id){let r=runProgress();return Math.min(PERK_CAPS[id]||3,Math.max(0,Number(r?.runPerks[id])||0))}
 function perkBonus(id){let n=perkCount(id);if(id==='rapid'||id==='power')return [0,.08,.14,.18][n];if(id==='speed')return .07*n;if(id==='magnet')return .25*n;if(id==='cool')return .08*n;return 0}
 function levelOptions(){let r=runProgress();const available=PERKS.filter(p=>perkCount(p.id)<PERK_CAPS[p.id]);
@@ -175,8 +175,19 @@ function levelOptions(){let r=runProgress();const available=PERKS.filter(p=>perk
  if(!previous.length||previous.length>3){r.levelChoices=[...available].sort(()=>Math.random()-.5).slice(0,3).map(o=>o.id)}
  else r.levelChoices=previous;
  return r.levelChoices.map(id=>PERKS.find(p=>p.id===id)).filter(Boolean)}
+const PERK_STYLE={rapid:['OFFENSIF','perk-attack'],power:['DÉGÂTS','perk-damage'],speed:['MOBILITÉ','perk-mobility'],magnet:['COLLECTE','perk-utility'],vital:['SURVIE','perk-defense']};
+function perkDescription(id,next){
+ if(id==='rapid')return '+'+[0,8,14,18][next]+' % cadence totale';
+ if(id==='power')return '+'+[0,8,14,18][next]+' % dégâts totaux';
+ if(id==='speed')return '+'+(next*7)+' % vitesse totale';
+ if(id==='magnet')return '+'+(next*25)+' % portée de collecte';
+ if(id==='vital')return '+'+(next*15)+' PV max cumulés · soin +15 PV';
+ return '';
+}
 function openLevelChoice(){let r=runProgress();if(!r||r.pendingLevels<=0)return;
- overlay='level';let opts=levelOptions();if(!opts.length){overlay='';$('overlay').hidden=true;persist();return}$('overlay').innerHTML='<h3>✦ NIVEAU '+r.runLevel+' — CHOISIS UN BONUS</h3><p class="muted">Amélioration temporaire, active uniquement jusqu’à la fin de cette expédition. Le combat est en pause.</p>'+opts.map(o=>'<button class="perk-option" data-op="choosePerk" data-perk="'+o.id+'"><b>'+o.icon+' '+o.name+'</b><small>'+o.desc+' · Possédé : '+perkCount(o.id)+'</small></button>').join('');$('overlay').hidden=false;persist();}
+ overlay='level';let opts=levelOptions();if(!opts.length){overlay='';$('overlay').hidden=true;persist();return}
+ $('overlay').innerHTML='<div class="perk-screen"><div class="perk-top"><span class="perk-chip">✦ NIVEAU '+r.runLevel+'</span><span class="perk-duration">BONUS D’EXPÉDITION</span></div><h2>CHOISIS TON ÉVOLUTION</h2><p class="perk-intro">Une amélioration pour renforcer ton survivant. Combat en pause.</p><div class="perk-list">'+opts.map(o=>{let n=perkCount(o.id),cap=PERK_CAPS[o.id],sty=PERK_STYLE[o.id]||['ÉVOLUTION','perk-utility'];return '<button type="button" class="perk-card '+sty[1]+'" data-op="choosePerk" data-perk="'+o.id+'"><span class="perk-symbol">'+o.icon+'</span><span class="perk-copy"><span class="perk-category">'+sty[0]+'</span><strong>'+o.name+'</strong><span class="perk-effect">'+perkDescription(o.id,n+1)+'</span><span class="perk-level">NIVEAU '+(n+1)+' / '+cap+' <span class="perk-pips">'+Array.from({length:cap},(_,i)=>i<n+1?'◆':'◇').join(' ')+'</span></span></span><span class="perk-chevron">›</span></button>'}).join('')+'</div><p class="perk-footer">Ce choix reste actif jusqu’à la fin de l’expédition.</p></div>';
+ $('overlay').hidden=false;persist();}
 function choosePerk(id){let r=runProgress();if(!r||r.pendingLevels<=0||!r.levelChoices?.includes(id)||perkCount(id)>=PERK_CAPS[id])return;
  r.runPerks[id]=(r.runPerks[id]||0)+1;
  if(id==='vital'){player.max+=15;player.hp=Math.min(player.max,player.hp+15)}
@@ -488,8 +499,8 @@ cx.save();for(let j=0;j<23;j++){let x=27+(j*83+(r.current*19))%302,y=45+(j*137+r
 // Identité visuelle des secteurs et dangers annoncés.
 cx.save();cx.globalAlpha=.75;
 if(sec===0){cx.fillStyle='#55665b';for(let [x,y,w,h] of roomObstacles(room)){cx.fillRect(x,y,w,h);cx.strokeStyle='#9bab89';cx.strokeRect(x,y,w,h)}}
-if(sec===1){cx.fillStyle='#254f6c';for(let x of [55,290]){cx.fillRect(x,44,16,43);cx.fillRect(x,275,16,54)}cx.strokeStyle=room.hazardOn?'#7fe8ff':'#418baa';cx.lineWidth=room.hazardOn?7:2;cx.beginPath();cx.moveTo(room.hazardX||180,42);cx.lineTo(room.hazardX||180,356);cx.stroke();cx.fillStyle='#bfeeff';cx.font='10px sans-serif';cx.fillText(room.hazardOn?'⚠ LASER ACTIF':'LASER EN CHARGE',180,54)}
-if(sec===2){for(let x of [65,290]){cx.fillStyle='#624432';cx.fillRect(x-20,62,35,37);cx.fillRect(x-20,276,35,37)}cx.beginPath();cx.arc(room.hazardX||240,205,42,0,Math.PI*2);cx.fillStyle=room.hazardOn?'#ff773977':'#b16d2f33';cx.fill();cx.strokeStyle=room.hazardOn?'#ffc178':'#a7784c';cx.lineWidth=3;cx.stroke();cx.fillStyle='#ffd6a8';cx.font='10px sans-serif';cx.fillText(room.hazardOn?'⚠ CHALEUR':'ÉVENT EN CHARGE',180,53)}
+if(sec===1){cx.fillStyle='#254f6c';for(let x of [55,290]){cx.fillRect(x,44,16,43);cx.fillRect(x,275,16,54)}if(!room.cleared){cx.strokeStyle=room.hazardOn?'#7fe8ff':'#418baa';cx.lineWidth=room.hazardOn?7:2;cx.beginPath();cx.moveTo(room.hazardX||180,42);cx.lineTo(room.hazardX||180,356);cx.stroke();cx.fillStyle='#bfeeff';cx.font='10px sans-serif';cx.fillText(room.hazardOn?'⚠ LASER ACTIF':'LASER EN CHARGE',180,54)}}
+if(sec===2){for(let x of [65,290]){cx.fillStyle='#624432';cx.fillRect(x-20,62,35,37);cx.fillRect(x-20,276,35,37)}if(!room.cleared){cx.beginPath();cx.arc(room.hazardX||240,205,42,0,Math.PI*2);cx.fillStyle=room.hazardOn?'#ff773977':'#b16d2f33';cx.fill();cx.strokeStyle=room.hazardOn?'#ffc178':'#a7784c';cx.lineWidth=3;cx.stroke();cx.fillStyle='#ffd6a8';cx.font='10px sans-serif';cx.fillText(room.hazardOn?'⚠ CHALEUR':'ÉVENT EN CHARGE',180,53)}}
 if(sec===3){cx.strokeStyle='#b478a9';cx.lineWidth=3;for(let x of [47,313]){cx.strokeRect(x-11,72,22,35);cx.strokeRect(x-11,273,22,35)}}
 cx.restore();cx.font='bold 10px sans-serif';cx.fillStyle=theme.accent;cx.textAlign='left';cx.fillText('SECTEUR '+(sec+1)+' · '+theme.name,27,32);
 cx.fillStyle='#495864';cx.fillRect(0,0,360,20);cx.fillRect(0,380,360,20);cx.fillRect(0,0,20,400);cx.fillRect(340,0,20,400);for(let d of doors(r.current)){let[x,y,w,h]=doorRect(d.side);const arenaEntry=(isArena(d.to,r)||isBoss(d.to,r))&&!r.rooms[d.to].cleared;cx.fillStyle=!canPassDoor(d.to)?'#d76b63':arenaEntry?'#d9933f':'#55b8a3';cx.fillRect(x,y,w,h);if(!canPassDoor(d.to)){cx.strokeStyle='#ffaaa4';cx.lineWidth=2;cx.strokeRect(x+2,y+2,w-4,h-4)}if(arenaEntry){cx.strokeStyle='#ffe0a2';cx.lineWidth=3;cx.strokeRect(x+2,y+2,w-4,h-4)}cx.fillStyle='#122832';if(d.side==='top'||d.side==='bottom')cx.fillRect(x+6,y,w-12,h);else cx.fillRect(x,y+6,w,h-12);if(arenaEntry){cx.font='bold 10px sans-serif';cx.textAlign='center';cx.fillStyle='#fff2d0';let tx=d.side==='left'?39:d.side==='right'?319:180,ty=d.side==='top'?42:d.side==='bottom'?365:204;cx.fillText(isBoss(d.to,r)?'☠ BOSS':'⚠ ARÈNE',tx,ty)}}
@@ -498,7 +509,7 @@ lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type===
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){if(locked())return false;let r=data.run,id=r.current;for(let d of doors(id)){let s=d.side,hit=s==='top'?player.y<=23&&Math.abs(player.x-180)<30:s==='bottom'?player.y>=377&&Math.abs(player.x-180)<30:s==='left'?player.x<=23&&Math.abs(player.y-203)<32:player.x>=337&&Math.abs(player.y-203)<32;if(hit){if(!canPassDoor(d.to)){if(!locked()){msg('🔒 Nouvelle salle bloquée : termine le combat pour avancer. Retour libre.');}return false}enter(d.to,id);return true}}return false}
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
-function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; if(!room.cleared&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
+function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; if(!room.cleared&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
 let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed'))*dt,vy*150*(1+perkBonus('speed'))*dt,12,room);if(transition())return;
 if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};const arenaReward=pick(150,250);r.earnedCredits+=arenaReward;r.economy.arena+=arenaReward;objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre épique en cours d’ouverture !')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=450;r.economy.boss+=450;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=20;r.economy.room+=20;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
 if(room.enemies.length&&player.fire<=0){let target=room.enemies.reduce((a,b)=>length(player,a)<length(player,b)?a:b);let spread=mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09,ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,dmg:damage()*(1+perkBonus('power')),ttl:1.5});player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')))}
@@ -517,6 +528,12 @@ for(let b of bullets){
  if(b.ttl<=0)continue;
  b.ttl-=dt;if(b.enemy){if(length(b,player)<16){hurt(b.dmg);b.ttl=0}}else{for(let e of room.enemies){if(length(b,e)<15){e.hp-=b.dmg;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:e.hp<=0?'death':'impact',x:e.x,y:e.y}}));b.ttl=0;if(e.hp<=0&&!e.lootDropped){e.lootDropped=true;lootSpawn(room,'xp',e.x,e.y,null,pick(2,5));lootSpawn(room,'credits',e.x,e.y,null,pick(4,10));if(Math.random()<.055){lootSpawn(room,'weapon',e.x,e.y,makeWeapon(sectorOf(room)))}}break}}}}
 room.enemies=room.enemies.filter(e=>e.hp>0);
+// À la fin d’un combat, supprimer immédiatement les tirs hostiles et désarmer les dangers de salle.
+// Une arène non terminée garde ses vagues : le nettoyage ne valide jamais une salle prématurément.
+if(room.enemies.length===0){
+ for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1);
+ if(!isArena(r.current,r)||room.arenaWave>=3)room.hazardOn=false;
+}
 // Après sécurisation, ouverture automatique des coffres (y compris la récompense d'arène).
 if(room.chest==='closed'&&room.enemies.length===0&&!locked()&&(room.cleared||room.spawned)){
  room.chest='opened';room.chestFx=1.15;
