@@ -99,7 +99,22 @@ function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html=
 function tool(title,html){$('toolsTitle').textContent=title;$('toolsBody').innerHTML=html;$('tools').hidden=false}
 function backup(){persist();const code=btoa(unescape(encodeURIComponent(JSON.stringify(data))));tool('EXPORT / IMPORT',`<p>Le code inclut le refuge et l’expédition en cours. Conserve-le dans Notes ou Fichiers.</p><textarea id="exportCode" readonly></textarea><button id="copyCode">Copier le code</button><p>Restaurer une sauvegarde :</p><textarea id="importCode" placeholder="Colle ici une sauvegarde..."></textarea><button id="restoreCode">Restaurer</button>`);$('exportCode').value=code;$('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('exportCode').value);msg('Code copié.')}catch(e){$('exportCode').select();msg('Sélectionne le texte pour le copier.')}};$('restoreCode').onclick=()=>{try{const decoded=JSON.parse(decodeURIComponent(escape(atob($('importCode').value.trim()))));if(!valid(decoded))throw Error('format');if(!confirm('Remplacer toute la progression actuelle ?'))return;data=decoded;setPlayer();if(data.run&&isArena(data.run.current,data.run))enforceArena();bullets=[];closeOverlay();persist();render();$('tools').hidden=true;msg('Sauvegarde restaurée.')}catch(e){msg('Code invalide ou incompatible.')}}}
 $('startSector').addEventListener('change',e=>{data.chosenSector=Number(e.target.value);persist()});$('upHp').onclick=()=>upgrade('hp');$('upDmg').onclick=()=>upgrade('dmg');$('insure').onclick=insure;$('buy').onclick=buy;$('start').onclick=start;$('action').onclick=action;
-$('bagBtn').onclick=()=>openOverlay('bag');$('mapBtn').onclick=()=>openOverlay('map');$('pauseBtn').onclick=()=>openOverlay('pause');$('dodge').onclick=performDash;
+$('bagBtn').onclick=()=>openOverlay('bag');$('mapBtn').onclick=()=>openOverlay('map');$('pauseBtn').onclick=()=>openOverlay('pause');
+// Le clic synthetique iOS peut etre annule quand un autre doigt tient le joystick.
+// Le DASH est donc declenche par pointerdown, independamment du pointer du joystick.
+const dashButton=$('dodge');
+let lastDashPointerAt=-Infinity;
+dashButton.addEventListener('pointerdown', e=>{
+ if(e.pointerType==='mouse'&&e.button!==0)return;
+ e.preventDefault();
+ lastDashPointerAt=performance.now();
+ performDash();
+});
+// Accessibilite clavier et solution de secours sans double-activation au toucher.
+dashButton.addEventListener('click', e=>{
+ if(performance.now()-lastDashPointerAt<650){e.preventDefault();return}
+ performDash();
+});
 $('overlay').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let op=b.dataset.op,idx=Number(b.dataset.idx);if(op==='close'||op==='resume')closeOverlay();else if(op==='equipBag')equipBag(idx);else if(op==='drop')drop(idx);else if(op==='retreat'){if(confirm('Abandonner ? Tout le matériel non assuré sera perdu.'))finish(false)}});
 $('stash').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let i=Number(b.dataset.idx);if(b.dataset.op==='equipHome')equipHome(i);else if(b.dataset.op==='sell')sell(i)});
 $('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Déplace-toi en glissant sur la partie gauche du terrain. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange ⚠ ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Approche des coffres ou terminaux avant de toucher ACTION. SAC et CARTE mettent le combat en pause.</p><p>DASH : impulsion de 95 pixels dans la direction du joystick (ou dernière direction), recharge 2,2 secondes. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
