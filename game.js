@@ -359,8 +359,12 @@ function renderRefugeCharacter(){
  if($('loadoutDmgBonus'))$('loadoutDmgBonus').textContent=`+${data.dmgLv*3} dégâts permanents`;
  const preview=$('characterReservePreview');
  if(preview){
-  preview.innerHTML=data.stash.length?data.stash.slice(0,6).map(w=>`<article class="reserve-chip" style="--item-rarity:${tint(w)}"><span class="reserve-chip-icon">⚔</span><b>${uiSafe(w.name)}</b><small>${uiSafe(w.rar)}</small><span>${w.dmg} DGT · ${w.rate} tirs/s</span></article>`).join(''):'<div class="ui-empty">Aucun équipement en réserve. Extrais des armes pour remplir le stock.</div>';
+  const items=data.stash.slice(0,20);
+  const cards=items.map((w,i)=>`<button type="button" class="inventory-cell" data-inventory-index="${i}" aria-label="Voir ${uiSafe(w.name)}" style="--item-rarity:${tint(w)}"><span class="inventory-symbol">⚔</span><span class="inventory-name">${uiSafe(w.name)}</span><span class="inventory-rarity">${uiSafe(w.rar)}</span></button>`).join('');
+  preview.innerHTML=cards+Array.from({length:Math.max(0,8-items.length)},()=>'<span class="inventory-cell inventory-empty" aria-hidden="true"></span>').join('');
+  const selected=$('inventorySelection');if(selected)selected.hidden=true;
  }
+
 }
 function renderRefugeProgress(){
  const reg=region();
@@ -414,6 +418,16 @@ $('bagBtn').onclick=()=>openOverlay('bag');$('mapBtn').onclick=()=>openOverlay('
 $('overlay').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let op=b.dataset.op,idx=Number(b.dataset.idx);if(op==='choosePerk')choosePerk(b.dataset.perk);else if(op==='close'||op==='resume')closeOverlay();else if(op==='equipBag')equipBag(idx);else if(op==='drop')drop(idx);else if(op==='retreat'){if(confirm('Abandonner ? Tout le matériel non assuré sera perdu.'))finish(false)}});
 function merchantClickHandler(e){let b=e.target.closest('[data-merchant-tab],[data-merchant-buy],[data-merchant-sell]');if(!b)return;if(b.hasAttribute('data-merchant-tab')){merchantTab=b.dataset.merchantTab;merchantRender()}else if(b.hasAttribute('data-merchant-buy'))merchantBuy(Number(b.dataset.merchantBuy));else if(b.hasAttribute('data-merchant-sell'))merchantSell(Number(b.dataset.merchantSell));}
 $('toolsBody').addEventListener('click',merchantClickHandler);if($('merchantPageContent'))$('merchantPageContent').addEventListener('click',merchantClickHandler);
+$('characterReservePreview').addEventListener('click',e=>{
+ const cell=e.target.closest('[data-inventory-index]');if(!cell)return;
+ const i=Number(cell.dataset.inventoryIndex),w=data.stash[i],host=$('inventorySelection');if(!w||!host)return;
+ host.hidden=false;host.innerHTML=`<div class="inventory-selected-head"><b>${uiSafe(w.name)}</b><span style="color:${tint(w)}">${uiSafe(w.rar)}</span></div><p>${Number(w.dmg)||0} dégâts · ${Number(w.rate)||0} tirs/s · ${salvagePrice(w)} ¤ revente</p><div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE</button></div>`;
+});
+$('inventorySelection').addEventListener('click',e=>{
+ const b=e.target.closest('[data-grid-equip],[data-grid-sell]');if(!b)return;
+ if(b.hasAttribute('data-grid-equip'))equipHome(Number(b.dataset.gridEquip));
+ else sell(Number(b.dataset.gridSell));
+});
 $('stash').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let i=Number(b.dataset.idx);if(b.dataset.op==='equipHome')equipHome(i);else if(b.dataset.op==='sell')sell(i)});
 $('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Utilise le joystick semi-mobile en bas au centre pour te déplacer. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange ⚠ ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Les coffres s’ouvrent automatiquement après avoir sécurisé la salle. Les avant-postes s’activent par proximité. SAC et CARTE mettent le combat en pause.</p><p>Reste 3 secondes dans le cercle lumineux pour lancer une extraction. Une fois activée, reste dans le cercle pendant tout le compte à rebours : en sortir annule l’extraction. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
 // DASH : impulsion immédiate et indépendante du tick d'animation.

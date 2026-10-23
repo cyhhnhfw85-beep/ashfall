@@ -334,3 +334,20 @@ header small{letter-spacing:.16em}
 #merchantPageContent .ui-help{background:linear-gradient(145deg,#142d3d,#0f2230);border:1px solid #406678}
 button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0 0 22px #d59a4445}
 @media(max-width:420px){.loadout-grid,.reserve-preview-grid{grid-template-columns:1fr}.merchant-banner-copy{max-width:70%}.merchant-banner{min-height:174px}.merchant-offer b{font-size:18px}.refuge-status-ribbon span{font-size:11px;padding:7px 9px}}
+
+/* 0.8.9.20 tactical equipment interface - visual slots do not grant nonexistent equipment */
+#refuge-page-character .tactical-showcase{display:grid;grid-template-columns:minmax(52px,1fr) minmax(135px,2.6fr) minmax(52px,1fr);gap:8px;align-items:center;padding:13px;background:radial-gradient(ellipse at 50% 40%,#1c5060 0%,#102b3a 55%,#0b1f30 100%);border-color:#4e879b}
+.tactical-showcase .premium-portrait{grid-column:2;grid-row:1;width:100%;min-width:0;max-width:250px;height:280px;justify-self:center;border:0;background:radial-gradient(ellipse at center,#3c68734d,#0b1d29 75%);border-radius:10px}
+.tactical-showcase .premium-survivor{width:100%;height:100%;filter:drop-shadow(0 7px 9px #0009)}
+.tactical-column{grid-row:1;display:grid;gap:10px;align-content:center}.tactical-left{grid-column:1}.tactical-right{grid-column:3}
+.equip-square{aspect-ratio:1;min-height:54px;max-height:100px;background:linear-gradient(145deg,#15344a,#0b1d2e);border:2px solid #416f8c;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#a3d6e8;box-shadow:inset 0 0 14px #0006}
+.equip-square span{font-size:clamp(18px,4.5vw,28px)}.equip-square small{font-size:clamp(7px,1.8vw,10px);letter-spacing:.06em;color:#b9cbd9}.equip-square.future-slot{border-color:#435766;opacity:.7}.equip-square.active-slot{border-color:#d8a95e;color:#f4c875;background:linear-gradient(145deg,#253542,#131b2c)}
+.tactical-showcase .survivor-meta{grid-column:1/-1;grid-row:2;text-align:center;justify-items:center;padding:2px 0 6px}.tactical-showcase .survivor-meta>b{font-size:20px}.tactical-showcase .survivor-meta p{margin:0}.tactical-showcase .survivor-badges{justify-content:center}.tactical-showcase .portrait-label{bottom:0;left:4%;right:4%;font-size:10px}
+#refuge-page-character .loadout-grid,#refuge-page-character .character-equipped-card{display:none}
+.tactical-inventory{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;padding:12px;background:linear-gradient(145deg,#102839,#0a1b29);border:1px solid #456f89;border-radius:15px}
+.tactical-inventory .inventory-cell{min-width:0;aspect-ratio:.86;border-radius:9px;border:2px solid var(--item-rarity,#35586b);background:linear-gradient(145deg,#1c3a4f,#0d2030);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:3px;padding:4px;text-align:center;color:#eaf5f8;box-shadow:inset 0 0 12px #0005}
+.tactical-inventory .inventory-cell.inventory-empty{border:1px solid #29475a;background:#0c1c2a;opacity:.55}
+.inventory-symbol{font-size:25px;line-height:1}.inventory-name{font-size:10px;line-height:1.1;overflow-wrap:anywhere}.inventory-rarity{font-size:8px;color:var(--item-rarity,#c9e1ee)}.equipment-hint{font-size:12px;color:#b5cdda;margin:0 2px}
+.inventory-selection{background:#193548;border:1px solid #547b90;border-radius:13px;padding:12px}.inventory-selection[hidden]{display:none}.inventory-selected-head{display:flex;gap:8px;justify-content:space-between;align-items:center}.inventory-selection p{color:#c4d8e2;font-size:13px}.inventory-selected-actions{display:flex;gap:9px}.inventory-selected-actions button{flex:1}
+.inventory-details{border:1px solid #365d72;border-radius:12px;padding:10px;background:#102433}.inventory-details>summary{cursor:pointer;color:#e9bb79;font-weight:750}
+@media(max-width:390px){#refuge-page-character .tactical-showcase{grid-template-columns:52px minmax(120px,1fr) 52px;gap:5px;padding:8px}.tactical-showcase .premium-portrait{height:225px}.equip-square{min-height:50px}.inventory-name{font-size:9px}.tactical-inventory{gap:5px;padding:8px}}
