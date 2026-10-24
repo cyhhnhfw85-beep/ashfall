@@ -1,12 +1,10 @@
-# ASHFALL 0.8.9.50 — Phase 3A : dangers tactiques
+# ASHFALL 0.8.9.51 — Phase 3B : découverte et terminaux
 
-Base : 0.8.9.49 Polish Interactifs.
+Cette version conserve la 0.8.9.50 (destructibles) et ajoute des découvertes **sans nouveau bouton** uniquement pour les **nouvelles expéditions** (`interactiveV51`).
 
-- Les nouvelles expéditions reçoivent, dans certaines salles standards, des **barils instables** ou des **modules électriques** destructibles. Les anciennes expéditions actives conservent leur disposition et ne reçoivent aucun nouvel obstacle.
-- Les tirs automatiques peuvent cibler un module situé près d’ennemis, depuis une distance de sécurité. Les tirs qui traversent un module peuvent aussi le déclencher.
-- Une fois touché, le module annonce son explosion pendant 0,85 s et marque le rayon de danger au sol ; il inflige des dégâts aux ennemis et peut blesser le joueur proche.
-- Un module détruit reste détruit, sa collision disparaît et son état est conservé dans la sauvegarde d’expédition.
-- Les explosions ne génèrent pas de butin bonus. Un ennemi abattu peut laisser son butin habituel.
-- Le refuge, les graphiques approuvés, les coffres, la mécanique d’extraction et l’économie restent inchangés.
+- Caches : quatre salles secrètes préexistantes disposent maintenant d'une cache dissimulée. Approcher pour révéler, rester 0,9 s près du coffre pour fouiller après nettoyage. Le butin de crédits (18 à 32) n'est conservé qu'après extraction.
+- Terminaux : jusqu'à six terminaux répartis dans les salles ordinaires. Après nettoyage, rester 0,9 s à proximité pour activer. Scanner = trois indices de salles sur la carte sans les débloquer. Médical = jusqu'à 22 PV récupérés lorsque blessé. Régulateur = charge de sécurité conservée pendant l’expédition : neutralise le prochain danger laser/thermique rencontré (maximum trois charges en réserve).
+- Les découvertes sont à usage unique et sauvegardées avec l'expédition. Les armes, les portes, les hitbox, l'économie du Marchand, le refuge et les règles d'extraction ne changent pas.
+- Les anciennes expéditions continuent sans nouveaux objets placés.
 
-Test recommandé : ouvrir une nouvelle expédition, trouver un module, attirer un ennemi près de lui, déclencher son explosion, quitter puis revisiter la salle, et vérifier la sauvegarde/extraction.
+**Attention** : certains terminaux peuvent être invisibles si un espace libre n'est pas disponible ; c'est un mode de sécurité volontaire, sans forcer d'objet dans un mur.
