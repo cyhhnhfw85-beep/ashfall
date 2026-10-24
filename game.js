@@ -359,10 +359,116 @@ function enemiesFor(id){let r=data.run,room=r?.rooms[id];if(id===0||room?.kind==
   let type=(boss||arena)&&k===count-1?'sentinel':sec===0?(k%2?'ranged':'chaser'):sec===1?(k%3?'ranged':'drone'):sec===2?(k%2?'brute':'ranged'):(k%2?'sentinel':'drone');
   let hp=(type==='sentinel'?(boss?250:125):type==='brute'?125:type==='drone'?65:type==='ranged'?60:75)*(1+sec*.12);
   const pos=spawnSafe(room,enemies);
-  if(pos)enemies.push({id:uid(),type,...pos,hp,max:hp,cd:Math.random()+.6,wind:0,aim:0});
+  if(pos)enemies.push({id:uid(),type,...pos,hp,max:hp,cd:Math.random()+.6,wind:0,aim:0,...(boss&&k===count-1?{guardian:true}:{} )});
  }
  return enemies;
 }
+// 0.8.9.71 - Ennemis tactiques : nouveaux comportements sans nouveaux contrôles.
+// Champs gardien / guardianAI facultatifs : sauvegardes K-17 existantes compatibles.
+function ashGuardianInRoom(e,room){return !!e&&!!room&&(e.guardian===true||(room.kind==='boss'&&e.type==='sentinel'&&e.max>=210));}
+function ashBossPhase(e){return e.hp/e.max<=.32?3:e.hp/e.max<=.67?2:1;}
+function ashBossPatternCount(kind,phase){return kind==='radial'?(phase===3?10:8):(phase===3?5:phase===2?4:3);}
+function ashBossShoot(e,kind,phase,angle){
+ const count=ashBossPatternCount(kind,phase),speed=kind==='radial'?147:phase===3?225:207;
+ for(let j=0;j<count;j++){
+  // Salves ciblées à éventail ; impulsions circulaires avec un couloir prévisible.
+  const a=kind==='radial'?(angle+Math.PI*2*j/count):(angle+(j-(count-1)/2)*.18);
+  bullets.push({x:e.x+Math.cos(a)*20,y:e.y+Math.sin(a)*20,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed,enemy:true,style:'guardian',dmg:kind==='radial'?12:phase===3?18:16,ttl:3.4});
+ }
+ combatFxEnemyShot(e.x,e.y,angle,'guardian');
+}
+function ashBossTick(e,room,dt){
+ if(!ashGuardianInRoom(e,room))return false;
+ e.guardian=true;
+ let phase=ashBossPhase(e);
+ let ai=e.guardianAI;
+ if(!ai||typeof ai!=='object'){ai={phase:1,cycle:0,attack:null,wind:0,aim:0};e.guardianAI=ai;}
+ if(!Number.isFinite(ai.cycle))ai.cycle=0;
+ if(phase>(ai.phase||1)){
+  ai.phase=phase;
+  ai.attack=null;ai.wind=0;e.wind=0;e.cd=Math.max(e.cd,.65);
+  combatBurst(e.x,e.y,phase===3?'#ffbb91':'#c9a4f5',12,83);
+  msg(phase===3?'GARDIEN K-17 // PHASE 3 : SURCHARGE':'GARDIEN K-17 // PHASE 2 : IMPULSIONS');
+ } else ai.phase=phase;
+ const distance=Math.hypot(player.x-e.x,player.y-e.y);
+ if(ai.attack){
+  ai.wind=Math.max(0,(Number(ai.wind)||0)-dt);e.wind=ai.wind;e.aim=ai.aim;
+  if(ai.wind===0){
+   ashBossShoot(e,ai.attack,phase,ai.aim);
+   ai.attack=null;e.wind=0;e.cd=phase===3?1.7:phase===2?2.1:2.4;
+  }
+  return true;
+ }
+ e.wind=0;
+ // Le boss garde ses distances sans traverser d'obstacle ni accélérer brutalement.
+ const aim=Math.atan2(player.y-e.y,player.x-e.x);
+ if(distance>115){advanceSolid(e,Math.cos(aim)*dt*35,Math.sin(aim)*dt*35,14,room);}
+ else if(distance<72){advanceSolid(e,-Math.cos(aim)*dt*24,-Math.sin(aim)*dt*24,14,room);}
+ e.cd-=dt;
+ if(e.cd<=0&&distance<420){
+  ai.cycle++;
+  ai.attack=phase===1?'fan':ai.cycle%2===0?'radial':'fan';
+  ai.wind=ai.attack==='radial'?1.28:phase===3?.9:1.08;
+  ai.aim=aim;e.wind=ai.wind;e.aim=aim;
+ }
+ return true;
+}
+function ashStrafeEnemy(e,room,dt,angle,d){
+ if(e.wind>0||d<72||d>245)return;
+ if(e.type!=='ranged'&&e.type!=='drone')return;
+ if(e.strafeSide!==1&&e.strafeSide!==-1)e.strafeSide=String(e.id||'').split('').reduce((a,c)=>a+c.charCodeAt(0),0)%2===0?1:-1;
+ const side=e.strafeSide;
+ const v=e.type==='drone'?39:21;
+ const vx=-Math.sin(angle)*side,vy=Math.cos(angle)*side;
+ advanceSolid(e,vx*v*dt,vy*v*dt,14,room);
+}
+// Toutes les zones dangereuses sont montrées AVANT la résolution des attaques.
+function ashDrawEnemyTelegraphs(room){
+ const t=performance.now()*.001;
+ cx.save();
+ for(const e of room.enemies||[]){
+  if(!(e.wind>0))continue;
+  const boss=ashGuardianInRoom(e,room),a=Number.isFinite(e.aim)?e.aim:0;
+  const radial=boss&&e.guardianAI?.attack==='radial';
+  const melee=e.type==='chaser'||e.type==='brute';
+  const range=boss?210:melee?(e.type==='brute'?125:115):e.type==='drone'?200:245;
+  const width=boss?.43:melee?.48:.075;
+  cx.save();cx.translate(e.x,e.y);
+  if(radial){
+   const count=ashBossPatternCount('radial',ashBossPhase(e));
+   cx.strokeStyle='#eac3ff';cx.lineWidth=2.3;cx.globalAlpha=.5+.18*Math.sin(t*11);
+   cx.setLineDash([8,6]);cx.beginPath();cx.arc(0,0,74,0,Math.PI*2);cx.stroke();cx.setLineDash([]);
+   for(let j=0;j<count;j++){const th=a+Math.PI*2*j/count;cx.beginPath();cx.moveTo(Math.cos(th)*32,Math.sin(th)*32);cx.lineTo(Math.cos(th)*120,Math.sin(th)*120);cx.stroke();}
+  }else if(melee||boss){
+   const alpha=.09+.05*Math.sin(t*12);
+   cx.fillStyle=boss?`rgba(216,157,255,${alpha+.05})`:`rgba(249,118,101,${alpha})`;
+   cx.beginPath();cx.moveTo(0,0);cx.arc(0,0,range,a-width,a+width);cx.closePath();cx.fill();
+   cx.lineWidth=2;cx.strokeStyle=boss?'#dfb2ff':'#ffa296';
+   for(const th of [a-width,a+width]){cx.beginPath();cx.moveTo(0,0);cx.lineTo(Math.cos(th)*range,Math.sin(th)*range);cx.stroke();}
+   cx.beginPath();cx.arc(0,0,range,a-width,a+width);cx.stroke();
+  }else{
+   cx.lineWidth=e.type==='drone'?2:1.5;
+   cx.strokeStyle=e.type==='drone'?'#93d9fd':'#f8c17c';cx.globalAlpha=.68+.2*Math.sin(t*10);
+   cx.setLineDash([7,6]);cx.beginPath();cx.moveTo(0,0);cx.lineTo(Math.cos(a)*range,Math.sin(a)*range);cx.stroke();cx.setLineDash([]);
+  }
+  cx.restore();
+ }
+ cx.restore();
+}
+function ashDrawBossHud(room){
+ const boss=(room.enemies||[]).find(e=>ashGuardianInRoom(e,room)&&e.hp>0);
+ if(!boss)return;
+ const phase=ashBossPhase(boss);
+ cx.save();cx.setTransform(1,0,0,1,0,0);
+ cx.fillStyle='rgba(8,22,33,.89)';cx.strokeStyle='#9674ad';cx.lineWidth=1;
+ cx.beginPath();cx.roundRect(76,7,208,31,7);cx.fill();cx.stroke();
+ cx.fillStyle='#efe4f8';cx.font='bold 9px system-ui,sans-serif';cx.textAlign='left';cx.fillText('GARDIEN K-17',85,20);
+ cx.fillStyle='#c49be2';cx.textAlign='right';cx.fillText('PHASE '+phase+'/3',275,20);
+ cx.fillStyle='#4b314e';cx.fillRect(85,25,190,5);
+ cx.fillStyle=phase===3?'#efa98c':'#b88bd6';cx.fillRect(85,25,190*Math.max(0,boss.hp/boss.max),5);
+ cx.restore();
+}
+
 function spawnReinforcement(room,count){for(let k=0;k<count;k++){
  const type=k%2===0?'ranged':'chaser',hp=type==='ranged'?60:75;
  const pos=spawnSafe(room,room.enemies,{x:k%2?292:67,y:85+35*(k%3)});
@@ -1041,14 +1147,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.70';
+const ASHFALL_RUNTIME_VERSION='0.8.9.71';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.70, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.71, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -1876,7 +1982,7 @@ function drawEnemyGameplay(enemy,sector,seconds,isBoss=false){
  const fx=Math.cos(ang),fy=Math.sin(ang);
  const lit=(enemy.wind||0)>0;
  cx.save();const hitVisual=combatFx.hit.get(enemy);const hitAmt=hitVisual?.ttl>0?hitVisual.ttl/hitVisual.life:0;cx.translate(enemy.x-(hitVisual?Math.cos(hitVisual.angle)*3.1*hitAmt:0),enemy.y-(hitVisual?Math.sin(hitVisual.angle)*3.1*hitAmt:0));
- if(isBoss)cx.scale(1.09,1.09);
+ if(isBoss){cx.scale(1.25,1.25);cx.fillStyle=ashBossPhase(enemy)===3?'rgba(241,140,126,.18)':'rgba(195,151,231,.13)';cx.beginPath();cx.arc(0,-8,34+2*Math.sin(seconds*6),0,Math.PI*2);cx.fill();}
  function poly(points,color,border='#172731',width=1.7){
   cx.beginPath();cx.moveTo(points[0][0],points[0][1]);
   for(let i=1;i<points.length;i++)cx.lineTo(points[i][0],points[i][1]);
@@ -2723,7 +2829,7 @@ if(room.enemies.length){
  if(tactical){cx.save();cx.strokeStyle='#f8d68b';cx.lineWidth=2;cx.setLineDash([4,3]);cx.beginPath();cx.arc(tactical.x,tactical.y,25,0,Math.PI*2);cx.stroke();cx.setLineDash([]);cx.fillStyle='#ffe8b3';cx.font='bold 9px sans-serif';cx.textAlign='center';/* La cible tactique est identifiée par un anneau doré en pointillés. */cx.restore()}
 }
 drawFieldEvent(room);drawRefinedChest(room,r);if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
-lootDraw(room);ashSweepFxDraw();for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),room.kind==='boss'&&e.type==='sentinel');cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-39,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-39,30*Math.max(0,e.hp/e.max),4)}combatFxPaintBullets();if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}combatFxPaintWorld();cx.restore();combatFxPaintHurt();}
+lootDraw(room);ashSweepFxDraw();ashDrawEnemyTelegraphs(room);for(let e of room.enemies){const guardian=ashGuardianInRoom(e,room);drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),guardian);const bw=guardian?70:30,bhy=guardian?-57:-39;cx.fillStyle='#081722';cx.fillRect(e.x-bw/2,e.y+bhy,bw,5);cx.fillStyle=guardian?'#c99de5':'#79e0a1';cx.fillRect(e.x-bw/2,e.y+bhy,bw*Math.max(0,e.hp/e.max),5)}combatFxPaintBullets();if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}combatFxPaintWorld();cx.restore();if(isBoss(r.current,r))ashDrawBossHud(room);combatFxPaintHurt();}
 function hurt(amount,cause='combat'){if(!player||!data.run||player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));combatFxDamagePlayer();player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false,cause)}
 function transition(){
  if(locked())return false;
@@ -2751,12 +2857,12 @@ if(room.enemies.length&&player.fire<=0){
   bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,style:shotKind,dmg:damage()*(1+perkBonus('power')),ttl:1.5});
   player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')))
  }}
-for(let e of room.enemies){let d=length(e,player),angle=Math.atan2(player.y-e.y,player.x-e.x);e.wind=e.wind||0;
+for(let e of room.enemies){let d=length(e,player),angle=Math.atan2(player.y-e.y,player.x-e.x);e.wind=e.wind||0;if(ashBossTick(e,room,dt))continue;
  const oppositeWing=roomGeom(room).type==='ell'&&((e.x>355&&player.y>395)||(e.y>395&&player.x>355));
  const navTarget=oppositeWing?{x:180,y:195}:player;
  const moveAngle=Math.atan2(navTarget.y-e.y,navTarget.x-e.x);
-if(e.wind>0){e.wind-=dt;if(e.wind<=0){if(e.type==='chaser'||e.type==='brute'){let reach=length(e,player);if(reach<(e.type==='brute'?125:115)&&Math.abs(Math.atan2(Math.sin(angle-e.aim),Math.cos(angle-e.aim)))<.48)hurt(e.type==='brute'?25:18)}else{let count=e.type==='sentinel'?3:1;for(let j=0;j<count;j++){let a=e.aim+(j-(count-1)/2)*.18;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),vy:Math.sin(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),enemy:true,dmg:e.type==='sentinel'?22:e.type==='drone'?16:14,ttl:3});if(j===0)combatFxEnemyShot(e.x,e.y,a,e.type)}}e.cd=e.type==='sentinel'?2.5:e.type==='drone'?1.45:e.type==='brute'?2.1:e.type==='ranged'?1.8:1.5}}
-else{if((oppositeWing?Math.hypot(navTarget.x-e.x,navTarget.y-e.y):d)>(e.type==='ranged'?140:e.type==='drone'?160:e.type==='sentinel'?155:e.type==='brute'?36:36)){advanceSolid(e,Math.cos(moveAngle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),Math.sin(moveAngle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),14,room)}e.cd-=dt;if(e.cd<=0&&d<(e.type==='chaser'?135:300)){e.aim=angle;e.wind=e.type==='chaser'?.8:e.type==='brute'?1.15:e.type==='sentinel'?1.2:e.type==='drone'?.6:.7}}
+if(e.wind>0){e.wind-=dt;if(e.wind<=0){if(e.type==='chaser'||e.type==='brute'){if(e.type==='chaser')advanceSolid(e,Math.cos(e.aim)*21,Math.sin(e.aim)*21,14,room);let reach=length(e,player);if(reach<(e.type==='brute'?125:115)&&Math.abs(Math.atan2(Math.sin(angle-e.aim),Math.cos(angle-e.aim)))<.48)hurt(e.type==='brute'?25:18)}else{let count=e.type==='sentinel'?3:1;for(let j=0;j<count;j++){let a=e.aim+(j-(count-1)/2)*.18;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),vy:Math.sin(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),enemy:true,dmg:e.type==='sentinel'?22:e.type==='drone'?16:14,ttl:3});if(j===0)combatFxEnemyShot(e.x,e.y,a,e.type)}}e.cd=e.type==='sentinel'?2.5:e.type==='drone'?1.45:e.type==='brute'?2.1:e.type==='ranged'?1.8:1.5}}
+else{if((oppositeWing?Math.hypot(navTarget.x-e.x,navTarget.y-e.y):d)>(e.type==='ranged'?140:e.type==='drone'?160:e.type==='sentinel'?155:e.type==='brute'?36:36)){advanceSolid(e,Math.cos(moveAngle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),Math.sin(moveAngle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),14,room)}ashStrafeEnemy(e,room,dt,angle,d);e.cd-=dt;if(e.cd<=0&&d<(e.type==='chaser'?135:300)){e.aim=angle;e.wind=e.type==='chaser'?.8:e.type==='brute'?1.15:e.type==='sentinel'?1.2:e.type==='drone'?.6:.7}}
 }
 if(!data.run)return;
 for(let b of bullets){
