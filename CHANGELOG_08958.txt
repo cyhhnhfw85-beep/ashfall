@@ -1,0 +1,9 @@
+ASHFALL 0.8.9.58 — Extraction mobile, compte à rebours et rapport illustré
+
+1. Mini-carte montrant toutes les salles explorées et indices scannés sans effacement lors des déplacements et rechargements ; géométries réelles intactes.
+2. Pause centrale avec retour via inventaire et carte, confirmation d’abandon.
+3. Débrief extraction, mort et abandon avant retour au refuge. Détails des crédits, recherche, XP temporaire, durée active, éliminations, équipement récupéré/perdu.
+4. Débrief sauvegardé et restauré sans dupliquer les récompenses ; support des sauvegardes d’anciennes versions.
+5. Cache PWA 08958.
+
+38 tests automatisés Chromium validés. Test iPhone/Safari recommandé après installation.
