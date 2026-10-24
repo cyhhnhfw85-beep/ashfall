@@ -1,9 +1,9 @@
-# ASHFALL — Alpha PWA 0.8.9.68
+# ASHFALL — Alpha PWA 0.8.9.69
 
-Version complète jouable hors ligne après chargement initial. Déployer tous les fichiers à la racine du site, y compris progression-phase.css ; conserver une exportation des sauvegardes avant mise à jour.
+Correctif de collecte et de lisibilité en expédition. Déployer tous les fichiers à la racine de l'hébergement ; sauvegarder/exporter sa progression avant installation.
 
-## Changements de la phase D
-Trois contrats optionnels dont la récompense nécessite une extraction réussie. Carrière accessible dans **Secteurs**, historique limité à 12 rapports à partir de la 0.8.9.68. Aucun changement des chances de coffre, ni des mécaniques de combat.
-
-## Compatibilité
-La clé de stockage `ashfall_pwa_v1` reste identique ; les anciens snapshots continuent de fonctionner. Les runs entamés avant la 0.8.9.68 n'ont pas de contrat attribué rétroactivement.
+- Dès qu'une salle est effectivement sécurisée, l'XP et les crédits au sol sont crédités en une seule transaction locale, avec un effet visuel d'aspiration de 0,62 seconde. Les boss et arènes attendent la fin de toutes leurs vagues.
+- Les armes ne sont jamais aspirées automatiquement. Au sol, elles affichent une petite silhouette tactique colorée selon leur rareté ; les illustrations originales restent inchangées dans les sacs et fenêtres.
+- Le bonus de magnétisme n'est plus proposé. Les choix déjà stockés dans un ancien run sont régénérés parmi les quatre bonus restants, sans toucher aux effets déjà appliqués.
+- HUD supérieur raccourci pour conserver une meilleure visibilité du terrain sur iPhone.
+- Prix de coffre, autres bonus, dégâts, combat, économie et clé de sauvegarde inchangés (`ashfall_pwa_v1`). Les points de recherche restent calculés selon les objectifs d'expédition existants.

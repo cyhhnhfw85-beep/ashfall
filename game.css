@@ -907,3 +907,49 @@ body.ashfall-expedition #overlay:has(.ash-pause-card){
 @media(max-width:350px){#overlay:has(.perk-screen){padding-left:10px;padding-right:10px;}#overlay .perk-screen .perk-card{grid-template-columns:46px minmax(0,1fr) 11px;column-gap:8px;padding:9px 8px;min-height:88px;}#overlay .perk-screen .perk-symbol{width:46px;height:51px;}#overlay .perk-screen .perk-art{width:29px;height:29px;}#overlay .perk-effect{font-size:10px;}#overlay .perk-category{font-size:8px;}}
 @media(max-height:700px){#overlay .perk-screen .perk-card{min-height:76px;padding-top:7px;padding-bottom:7px;}#overlay .perk-screen .perk-symbol{height:46px;}#overlay .perk-list{gap:6px;}#overlay .perk-intro{margin-bottom:8px;}#overlay .perk-footer{margin-top:7px;}}
 @media(prefers-reduced-motion:reduce){#overlay .perk-screen .perk-card,#overlay .perk-screen .perk-art{animation:none!important;transition:none!important;}}
+
+
+/* ASHFALL 0.8.9.69 — HUD compact : ne pas masquer le terrain sur iPhone. */
+body.ashfall-expedition .gamebar{
+  box-sizing:border-box!important;width:100%!important;max-width:100vw!important;
+  grid-template-columns:minmax(0,1fr) clamp(104px,31vw,124px)!important;
+  gap:5px!important;padding:calc(env(safe-area-inset-top) + 5px) max(6px,env(safe-area-inset-right)) 0 max(6px,env(safe-area-inset-left))!important;
+  overflow:visible!important;background:none!important;border:0!important;
+}
+body.ashfall-expedition .gamebar .hud-main{
+  padding:7px 8px 8px!important;border-radius:10px!important;
+  min-width:0!important;box-shadow:0 4px 10px #0008!important;
+}
+body.ashfall-expedition .hud-topline{margin-bottom:5px!important;min-height:0!important;}
+body.ashfall-expedition #roomTitle{font-size:9px!important;line-height:1.15!important;}
+body.ashfall-expedition .ash-vital-name{font-size:14px!important;line-height:1.1!important;}
+body.ashfall-expedition #hpText{font-size:12px!important;}
+body.ashfall-expedition .health.ash-vital-track{height:11px!important;margin:3px 0 8px!important;}
+body.ashfall-expedition .ash-xp-name{font-size:11px!important;}
+body.ashfall-expedition #xpDisplay{font-size:9px!important;}
+body.ashfall-expedition .xp-track.ash-xp-track{height:7px!important;margin:3px 0 0!important;}
+body.ashfall-expedition #ashContractHud:not([hidden]){
+  margin-top:5px!important;padding:3px 5px!important;font-size:8px!important;
+  line-height:1.15!important;max-height:29px;overflow:hidden;
+}
+body.ashfall-expedition .ash-hud-right{gap:4px!important;min-width:0!important;}
+body.ashfall-expedition .ash-minimap-button{
+  height:77px!important;min-height:77px!important;max-height:77px!important;
+  padding:4px!important;border-radius:9px!important;gap:2px!important;
+}
+body.ashfall-expedition .ash-minimap-topline{font-size:7px!important;letter-spacing:0!important;min-height:10px;}
+body.ashfall-expedition .ash-hud-right .hud-actions{gap:4px!important;}
+body.ashfall-expedition .hud-actions button{height:32px!important;min-height:32px!important;max-height:32px!important;border-radius:8px!important;padding:3px!important;}
+body.ashfall-expedition #bagBtn{font-size:10px!important;gap:3px!important;}
+body.ashfall-expedition #bagCount{font-size:10px!important;padding:3px!important;}
+body.ashfall-expedition #pauseBtn{flex-basis:30px!important;min-width:30px!important;}
+@media(max-width:350px){
+ body.ashfall-expedition .gamebar{grid-template-columns:minmax(0,1fr) 104px!important;gap:4px!important;}
+ body.ashfall-expedition .gamebar .hud-main{padding:6px!important;}
+ body.ashfall-expedition .ash-minimap-button{height:70px!important;min-height:70px!important;max-height:70px!important;}
+ body.ashfall-expedition .hud-actions button{height:30px!important;min-height:30px!important;max-height:30px!important;}
+}
+@media(orientation:landscape){
+ body.ashfall-expedition .gamebar{grid-template-columns:minmax(0,190px) min(22vw,112px)!important;}
+ body.ashfall-expedition .ash-minimap-button{height:65px!important;min-height:65px!important;max-height:65px!important;}
+}
