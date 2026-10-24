@@ -540,3 +540,49 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 #refuge-page-progress .ash-sector-guide strong{color:#f0c082;font-size:9px;letter-spacing:.04em}
 #refuge-page-progress .ash-sector-guide small{color:#a9c6d4;font-size:9px;line-height:1.25}
 @media(max-width:355px){.stats.ash-resources>.ash-resource-card{padding:9px 7px;gap:7px;min-height:66px}.ash-currency-logo{width:33px;height:33px;flex-basis:33px}.stats.ash-resources b{font-size:20px}#refuge-page-progress .ash-sector-guide{grid-template-columns:1fr}#refuge-page-progress .ash-sector-guide>div{display:flex;align-items:center;gap:8px}}
+
+
+/* 0.8.9.39 — nettoyage de l'accueil et atelier du survivant */
+#refuge-page-home .home-deployment{margin-bottom:4px}
+#refuge-page-home .home-deploy-eyebrow{font-weight:800}
+#refuge-page-home .home-deployment>p{color:#bdd2dc;font-size:13px}
+#refuge-page-character .survivor-meta .survivor-badges{margin-top:8px}
+#refuge-page-character #survivor-panel-equipment[hidden],#refuge-page-character #survivor-panel-workshop[hidden]{display:none!important}
+#refuge-page-character .survivor-subnav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#refuge-page-character .survivor-subtab{height:47px;border:1px solid #54748a;background:#122b3b;border-radius:11px;color:#b9d1dd;font-size:12px;font-weight:850;letter-spacing:.07em}
+#refuge-page-character .survivor-subtab.active{background:linear-gradient(145deg,#eec47c,#d99d50);color:#192532;border-color:#ffdb92}
+#refuge-page-character .survivor-subtab:focus-visible{outline:2px solid #aee5fb;outline-offset:2px}
+#refuge-page-character #survivor-panel-equipment{display:grid;gap:13px}
+#refuge-page-character .inventory-toolbar{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+#refuge-page-character .inventory-toolbar label{margin-left:auto}
+#refuge-page-character .survivor-meta>p,#refuge-page-character #characterInsuranceBadge{display:none!important}
+#refuge-page-character #survivor-panel-workshop{display:grid;gap:12px}
+#refuge-page-character .ash-workshop-hero{padding:18px 15px;background:radial-gradient(circle at 100% 0,#2b4c5966,transparent 65%),linear-gradient(145deg,#1c3948,#0d2332);border:1px solid #55778b;border-radius:16px}
+#refuge-page-character .ash-workshop-eyebrow{font-size:10px;font-weight:900;letter-spacing:.12em;color:#e9b978}
+#refuge-page-character .ash-workshop-hero h3{color:#f4e0bf;font-size:20px;margin:8px 0 5px}
+#refuge-page-character .ash-workshop-hero p{font-size:12px;line-height:1.5;color:#bed1dc;margin:0 0 14px}
+#refuge-page-character .ash-workshop-wallet{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #476b7e;border-radius:9px;background:#0d2737;padding:11px 13px}
+#refuge-page-character .ash-workshop-wallet span{font-size:10px;font-weight:850;color:#d5e4e8;letter-spacing:.09em}
+#refuge-page-character .ash-workshop-wallet strong{font-size:22px;color:#ffdb9a;font-variant-numeric:tabular-nums}
+#refuge-page-character .ash-upgrade-cards{display:grid;gap:11px}
+#refuge-page-character .ash-upgrade-card{padding:15px;background:linear-gradient(150deg,#173546,#102634);border:1px solid #53768c;border-radius:15px;display:grid;gap:10px}
+#refuge-page-character .ash-upgrade-head{display:flex;align-items:center;gap:10px}
+#refuge-page-character .ash-upgrade-glyph{width:45px;height:45px;flex:0 0 45px;display:grid;place-items:center;border:1px solid #718c90;border-radius:12px;background:#253a43;color:#f1be77;font-size:25px}
+#refuge-page-character .ash-upgrade-head>div{flex:1;min-width:0}
+#refuge-page-character .ash-upgrade-head small{font-size:9px;color:#9fc6d4;letter-spacing:.14em;font-weight:800}
+#refuge-page-character .ash-upgrade-head h4{font-size:18px;color:#f2f6f7;margin:2px 0 0}
+#refuge-page-character .ash-upgrade-level{background:#233f50;border:1px solid #516e7f;padding:5px 7px;border-radius:7px;color:#f0d19d;font-size:11px;white-space:nowrap}
+#refuge-page-character .ash-upgrade-card>p{margin:0;font-size:12px;line-height:1.4;color:#bfd1d8}
+#refuge-page-character .ash-upgrade-track{height:7px;border-radius:30px;overflow:hidden;background:#091d28;border:1px solid #37566a}
+#refuge-page-character .ash-upgrade-track>span{height:100%;display:block;background:linear-gradient(90deg,#d49c58,#f1d095);transition:width .2s}
+#refuge-page-character .ash-upgrade-effect{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:11px;color:#a8c8d5}
+#refuge-page-character .ash-upgrade-effect strong{font-size:15px;color:#f3dcaf}
+#refuge-page-character .ash-upgrade-card>button{width:100%;min-height:45px;background:#274858;color:#f4dfb8;border:1px solid #d3a35c;border-radius:9px;font-weight:850;font-size:13px}
+#refuge-page-character .ash-upgrade-card>button:disabled{opacity:.45;cursor:not-allowed}
+#refuge-page-character .ash-workshop-footnote{margin:0;padding:11px;font-size:11px;line-height:1.5;color:#b5c9d5;border-left:3px solid #ccaa78;background:#122b3a;border-radius:0 8px 8px 0}
+#refuge-page-progress .ash-survival-summary{display:grid;gap:10px}
+#refuge-page-progress .ash-survival-summary h3{font-size:14px;color:#e9bc7a;margin:2px 0 0;letter-spacing:.07em}
+#refuge-page-progress .ash-survival-summary .refuge-stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+#refuge-page-progress .ash-technical-status{display:none!important}
+
+#refuge-page-progress .progress-sector.outpost::after{content:"BALISE"}

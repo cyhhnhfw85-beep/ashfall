@@ -57,3 +57,13 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 - Supprime les liens Postes du refuge en double : une seule navigation supérieure demeure.
 - La page Progression est renommée Secteurs et explique zones accessibles, avant-postes et Gardien sans faire croire à une carte géographique de combat.
 - Aucun changement du gameplay, de l'économie, des sauvegardes ni des graphismes déjà validés.
+
+## 0.8.9.39 — Accueil / Survivant / Atelier
+- L'accueil n'affiche plus ni équipement ni carte des secteurs, seulement le départ et le tutoriel.
+- Suppression du choix du point d'insertion; toutes les nouvelles expéditions commencent à l'entrée (zone 0).
+- Les balises/avant-postes historiques restent dans la carte et la sauvegarde pour compatibilité; les changements de gameplay plus profonds sont reportés.
+- Renommage Personnage -> Survivant; l'interface est séparée en Équipement et Atelier.
+- Pas d'assurance, stats ni résumé de l'arme équipé redondant sous le portrait et dans l'inventaire.
+- Bilan extraction / décès transféré dans Secteurs; Atelier présente les 2 upgrades existants dans un design dédié.
+- Valeurs d'améliorations inchangées (+15 PV ou +3 dégâts, coût 4 + 4*level recherche, niveau max 8); aucune nouvelle amélioration inventée.
+- Sauvegardes et assets existants conservés.
