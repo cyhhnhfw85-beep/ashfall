@@ -781,19 +781,122 @@ function advanceSolid(entity,dx,dy,radius,room){
  }
 }
 
+// V46 — Nomade gameplay : silhouette low-poly coherente avec l'illustration refuge.
+// Les facettes sont dessinees vectoriellement pour garder les contours nets pendant
+// le zoom camera. Ceci ne change ni les hitboxes, ni la cadence, ni les dommages.
+function nomadWeaponStyle(w){
+ const n=String(w&&w.name||'').toLowerCase();
+ if(/pistolet|pistol/.test(n))return 'pistol';
+ if(/smg|vektor/.test(n))return 'smg';
+ if(/impulsion|\bion[ -]/.test(n))return 'energy';
+ return 'rifle';
+}
+function drawNomadGameplay(x,y,clock,fx,fy,weapon,room){
+ const movement=Math.hypot(player?.dx||0,player?.dy||0);
+ const walking=movement>.13;
+ const swing=walking?Math.sin(clock*11)*3.4:0;
+ const bounce=walking?Math.abs(Math.sin(clock*11))*1.15:Math.sin(clock*2.2)*.25;
+ // Le canon vise la cible automatique si elle est visible ; sinon, derniere direction de deplacement.
+ let ax=Number.isFinite(fx)?fx:1,ay=Number.isFinite(fy)?fy:0;
+ if(room&&room.enemies&&room.enemies.length){
+  let target=null,dd=Infinity;
+  for(const enemy of room.enemies){
+   const dist=Math.hypot(enemy.x-x,enemy.y-y);
+   if(dist<dd&&dist<380&&hasLineOfSight(x,y,enemy.x,enemy.y,room)){
+    dd=dist;target=enemy;
+   }
+  }
+  if(target){ax=target.x-x;ay=target.y-y;}
+ }
+ if(Math.hypot(ax,ay)<.001){ax=1;ay=0;}
+ const ang=Math.atan2(ay,ax)+Math.PI/2;
+ const mode=nomadWeaponStyle(weapon);
+ const rifle=mode!=='pistol';
+ const accent=mode==='energy'?'#82d2e8':mode==='smg'?'#9caeac':'#c3b1a0';
+ function path(points,fill,stroke='#18232a',width=1.6){
+  cx.beginPath();cx.moveTo(points[0][0],points[0][1]);
+  for(let i=1;i<points.length;i++)cx.lineTo(points[i][0],points[i][1]);
+  cx.closePath();cx.fillStyle=fill;cx.fill();
+  if(stroke){cx.strokeStyle=stroke;cx.lineWidth=width;cx.lineJoin='round';cx.stroke();}
+ }
+ function line(x1,y1,x2,y2,c,w){cx.strokeStyle=c;cx.lineWidth=w;cx.lineCap='round';cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke();}
+ cx.save();
+ // Ombre sur le plan du sol : ne tourne pas avec le Nomade.
+ cx.fillStyle='#07151b91';cx.beginPath();cx.ellipse(x,y+12,16.5,6,0,0,Math.PI*2);cx.fill();
+ cx.translate(x,y-bounce);cx.rotate(ang);
+ // Bottes et jambes, leger mouvement symetrique autour d'une silhouette stable.
+ path([[-10,7+swing*.2],[-2,8],[0,17+swing],[-5,22+swing],[-12,19+swing]],'#353338');
+ path([[2,8],[10,7-swing*.2],[12,19-swing],[5,22-swing],[0,17-swing]],'#393a3c');
+ path([[-12,18+swing],[-5,19+swing],[-4,24+swing],[-14,24+swing]],'#b38d59');
+ path([[5,19-swing],[12,18-swing],[14,24-swing],[4,24-swing]],'#c79c60');
+ path([[-12,19+swing],[-8,18+swing],[-7,22+swing],[-14,22+swing]],'#e1ae6b',null);
+ path([[8,18-swing],[12,19-swing],[14,22-swing],[7,22-swing]],'#e1ad68',null);
+ // Sac a dos dorsal, visible autour des epaules et en arriere de la cape.
+ path([[-10,-10],[-13,-3],[-14,9],[-8,13],[8,13],[14,9],[13,-3],[10,-10]],'#242b2e');
+ path([[-12,-3],[-14,7],[-9,10],[-8,-4]],'#4e4841',null);
+ path([[9,-3],[13,-2],[12,8],[8,11]],'#333c3d',null);
+ line(-9,5,9,5,'#707069',1.2);
+ // Tunique : forme triangulee compacte, base assez large pour conserver le volume.
+ path([[-11,-9],[-15,-2],[-11,12],[11,12],[15,-2],[11,-9]],'#b98243');
+ path([[-11,-9],[0,-12],[3,9],[-11,12],[-15,-2]],'#e3a960',null);
+ path([[0,-12],[11,-9],[15,-2],[11,12],[3,9]],'#bf8749',null);
+ path([[-10,-8],[-3,-10],[1,2],[-6,3]],'#f1bd75',null);
+ path([[3,-8],[12,-7],[10,5],[2,9]],'#a8753f',null);
+ path([[-10,8],[10,8],[11,12],[-11,12]],'#3d342f',null);
+ path([[5,1],[8,5],[5,9],[2,5]],'#244251','#1b3036',.7);
+ // Bras droit tenant l'arme ; avant-bras et gants restent joints au torse.
+ path([[9,-9],[16,-9],[18,-16],[12,-20],[6,-15]],'#cc9051');
+ path([[12,-20],[18,-16],[17,-12],[10,-13]],'#e6a965',null);
+ // Bras de soutien du fusil, sous le canon. Pistolet : bras gauche replie.
+ if(rifle){
+  path([[-10,-9],[-16,-10],[-12,-19],[-3,-17],[2,-15]],'#c98d4d');
+  path([[-12,-18],[-3,-17],[1,-15],[-6,-13]],'#edb36b',null);
+  path([[-4,-19],[2,-20],[4,-16],[0,-13],[-4,-14]],'#3a3533');
+ }else{
+  path([[-11,-9],[-16,-7],[-13,1],[-7,2],[-5,-5]],'#c68a49');
+  path([[-15,-5],[-12,-7],[-9,-2],[-12,1]],'#edb575',null);
+ }
+ // Capuche iconique : facettes sable et visage integralement sombre.
+ path([[-13,-15],[-9,-25],[0,-29],[10,-25],[13,-16],[10,-8],[0,-5],[-10,-8]],'#a5703b');
+ path([[-13,-15],[-9,-25],[0,-29],[0,-8],[-10,-8]],'#f3bb73',null);
+ path([[0,-29],[10,-25],[13,-16],[10,-8],[0,-8]],'#d0934b',null);
+ path([[-8,-17],[-5,-22],[6,-22],[9,-17],[7,-10],[0,-8],[-7,-11]],'#11171c','#252528',1);
+ path([[-7,-17],[-4,-22],[1,-22],[-1,-17],[-6,-14]],'#21272b',null);
+ path([[4,-10],[8,-14],[6,-11],[1,-9]],'#2e3130',null);
+ line(-11,-10,-7,-7,'#473523',1.4);line(8,-7,11,-10,'#493421',1.4);
+ // Main tenant l'arme devant l'epaule droite.
+ path([[11,-17],[16,-18],[18,-13],[15,-10],[10,-12]],'#343334');
+ path([[12,-18],[16,-17],[17,-15],[12,-15]],'#615246',null);
+ // Armes low-poly reconnaissables : pistol, SMG, rifle ou technologie.
+ if(!rifle){
+  path([[11,-14],[20,-14],[21,-28],[16,-31],[12,-29]],'#292e36');
+  path([[14,-26],[20,-27],[20,-30],[14,-30]],'#59616b',null);
+  path([[12,-14],[18,-14],[17,-7],[13,-8]],'#47413e');
+  line(13,-21,18,-21,'#92999b',1.1);
+  path([[15,-31],[20,-31],[20,-33],[15,-33]],'#27303a');
+ }else{
+  path([[11,-11],[17,-11],[17,-35],[13,-35],[11,-24]],'#262e35');
+  path([[12,-16],[19,-16],[18,-26],[13,-26]],'#4b5259');
+  path([[14,-33],[17,-33],[18,-41],[13,-41]],'#343c45');
+  line(14,-38,17,-38,accent,1.2);
+  path([[10,-19],[16,-19],[17,-14],[12,-12]],'#272d32');
+  path([[10,-20],[13,-20],[11,-29],[9,-27]],'#424444');
+  path([[15,-27],[19,-27],[18,-24],[16,-24]],'#7a8589',null);
+  if(mode==='energy'){
+   cx.fillStyle='#70d7ed';cx.fillRect(15,-39,2,10);
+   cx.strokeStyle='#59badb';cx.lineWidth=1;cx.strokeRect(13,-41,5,8);
+  }
+ }
+ cx.restore();
+}
+
 // 0.8.7: sprites pixel-art proceduraux, sans assets externes ni changement des hitbox.
 function px(x,y,w,h,color){cx.fillStyle=color;cx.fillRect(Math.round(x),Math.round(y),w,h)}
 function pixelActor(x,y,kind,phase=0,facingX=1,facingY=0){
  const t=Math.sin(phase*10),step=t>0?2:-2;
  cx.save();cx.translate(Math.round(x),Math.round(y));cx.imageSmoothingEnabled=false;
  if(kind==='player'){
-  // Ombre, jambes articulées, sac et casque avec visière orientée vers la cible.
-  px(-10,12,20,4,'#081c24');px(-7,7,5,7+step,'#34535f');px(2,7,5,7-step,'#34535f');
-  px(-11,-7,22,16,'#183b47');px(-7,-9,14,17,'#79c9ae');px(-5,-12,10,5,'#c4e9d5');
-  px(-7,-13,14,3,'#284f5b');px(-5,-8,10,5,'#243b54');px(-10,-5,4,10,'#aacbb8');px(7,-5,4,10,'#aacbb8');
-  px(-9,0,3,8,'#596c49');px(8,0,3,8,'#596c49');
-  let ax=Math.abs(facingX)>Math.abs(facingY)?(facingX>=0?10:-20):0,ay=Math.abs(facingY)>=Math.abs(facingX)?(facingY>=0?9:-17):-2;
-  px(ax,ay,13,5,'#152734');px(ax+2,ay+1,10,2,'#bed4db');
+  cx.restore();return; // Le Nomade est rendu par drawNomadGameplay.
  }else if(kind==='drone'){
   px(-15,-2,30,5,'#305b7a');px(-15,-6,5,13,'#83c7ee');px(10,-6,5,13,'#83c7ee');
   px(-10,-9,20,18,'#2e6484');px(-7,-6,14,11,'#79c6ec');px(-4,-4,8,5,'#0b263d');px(-2,-4,4,3,'#ecf6ff');
@@ -1264,7 +1367,7 @@ function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=
  drawScenicLife(room,sec,theme);
 drawRoomWalls(room,r);
 if((room.chestFx||0)>0){cx.save();cx.globalAlpha=Math.min(1,room.chestFx);cx.strokeStyle='#f7d58b';cx.lineWidth=5;cx.beginPath();cx.arc(180,110,25+(1.15-room.chestFx)*38,0,Math.PI*2);cx.stroke();cx.restore()}if(room.chest==='closed'){cx.fillStyle='#b98b4d';cx.fillRect(159,91,42,35);cx.fillStyle='#f0c878';cx.fillRect(177,91,7,35);px(162,94,36,3,'#674e39');px(163,121,34,3,'#674e39');px(169,103,4,14,'#d4a36a');cx.font='10px sans-serif';cx.textAlign='center';cx.fillText(isGuarded(r.current,r)?room.enemies.length?'🔒 GARDÉ':'DÉVERROUILLÉ':'COFFRE',180,79)}if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost'){cx.strokeStyle='#81cafd';cx.lineWidth=3;cx.strokeRect(145,159,70,70);cx.fillStyle='#b8e9ff';cx.textAlign='center';cx.font='bold 11px sans-serif';cx.fillText('📡 BALISE',180,192);cx.font='9px sans-serif';cx.fillText(region().outposts.includes(room.sector)?'ACTIVÉ':'APPROCHE POUR ACTIVER',180,208)}if(isExit(r.current,r)){cx.strokeStyle='#6ddfc3';cx.lineWidth=4;cx.beginPath();cx.arc(180,195,39,0,7);cx.stroke();cx.fillStyle='#c1f9e8';cx.font='bold 11px sans-serif';cx.textAlign='center';cx.fillText(r.exitStarted?'RESTE DANS LE CERCLE':'RESTE DANS LE CERCLE',180,199);if(!r.exitStarted){cx.strokeStyle='#ffca72';cx.lineWidth=7;cx.beginPath();cx.arc(180,195,44,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,(r.exitCharge||0)/3));cx.stroke();cx.fillText(Math.round(Math.min(100,(r.exitCharge||0)/3*100))+' %',180,214)}}
-lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}pixelActor(e.x,e.y,e.type,performance.now()/1000+(e.x*.04));cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-22,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-22,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){pixelActor(player.x,player.y,'player',performance.now()/1000,player.facingX||1,player.facingY||0)}cx.restore();}
+lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}pixelActor(e.x,e.y,e.type,performance.now()/1000+(e.x*.04));cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-22,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-22,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}cx.restore();}
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){
  if(locked())return false;
