@@ -1,6 +1,6 @@
-# ASHFALL 0.8.9.72 — Exploration et événements
+# ASHFALL 0.8.9.73 — Équipement et personnalisation
 
-Version complète, créée à partir de **0.8.9.70**, sans fusion de la branche boss 0.8.9.71.
+Version complète, créée à partir de **0.8.9.72**, sans fusion de la branche boss 0.8.9.71.
 
 ## Nouveautés
 - 7 découvertes facultatives générées sur les nouvelles cartes : 2 relais d’écho, 3 dépôts abandonnés, 2 signaux de détresse.
@@ -19,7 +19,11 @@ Version complète, créée à partir de **0.8.9.70**, sans fusion de la branche 
 - Graphismes d’armes, coffres, contrôles tactiles, combat et HUD de la 0.8.9.70 conservés.
 
 ## Installer
-Exporter d’abord la sauvegarde. Déployer **tous** les fichiers à la racine du site (y compris le sous-dossier `assets`). Vérifier l’affichage **0.8.9.72**. Ne pas écraser la sauvegarde locale.
+Exporter d’abord la sauvegarde. Déployer **tous** les fichiers à la racine du site (y compris le sous-dossier `assets`). Vérifier l’affichage **0.8.9.73**. Ne pas écraser la sauvegarde locale.
 
 ## Validation
 Tests Chromium sur 320, 390, 416 et 430 px, reprises d’événements, attribution une fois, ancien run et 150 générations procédurales. Un essai réel sur Safari iPhone demeure nécessaire.
+
+
+## 0.8.9.73 — Équipements tactiques
+Survivant → Équipement → Casque et module. Débloquer avec crédits et recherche, puis équiper une option de chaque catégorie. Les bonus sont activés uniquement au lancement d'une nouvelle expédition. Les anciennes expéditions reprennent telles quelles. Consulte CHANGELOG_08973.md.

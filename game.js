@@ -140,6 +140,91 @@ function premium(){return Math.max(20,Math.ceil(value(data.equipped)*.12))}
 function price(){return Math.round(value(data.equipped)*.55)}
 function tint(w){return ({'Commun':'#d9e2e9','Inhabituel':'#60de98','Rare':'#5aa9ff','Épique':'#c184ff','Légendaire':'#ffbd4c','Mythique':'#ff667c'})[w.rar]||'#d9e2e9'}
 function makeWeapon(level=0){let r=Math.random(),rar=r<.075?'Épique':r<.32?'Rare':'Commun';return{id:uid(),name:['Nomade','Vektor','Spectre','Ion','Cendre'][pick(0,4)]+'-'+pick(1,9),rar,dmg:pick(15,23)+level*2+(rar==='Rare'?8:rar==='Épique'?17:0),rate:Math.round((1.3+Math.random()*1.4)*10)/10}}
+
+// ASHFALL 0.8.9.73 — Configuration tactique du survivant.
+// Ces modules sont débloqués une fois, puis équipés au refuge. Ils ne tombent pas au sol,
+// ne sont ni revendables ni perdus à la mort. Le snapshot de départ reste immuable.
+const ASH_GEAR=Object.freeze([
+ {id:'helmet-scout',slot:'helmet',name:'Casque Éclaireur',icon:'next',rar:'Rare',credits:650,research:5,detail:'+6 % vitesse de déplacement',speed:.06},
+ {id:'helmet-guard',slot:'helmet',name:'Casque Bastion',icon:'shield',rar:'Épique',credits:1100,research:9,detail:'-10 % dégâts subis',resist:.10},
+ {id:'helmet-vital',slot:'helmet',name:'Casque Endurance',icon:'health',rar:'Rare',credits:800,research:7,detail:'+20 PV au départ',maxHp:20},
+ {id:'module-rate',slot:'module',name:'Stabilisateur de tir',icon:'rate',rar:'Rare',credits:850,research:7,detail:'+8 % cadence de tir',rate:.08},
+ {id:'module-power',slot:'module',name:'Amplificateur balistique',icon:'damage',rar:'Épique',credits:1250,research:10,detail:'+6 % dégâts des tirs',damage:.06},
+ {id:'module-xp',slot:'module',name:'Analyseur tactique',icon:'research',rar:'Rare',credits:800,research:7,detail:'+12 % XP récoltée',xp:.12}
+]);
+const ashGearById=id=>ASH_GEAR.find(x=>x.id===id)||null;
+const ashGearEmpty=()=>({helmet:null,module:null,owned:[]});
+function ashGearState(){
+ const src=data.loadout&&typeof data.loadout==='object'?data.loadout:{};
+ const owned=Array.isArray(src.owned)?src.owned.filter(id=>typeof id==='string'&&!!ashGearById(id)):[];
+ const unique=[...new Set(owned)];
+ const helmet=unique.includes(src.helmet)&&ashGearById(src.helmet)?.slot==='helmet'?src.helmet:null;
+ const module=unique.includes(src.module)&&ashGearById(src.module)?.slot==='module'?src.module:null;
+ return {helmet,module,owned:unique};
+}
+function ashGearSnapshot(){const x=ashGearState();return {helmet:x.helmet,module:x.module};}
+function ashGearProfile(snapshot){
+ let result={maxHp:0,speed:0,resist:0,rate:0,damage:0,xp:0};
+ if(!snapshot||typeof snapshot!=='object')return result;
+ for(const slot of ['helmet','module']){
+  const item=ashGearById(snapshot[slot]);if(!item||item.slot!==slot)continue;
+  for(const k of Object.keys(result))result[k]+=Number(item[k])||0;
+ }
+ return result;
+}
+const ashRunGear=()=>ashGearProfile(data.run?.loadout);
+const ashGearTint={Commun:'#B9C9D3',Rare:'#6BAFFF','Épique':'#BB92F4','Légendaire':'#F3C674'};
+function ashGearRender(){
+ const host=$('ashGearConfigurator');if(!host||data.run)return;
+ const state=ashGearState();
+ const renderSlot=(slot,label,icon)=>{
+  const active=ashGearById(state[slot]);
+  const cards=ASH_GEAR.filter(x=>x.slot===slot).map(item=>{
+   const owned=state.owned.includes(item.id),equipped=state[slot]===item.id;
+   const available=data.credits>=item.credits&&data.research>=item.research;
+   return `<article class="ash-gear-card ${equipped?'is-equipped':''}" style="--gear-tone:${ashGearTint[item.rar]||'#B9C9D3'}">
+   <div class="ash-gear-card-top"><span class="ash-gear-icon">${afIcon(item.icon)}</span><div class="ash-gear-card-title"><small>${item.rar.toUpperCase()}</small><b>${item.name}</b></div>${equipped?'<span class="ash-gear-state">ACTIF</span>':''}</div>
+   <p>${item.detail}</p><button type="button" data-gear-id="${item.id}" ${equipped||(!owned&&!available)?'disabled':''} class="${equipped?'ash-gear-equipped':owned?'ash-gear-select':'ash-gear-buy'}">${equipped?'ÉQUIPÉ':owned?'ÉQUIPER':`DÉBLOQUER · ${item.credits} CR · ${item.research} REC`}</button></article>`;
+  }).join('');
+  return `<section class="ash-gear-section"><div class="ash-gear-slot-head">${afIcon(icon)} <div><h4>${label}</h4><small>${active?active.name+' · '+active.detail:'Aucun bonus équipé'}</small></div></div><div class="ash-gear-cards">${cards}</div><button type="button" class="ash-gear-remove" data-gear-remove="${slot}" ${!active?'disabled':''}>RETIRER LE ${label}</button></section>`;
+ };
+ host.innerHTML=`<div class="ash-gear-intro"><span class="ui-eyebrow">CONFIGURATION TACTIQUE // PERSISTANTE</span><h3>CASQUE ET MODULE</h3><p>Choisis un casque et un module avant l'expédition. Les améliorations achetées restent débloquées. Pas de perte à la mort ni de bonus sur les armes revendues.</p><div class="ash-gear-wallet">${afIcon('credits')} ${data.credits} CRÉDITS <span>${afIcon('research')} ${data.research} RECHERCHE</span></div></div>${renderSlot('helmet','CASQUE','shield')}${renderSlot('module','MODULE','rate')}`;
+ const helmetArt=$('ashHelmetSlotArt'),moduleArt=$('ashModuleSlotArt');
+ if(helmetArt)helmetArt.innerHTML=activeGearIcon(state.helmet,'shield');
+ if(moduleArt)moduleArt.innerHTML=activeGearIcon(state.module,'rate');
+ for(const slot of ['helmet','module']){
+  const label=$('ash'+(slot==='helmet'?'Helmet':'Module')+'SlotName');
+  if(label)label.textContent=ashGearById(state[slot])?.name||'Non équipé';
+ }
+}
+function activeGearIcon(id,fallback){return afIcon(ashGearById(id)?.icon||fallback)}
+function ashGearAction(id,remove=false){
+ if(data.run||data.pendingDebrief||data.chestPending)return;
+ const item=remove?null:ashGearById(id),slot=remove?id:item?.slot;
+ if(!['helmet','module'].includes(slot))return;
+ const previous=data.loadout;const beforeCredits=data.credits,beforeResearch=data.research;
+ const state=ashGearState();
+ if(remove){if(!state[slot])return;state[slot]=null;}
+ else{
+  if(state[slot]===id)return;
+  if(!state.owned.includes(id)){
+   if(data.credits<item.credits||data.research<item.research)return;
+   // Deux ressources consommées ensemble dans le même snapshot.
+   if(!confirm(`Débloquer ${item.name} pour ${item.credits} crédits et ${item.research} recherche ?`))return;
+   data.credits-=item.credits;data.research-=item.research;state.owned.push(id);
+  }
+  state[slot]=id;
+ }
+ data.loadout=state;
+ if(!persist()){
+  // Rétablir l'état mémoire lorsque l'écriture locale est refusée.
+  data.loadout=previous;
+  data.credits=beforeCredits;data.research=beforeResearch;
+  return;
+ }
+ render();msg(remove?'Équipement retiré.':`${item.name} prêt pour la prochaine expédition.`);
+}
+
 const maxHp=()=>100+data.hpLv*15;
 const damage=()=>data.run.equipped.dmg+data.dmgLv*3;
 
@@ -370,6 +455,7 @@ function spawnReinforcement(room,count){for(let k=0;k<count;k++){
 }}
 
 function createRun(){
+ const newLoadout=ashGearSnapshot(),initialHp=maxHp()+ashGearProfile(newLoadout).maxHp;
  let m=makeLargeMap();region().expeditions++;
  // Phase 3B/3C - equilibrage 0.8.9.55 : uniquement pour les nouvelles expeditions.
  // Les terminaux sont places en fonction de leur utilite : cartographie tot,
@@ -394,7 +480,7 @@ function createRun(){
   room.fieldRole=spec.role;assigned.add(room.id);
  }
  m.rooms.filter(z=>z.kind==='secret').forEach(z=>{z.fieldRole='cache'});
- // Phase Exploration 0.8.9.72 : sept découvertes facultatives, réparties entre
+ // Phase Exploration 0.8.9.73 : sept découvertes facultatives, réparties entre
  // les secteurs et distinctes des terminaux, incidents, boss et caches existants.
  // Une salle gardée compatible sert de secours si un secteur manque de salles ordinaires.
  // Les anciennes expéditions ne reçoivent jamais ces nouveaux événements.
@@ -453,7 +539,7 @@ function createRun(){
   if(!kind)continue; // On prefere moins d'incidents a une surrepresentation artificielle.
   room.incidentRole=kind;typeCounts[kind]++;
  }
- return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,interactiveV54:true,interactiveV72:true,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,contractId:ashChosenContract().id,earnedCredits:0,elapsedSeconds:0,kills:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,exitRoom:null,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}};
+ return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,interactiveV54:true,interactiveV72:true,loadout:newLoadout,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,contractId:ashChosenContract().id,earnedCredits:0,elapsedSeconds:0,kills:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,exitRoom:null,player:{x:180,y:310,hp:initialHp,max:initialHp,inv:0,fire:0,dash:0,dx:0,dy:0}};
 }
 function setPlayer(){player=data.run?.player||null}
 
@@ -473,6 +559,8 @@ function runProgress(){let r=data.run;if(!r)return null;
 }
 function xpThreshold(lv){return Math.round(10+lv*7+lv*lv*1.5)}
 function collectXp(amount,deferChoice=false){let r=runProgress();if(!r)return;
+ const scaled=Math.max(0,amount)*(1+ashRunGear().xp)+(Number(r.gearXpFraction)||0);
+ amount=Math.floor(scaled+1e-8);r.gearXpFraction=Math.max(0,scaled-amount);
  r.xp+=amount;r.xpTotal+=amount;
  let safety=0;while(r.xp>=xpThreshold(r.runLevel)&&safety++<50){r.xp-=xpThreshold(r.runLevel);r.runLevel++;r.pendingLevels++}
  if(r.pendingLevels>0&&!deferChoice&&overlay!=='level')openLevelChoice();
@@ -1115,14 +1203,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.72';
+const ASHFALL_RUNTIME_VERSION='0.8.9.73';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.72, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.73, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -1509,6 +1597,7 @@ function renderInventorySelection(){
 }
 function renderRefugeCharacter(){
  const stats=data.stats||{};
+ ashGearRender();
  if($('activeWeaponArt'))$('activeWeaponArt').innerHTML=weaponArt(data.equipped);
  if($('characterEquippedSlotArt'))$('characterEquippedSlotArt').innerHTML=weaponArt(data.equipped);
  if($('characterHeldWeaponImage')){
@@ -1674,8 +1763,8 @@ function render(){let r=data.run;if(!r&&$('ashLootToast'))$('ashLootToast').hidd
  
  const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();ashRenderContractSelection();ashRenderCareer();ashRefreshContractHud(null);if(refugeActivePage==='merchant')merchantRender();if(refugeActivePage==='chests')ashChestRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission().replace(/^[⚠⚡✦✓⚔📡◈]\s*/u,'');$('roomTitle').textContent=isBoss(r.current,r)?'BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'BALISE':`K-17 · ${r.current+1}/50`;$('hpText').textContent=`${Math.ceil(player.hp)} / ${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;if($('hpFill'))$('hpFill').classList.toggle('ash-critical',player.hp/player.max<.28);runProgress();$('bagCount').textContent=`${r.bag.length}/6`;ashRenderMiniMap(r);const xp=$('xpDisplay');if(xp){xp.textContent=`NIV. ${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)}`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}ashRefreshContractHud(r);const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
 function closeOverlay(){if(overlay==='level'&&data.run?.pendingLevels>0)return;if(overlayReturn==='pause'&&data.run&&(overlay==='bag'||overlay==='map')){overlayReturn='';openOverlay('pause');return;}overlayReturn='';overlay='';$('overlay').hidden=true;$('overlay').innerHTML='';if(data.run?.pendingLevels>0&&ashSweepChoiceTimer===null)openLevelChoice()}
-function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html='<button class="close" data-op="close">'+afIcon('close')+' Fermer</button>';if(mode==='bag'){html+=`<h3>${afIcon("bag")} SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>({w,i})).sort((a,b)=>(LOOT_RARITY_RANK[b.w.rar]||0)-(LOOT_RARITY_RANK[a.w.rar]||0)||lootPower(b.w)-lootPower(a.w)||a.i-b.i).map(({w,i})=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">${afIcon("info")} Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
-}else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy));if(coords.length){html+='<h3>'+afIcon('map')+' CARTE TACTIQUE — K-17</h3><p class="muted">Découvertes : '+ashDiscoveryStats(r).complete+'/'+ashDiscoveryStats(r).total+' explorées.</p><p class="muted">La forme de chaque pièce reflète sa géométrie : 1×1, 2×1, 1×2 ou en L. Un ? représente un indice de salle non visitée.</p><div class="ash-map-scroll">'+ashMapMarkup(r,false)+'</div><p class="muted">'+r.visited.length+'/50 salles explorées · ● Vous · B Gardien · A Arène · E Extraction · P Balise · D Découverte (d terminée). Glisse pour explorer la carte.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else if(mode==='pause')html=`<section class="ash-pause-card" role="dialog" aria-modal="true" aria-labelledby="ash-pause-title"><div class="ash-pause-emblem" aria-hidden="true">${afIcon("pause")}</div><div class="ash-pause-eyebrow">K-17 · EXPÉDITION EN COURS</div><h2 id="ash-pause-title">PAUSE</h2><p class="ash-pause-subtitle">Le temps est suspendu. Ton expédition est sauvegardée.</p><div class="ash-pause-stats"><span>${afIcon("map")} ${r.visited.length}/50 SALLES</span><span>${afIcon("bag")} ${r.bag.length}/6 OBJETS</span><span>${afIcon("xp")} NIV. ${r.runLevel||1}</span><span>${afIcon("map")} ${ashDiscoveryStats(r).complete}/${ashDiscoveryStats(r).total} DÉCOUVERTES</span></div><div class="ash-pause-actions"><button type="button" class="ash-pause-primary" data-op="resume">${afIcon("resume")} REPRENDRE</button><div class="ash-pause-shortcuts"><button type="button" data-op="bag">${afIcon("bag")} SAC</button><button type="button" data-op="map">${afIcon("map")} CARTE</button></div><button type="button" class="ash-pause-danger" data-op="retreat">Abandonner l’expédition</button></div><div class="ash-pause-footer">${afIcon("save")} Sauvegarde locale active</div></section>`;
+function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html='<button class="close" data-op="close">'+afIcon('close')+' Fermer</button>';if(mode==='bag'){html+=`<h3>${afIcon("bag")} SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ash-run-build"><b>CONFIGURATION</b> · ${ashGearById(r.loadout?.helmet)?.name||'Casque standard'} · ${ashGearById(r.loadout?.module)?.name||'Module vide'}</div><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>({w,i})).sort((a,b)=>(LOOT_RARITY_RANK[b.w.rar]||0)-(LOOT_RARITY_RANK[a.w.rar]||0)||lootPower(b.w)-lootPower(a.w)||a.i-b.i).map(({w,i})=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">${afIcon("info")} Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
+}else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy));if(coords.length){html+='<h3>'+afIcon('map')+' CARTE TACTIQUE — K-17</h3><p class="muted">Découvertes : '+ashDiscoveryStats(r).complete+'/'+ashDiscoveryStats(r).total+' explorées.</p><p class="muted">La forme de chaque pièce reflète sa géométrie : 1×1, 2×1, 1×2 ou en L. Un ? représente un indice de salle non visitée.</p><div class="ash-map-scroll">'+ashMapMarkup(r,false)+'</div><p class="muted">'+r.visited.length+'/50 salles explorées · ● Vous · B Gardien · A Arène · E Extraction · P Balise · D Découverte (d terminée). Glisse pour explorer la carte.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else if(mode==='pause')html=`<section class="ash-pause-card" role="dialog" aria-modal="true" aria-labelledby="ash-pause-title"><div class="ash-pause-emblem" aria-hidden="true">${afIcon("pause")}</div><div class="ash-pause-eyebrow">K-17 · EXPÉDITION EN COURS</div><h2 id="ash-pause-title">PAUSE</h2><p class="ash-pause-subtitle">Le temps est suspendu. Ton expédition est sauvegardée.</p><p class="ash-run-build">${ashGearById(r.loadout?.helmet)?.name||'Casque standard'} · ${ashGearById(r.loadout?.module)?.name||'Module vide'}</p><div class="ash-pause-stats"><span>${afIcon("map")} ${r.visited.length}/50 SALLES</span><span>${afIcon("bag")} ${r.bag.length}/6 OBJETS</span><span>${afIcon("xp")} NIV. ${r.runLevel||1}</span><span>${afIcon("map")} ${ashDiscoveryStats(r).complete}/${ashDiscoveryStats(r).total} DÉCOUVERTES</span></div><div class="ash-pause-actions"><button type="button" class="ash-pause-primary" data-op="resume">${afIcon("resume")} REPRENDRE</button><div class="ash-pause-shortcuts"><button type="button" data-op="bag">${afIcon("bag")} SAC</button><button type="button" data-op="map">${afIcon("map")} CARTE</button></div><button type="button" class="ash-pause-danger" data-op="retreat">Abandonner l’expédition</button></div><div class="ash-pause-footer">${afIcon("save")} Sauvegarde locale active</div></section>`;
 else if(mode==='retreatConfirm')html=`<section class="ash-pause-card ash-pause-confirm" role="dialog" aria-modal="true" aria-labelledby="ash-pause-confirm-title"><div class="ash-pause-emblem danger" aria-hidden="true">${afIcon("danger")}</div><h2 id="ash-pause-confirm-title">ABANDONNER ?</h2><p>Ton équipement non assuré et les crédits gagnés pendant cette expédition seront perdus.</p><button type="button" class="ash-pause-primary" data-op="backPause">CONTINUER L’EXPÉDITION</button><button type="button" class="ash-pause-danger" data-op="confirmRetreat">CONFIRMER L’ABANDON</button></section>`;$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
 function tool(title,html){$('toolsTitle').textContent=title;$('toolsBody').innerHTML=html;$('tools').hidden=false}
 function backup(){persist();const code=btoa(unescape(encodeURIComponent(JSON.stringify(data))));tool('EXPORT / IMPORT',`<p>Le code inclut le refuge et l’expédition en cours. Conserve-le dans Notes ou Fichiers.</p><textarea id="exportCode" readonly></textarea><button id="copyCode">Copier le code</button><p>Restaurer une sauvegarde :</p><textarea id="importCode" placeholder="Colle ici une sauvegarde..."></textarea><button id="restoreCode">Restaurer</button>`);$('exportCode').value=code;$('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('exportCode').value);msg('Code copié.')}catch(e){$('exportCode').select();msg('Sélectionne le texte pour le copier.')}};$('restoreCode').onclick=()=>{try{const decoded=JSON.parse(decodeURIComponent(escape(atob($('importCode').value.trim()))));if(!valid(decoded))throw Error('format');if(!confirm('Remplacer toute la progression actuelle ?'))return;data=decoded;setPlayer();if(data.run&&isArena(data.run.current,data.run))enforceArena();bullets=[];closeOverlay();runProgress();persist();render();if(data.run?.pendingLevels>0)openLevelChoice();$('tools').hidden=true;msg('Sauvegarde restaurée.')}catch(e){msg('Code invalide ou incompatible.')}}}
@@ -2798,7 +2887,7 @@ if(room.enemies.length){
 }
 drawFieldEvent(room);drawRefinedChest(room,r);if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
 lootDraw(room);ashSweepFxDraw();for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),room.kind==='boss'&&e.type==='sentinel');cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-39,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-39,30*Math.max(0,e.hp/e.max),4)}combatFxPaintBullets();if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}combatFxPaintWorld();cx.restore();combatFxPaintHurt();}
-function hurt(amount,cause='combat'){if(!player||!data.run||player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));combatFxDamagePlayer();player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false,cause)}
+function hurt(amount,cause='combat'){if(!player||!data.run||player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));combatFxDamagePlayer();player.hp-=Math.max(1,Math.round(amount*(1-ashRunGear().resist)));player.inv=.65;if(player.hp<=0)finish(false,cause)}
 function transition(){
  if(locked())return false;
  const r=data.run,id=r.current,room=r.rooms[id];
@@ -2811,7 +2900,7 @@ function transition(){
 }
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
 function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];combatFxStep(dt,room);ashSweepFxStep(dt);if(Number.isFinite(r.elapsedSeconds))r.elapsedSeconds+=dt;environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; updateInteractables(room,dt);if(!data.run)return; if(!room.cleared&&!room.hazardDisabled&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15,'environnement');if(!data.run)return;room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
-let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed'))*dt,vy*150*(1+perkBonus('speed'))*dt,12,room);if(transition())return;
+let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed')+ashRunGear().speed)*dt,vy*150*(1+perkBonus('speed')+ashRunGear().speed)*dt,12,room);if(transition())return;
 updateIncident(room,dt);if(!data.run)return;
 if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};const arenaReward=pick(150,250);r.earnedCredits+=arenaReward;r.economy.arena+=arenaReward;objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre épique en cours d’ouverture !')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=450;r.economy.boss+=450;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)&&!incidentBlocksClear(room)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=20;r.economy.room+=20;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
 if(room.enemies.length&&player.fire<=0){
@@ -2822,8 +2911,8 @@ if(room.enemies.length&&player.fire<=0){
   const spread=tactical?0:mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09;
   const ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;
   const shotKind=combatFxFire(player.x,player.y,ang,r.equipped);
-  bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,style:shotKind,dmg:damage()*(1+perkBonus('power')),ttl:1.5});
-  player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')))
+  bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,style:shotKind,dmg:damage()*(1+perkBonus('power'))*(1+ashRunGear().damage),ttl:1.5});
+  player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')+ashRunGear().rate))
  }}
 for(let e of room.enemies){let d=length(e,player),angle=Math.atan2(player.y-e.y,player.x-e.x);e.wind=e.wind||0;
  const oppositeWing=roomGeom(room).type==='ell'&&((e.x>355&&player.y>395)||(e.y>395&&player.x>355));
@@ -2965,6 +3054,7 @@ function survivorSwitch(panel){
  });
 }
 document.querySelectorAll('[data-survivor-panel]').forEach(button=>button.addEventListener('click',()=>survivorSwitch(button.dataset.survivorPanel)));
+$('ashGearConfigurator').addEventListener('click',e=>{const buy=e.target.closest('[data-gear-id]');if(buy){ashGearAction(buy.dataset.gearId);return}const rem=e.target.closest('[data-gear-remove]');if(rem)ashGearAction(rem.dataset.gearRemove,true);});
 
 function refugeNavigate(tab){
  if(data.run || !['home','character','merchant','progress','chests'].includes(tab))return;
