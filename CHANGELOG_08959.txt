@@ -1,0 +1,8 @@
+ASHFALL ALPHA 0.8.9.59 — COFFRES DU REFUGE
+- 3 coffres : commun 150, rare 400, épique 900 crédits.
+- Chances d'armes : commun 78/20/1,9/0,1 %, rare 35/55/9/1 %, épique 6/34/52/8 % (Commun/Rare/Épique/Légendaire).
+- Animation d'ouverture avec véritables sprites d'armes ASHFALL.
+- Transaction persistée avant révélation et reprise sûre après recharge.
+- Revente plafonnée à 25 % du prix du coffre.
+- Nouvelle navigation à cinq onglets adaptée à l'écran iPhone.
+- Version et cache PWA 08959.

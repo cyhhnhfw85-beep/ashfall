@@ -1,9 +1,10 @@
-# ASHFALL ALPHA 0.8.9.58 — Mini-carte, Pause, Bilan
+# ASHFALL 0.8.9.59 — Coffres du refuge
 
-- Mini-carte : l'ensemble des salles visitées et indices cartographiés reste visible, même après un changement de salle. Empreintes 1×1, 2×1, 1×2, L conservées.
-- Pause : panneau central avec accès Reprendre, Sac, Carte, et abandon avec confirmation intégrée.
-- Fin d'expédition : bilan distinct pour extraction, mort, abandon ; crédits conservés/perdus, recherche, XP temporaire, salles, éliminations et butin. Le bilan persiste jusqu'au retour explicite au refuge, y compris après rechargement.
-- Compteurs de temps actif et éliminations ajoutés à chaque nouvelle expédition. Les anciennes sauvegardes restent compatibles ; métriques indisponibles affichées par tiret.
-- Sauvegardes conservées sous la cle ashfall_pwa_v1 ; cache PWA 08958.
+Trois coffres achetables en crédits, une arme par coffre, probabilités affichées.
+Commun : 150 crédits (78 % commun, 20 % rare, 1,9 % épique, 0,1 % légendaire).
+Rare : 400 crédits (35 % commun, 55 % rare, 9 % épique, 1 % légendaire).
+Épique : 900 crédits (6 % commun, 34 % rare, 52 % épique, 8 % légendaire).
 
-Tester d'abord sur copie de sauvegarde. Les tests Chromium ne remplacent pas Safari iOS.
+Une transaction complète (prix, arme attribuée, ouverture en attente) est sauvegardée avant animation. La revente d'une arme obtenue par coffre est plafonnée à 25 % du prix d'achat.
+
+Installation : remplacer tous les fichiers du site. Sauvegardes sous ashfall_pwa_v1 conservées. Tester avec une exportation de sauvegarde.

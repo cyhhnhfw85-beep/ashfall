@@ -1,5 +1,5 @@
-const CACHE='ashfall-08958-hud-carte';
-const FILES=['./','./index.html','./game.css?v=08958','./game.js?v=08958','./immersion.js?v=08958','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='ashfall-08959-refuge-coffres';
+const FILES=['./','./index.html','./game.css?v=08959','./game.js?v=08959','./immersion.js?v=08959','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ashfall-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
