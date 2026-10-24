@@ -1,5 +1,5 @@
-const CACHE='ashfall-08975-fusion';
-const FILES=['./','./index.html','./game.css?v=08975','./identity-tokens.css?v=08975','./identity-components.css?v=08975','./identity-integrated.css?v=08975','./loot-phase.css?v=08975','./progression-phase.css?v=08975','./equipment-phase.css?v=08975','./longterm-phase.css?v=08975','./identity.js?v=08975','./game.js?v=08975','./immersion.js?v=08975','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='ashfall-08976-fusion';
+const FILES=['./','./index.html','./game.css?v=08976','./identity-tokens.css?v=08976','./identity-components.css?v=08976','./identity-integrated.css?v=08976','./loot-phase.css?v=08976','./progression-phase.css?v=08976','./equipment-phase.css?v=08976','./longterm-phase.css?v=08976','./identity.js?v=08976','./game.js?v=08976','./immersion.js?v=08976','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ashfall-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{

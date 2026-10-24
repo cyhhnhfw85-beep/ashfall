@@ -1,4 +1,4 @@
-# ASHFALL 0.8.9.75 — Validation de fusion
+# ASHFALL 0.8.9.76 — Validation de fusion
 
 ## Vérifications réalisées
 
@@ -10,8 +10,8 @@
 6. **Équipement** : trois casques et trois modules présents ; achat du casque Bastion et de l'Amplificateur balistique pour 2 350 crédits et 19 points de recherche au total, configuration sauvegardée ; nouvelle expédition avec résistance `0.10` et multiplicateur dégâts additionnel `0.06` ; bonus figés dans `run.loadout`.
 7. **Boss** : reconnaissance fonctionnelle d'un Gardien présent dans une salle de boss ; les fonctions de phase, salves et télégraphes sont incluses dans le moteur. Les trois phases n'ont pas été jouées manuellement sur téléphone.
 8. **Progression** : extraction synthétique avec quatre salles et 42 éliminations → progression sauvegardée une fois, une extraction enregistrée ; expédition suivante perdue → une mort, conservation de l'extraction précédente, une salle de plus et aucun insigne attribué à tort.
-9. **Anciennes sauvegardes** : snapshots d'expéditions en cours générés sous 0.8.9.70, 0.8.9.71, 0.8.9.73 et 0.8.9.74 chargés dans 0.8.9.75, expéditions reprises sans exception et champs facultatifs absents respectés.
-10. **Structure du paquet** : numéro de version du moteur, de l'HTML, des URL versionnées et du cache du service worker harmonisés sur 0.8.9.75.
+9. **Anciennes sauvegardes** : snapshots d'expéditions en cours générés sous 0.8.9.70, 0.8.9.71, 0.8.9.73 et 0.8.9.74 chargés dans 0.8.9.76, expéditions reprises sans exception et champs facultatifs absents respectés.
+10. **Structure du paquet** : numéro de version du moteur, de l'HTML, des URL versionnées et du cache du service worker harmonisés sur 0.8.9.76.
 
 ## Limites et suivi
 

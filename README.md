@@ -1,4 +1,4 @@
-# ASHFALL — Alpha PWA 0.8.9.75 | Opération Fusion
+# ASHFALL — Alpha PWA 0.8.9.76 | Correctif armes
 
 ## Objet de la livraison
 
@@ -15,7 +15,7 @@ Le système de contrôle, les images et les objets d'origine sont conservés. Le
 
 - Les télégraphes, le dessin et le HUD du Gardien de la 0.8.9.71 coexistent avec les bonus de réduction des dégâts de la 0.8.9.73.
 - Les styles de l'équipement tactique et de la maîtrise longue durée sont tous deux chargés et mis en cache.
-- La version visible, le moteur, le contrôle de version et le service worker annoncent **0.8.9.75**.
+- La version visible, le moteur, le contrôle de version et le service worker annoncent **0.8.9.76**.
 - Les anciennes expéditions continuent d'utiliser leurs paramètres enregistrés : ni équipements tactiques, ni découvertes ne sont injectés rétroactivement.
 
 ## Compatibilité des sauvegardes
@@ -28,11 +28,11 @@ La clé locale **`ashfall_pwa_v1`** et le schéma **`version:1`** restent inchan
 
 1. Exporter une sauvegarde depuis la version en cours.
 2. Copier **tous les fichiers et sous-dossiers** de ce ZIP à la racine du site ASHFALL ; conserver les chemins du dossier `assets`.
-3. Rafraîchir, vérifier que l'écran affiche **0.8.9.75** et utiliser le contrôle de version intégré si nécessaire.
+3. Rafraîchir, vérifier que l'écran affiche **0.8.9.76** et utiliser le contrôle de version intégré si nécessaire.
 4. Tester l'onglet **Survivant** (casques et modules) et **Secteurs** (maîtrise K-17), puis vérifier une sauvegarde préexistante.
 
 ## Vérification et limites
 
-Voir `CHANGELOG_08975.md` et `VALIDATION_08975.md`. Contrôles exécutés sur un document de test Chromium (l'environnement bloque `localhost` et `file://`) ; l'installation PWA réelle, les interactions tactiles sur Safari iPhone, les parties complètes avec boss et l'état hors ligne doivent encore être validés sur appareil.
+Voir `CHANGELOG_08976.md` et `VALIDATION_08976.md`. Contrôles exécutés sur un document de test Chromium (l'environnement bloque `localhost` et `file://`) ; l'installation PWA réelle, les interactions tactiles sur Safari iPhone, les parties complètes avec boss et l'état hors ligne doivent encore être validés sur appareil.
 
 **Défaut hérité identifié** : sur certaines petites largeurs mobiles, les illustrations du panneau Coffres et parfois celles du personnage dépassent horizontalement. Il n'a pas été modifié dans cette fusion pour éviter un correctif graphique non lié à l'intégration.
