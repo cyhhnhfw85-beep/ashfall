@@ -1041,14 +1041,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.69';
+const ASHFALL_RUNTIME_VERSION='0.8.9.70';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.69, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.70, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -1589,7 +1589,7 @@ function ashRenderMiniMap(run){
  const signature=[run.current,discovered,scanned,(run.intelRooms||[]).join(',')].join('|');
  if(signature!==ashLastMiniSignature){target.innerHTML=ashMapMarkup(run,true);ashLastMiniSignature=signature;}
 }
-function render(){let r=data.run;if(!r&&$('ashLootToast'))$('ashLootToast').hidden=true;document.body.classList.toggle('ashfall-expedition',!!r);$('home').hidden=!!r;$('game').hidden=!r;$('phase').textContent=r?'EXPÉDITION':'REFUGE';$('credits').textContent=data.credits;$('research').textContent=data.research;$('runs').textContent=data.runs;if(!r){if($('xpDisplay'))$('xpDisplay').style.display='none';$('hpLevel').textContent='Nv. '+data.hpLv+' / 8';$('dmgLevel').textContent='Nv. '+data.dmgLv+' / 8';
+function render(){let r=data.run;if(!r&&$('ashLootToast'))$('ashLootToast').hidden=true;document.body.classList.toggle('ashfall-expedition',!!r);$('home').hidden=!!r;$('game').hidden=!r;if(r)requestAnimationFrame(ashFitPlayfield);$('phase').textContent=r?'EXPÉDITION':'REFUGE';$('credits').textContent=data.credits;$('research').textContent=data.research;$('runs').textContent=data.runs;if(!r){if($('xpDisplay'))$('xpDisplay').style.display='none';$('hpLevel').textContent='Nv. '+data.hpLv+' / 8';$('dmgLevel').textContent='Nv. '+data.dmgLv+' / 8';
  if($('workshopResearchMirror'))$('workshopResearchMirror').textContent=data.research;
  if($('hpUpgradeFill'))$('hpUpgradeFill').style.width=(data.hpLv/8*100)+'%';
  if($('dmgUpgradeFill'))$('dmgUpgradeFill').style.width=(data.dmgLv/8*100)+'%';
@@ -2802,8 +2802,50 @@ drawTime+=dt;if(drawTime>.12){drawTime=0;render()}tickSave+=dt;if(tickSave>4){ti
 const joystickZone=$('joystickZone'),joyBase=$('joyBase'),joyKnob=$('joyKnob');
 function joystickPosition(e){const r=joystickZone.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
 function joystickPaint(){const dx=joy.cx-joystickZone.clientWidth/2,dy=joy.cy-joystickZone.clientHeight/2;joyBase.style.transform=`translate(${dx}px,${dy}px)`;joyKnob.style.transform=`translate(${joy.x*25}px,${joy.y*25}px)`;}
-function down(e){if(!data.run||overlay||joy.pointer!==null||(e.pointerType==='mouse'&&e.button!==0))return;const p=joystickPosition(e),w=joystickZone.clientWidth,h=joystickZone.clientHeight;const ox=p.x-w/2,oy=p.y-h/2,mag=Math.hypot(ox,oy),maxShift=34,ratio=mag>maxShift?maxShift/mag:1;joy={x:0,y:0,pointer:e.pointerId,cx:w/2+ox*ratio,cy:h/2+oy*ratio};joystickPaint();try{joystickZone.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();}
-function move(e){if(joy.pointer!==e.pointerId)return;const p=joystickPosition(e),dx=p.x-joy.cx,dy=p.y-joy.cy,mag=Math.hypot(dx,dy),radius=42;joy.x=mag>radius?dx/mag:dx/radius;joy.y=mag>radius?dy/mag:dy/radius;joystickPaint();e.preventDefault();}
+/* Géométrie visuelle sans changement des coordonnées du monde ou des collisions.
+   Mesure le bas réel du HUD et le haut de la surface du joystick pour éviter
+   tout recouvrement sur Safari, même avec les encoches et les barres du navigateur. */
+function ashFitPlayfield(){
+  if(!document.body.classList.contains('ashfall-expedition'))return;
+  const stage=$('stage'),hud=document.querySelector('#game .gamebar');
+  if(!stage||!hud||!joystickZone)return;
+  const bar=hud.getBoundingClientRect(),control=joystickZone.getBoundingClientRect();
+  const width=window.innerWidth||document.documentElement.clientWidth;
+  let fieldWidth,center,centerX;
+  if(width>window.innerHeight){
+    // En paysage le HUD et le joystick occupent des hauteurs incompatibles.
+    // Placer le terrain à droite des contrôles, sans les recouvrir.
+    const hudRight=Array.from(hud.children).reduce((x,el)=>Math.max(x,el.getBoundingClientRect().right),0);
+    const left=Math.max(hudRight,control.right)+12;
+    const freeWidth=Math.max(90,width-left-10);
+    fieldWidth=Math.min(freeWidth,(window.innerHeight-20)*360/400);
+    center=window.innerHeight/2;
+    centerX=left+freeWidth/2;
+  }else{
+    const top=Math.max(0,bar.bottom)+10;
+    const bottom=Math.min(window.innerHeight,control.top)-10;
+    if(!(bottom>top+110)||!(width>0))return;
+    // Au plus 13% d'agrandissement; sans déformation des sprites.
+    fieldWidth=Math.min(width*1.13,(bottom-top)*360/400);
+    center=(top+bottom)/2;
+    centerX=width/2;
+  }
+  const field=fieldWidth.toFixed(1)+'px',centerPos=center.toFixed(1)+'px',leftPos=centerX.toFixed(1)+'px';
+  if(stage.style.getPropertyValue('--ash-play-width')!==field)stage.style.setProperty('--ash-play-width',field);
+  if(stage.style.getPropertyValue('--ash-play-center')!==centerPos)stage.style.setProperty('--ash-play-center',centerPos);
+  if(stage.style.getPropertyValue('--ash-play-left')!==leftPos)stage.style.setProperty('--ash-play-left',leftPos);
+}
+function ashSchedulePlayfield(){requestAnimationFrame(ashFitPlayfield)}
+window.addEventListener('resize',ashSchedulePlayfield,{passive:true});
+window.addEventListener('orientationchange',ashSchedulePlayfield,{passive:true});
+if(window.visualViewport)window.visualViewport.addEventListener('resize',ashSchedulePlayfield,{passive:true});
+if(typeof ResizeObserver!=='undefined'){
+  const playObserver=new ResizeObserver(ashSchedulePlayfield);
+  playObserver.observe(document.querySelector('#game .gamebar'));
+  playObserver.observe(joystickZone);
+}
+function down(e){if(!data.run||overlay||joy.pointer!==null||(e.pointerType==='mouse'&&e.button!==0))return;const p=joystickPosition(e),w=joystickZone.clientWidth,h=joystickZone.clientHeight;const ox=p.x-w/2,oy=p.y-h/2,mag=Math.hypot(ox,oy),maxShift=Math.min(64,Math.max(34,(w-100)/2)),ratio=mag>maxShift?maxShift/mag:1;joy={x:0,y:0,pointer:e.pointerId,cx:w/2+ox*ratio,cy:h/2+oy*ratio};joystickPaint();try{joystickZone.setPointerCapture(e.pointerId)}catch(_){}e.preventDefault();}
+function move(e){if(joy.pointer!==e.pointerId)return;const p=joystickPosition(e),dx=p.x-joy.cx,dy=p.y-joy.cy,mag=Math.hypot(dx,dy),radius=46;joy.x=mag>radius?dx/mag:dx/radius;joy.y=mag>radius?dy/mag:dy/radius;joystickPaint();e.preventDefault();}
 function up(e){if(joy.pointer!==e.pointerId)return;joy={x:0,y:0,pointer:null,cx:0,cy:0};joyBase.style.transform='translate(0,0)';joyKnob.style.transform='translate(0,0)';e.preventDefault();}
 joystickZone.addEventListener('pointerdown',down);joystickZone.addEventListener('pointermove',move);joystickZone.addEventListener('pointerup',up);joystickZone.addEventListener('pointercancel',up);joystickZone.addEventListener('lostpointercapture',up);
 window.addEventListener('keydown',e=>{if(e.target.tagName==='TEXTAREA')return;keyState[e.key]=true;});window.addEventListener('keyup',e=>keyState[e.key]=false);

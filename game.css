@@ -953,3 +953,40 @@ body.ashfall-expedition #pauseBtn{flex-basis:30px!important;min-width:30px!impor
  body.ashfall-expedition .gamebar{grid-template-columns:minmax(0,190px) min(22vw,112px)!important;}
  body.ashfall-expedition .ash-minimap-button{height:65px!important;min-height:65px!important;max-height:65px!important;}
 }
+
+
+/* ASHFALL 0.8.9.70 — terrain plus vaste dans la zone réellement libre.
+   Le dessin reste au ratio original 360:400 : jamais d'étirement.
+   Le jeu ne passe ni sous le HUD ni sous la zone du joystick. */
+body.ashfall-expedition #stage{display:block!important;position:absolute;inset:0;overflow:hidden!important;padding:0!important;}
+body.ashfall-expedition #stage #canvas{
+  position:absolute!important;left:var(--ash-play-left,50%)!important;
+  top:var(--ash-play-center,50%)!important;
+  transform:translate(-50%,-50%)!important;
+  width:var(--ash-play-width,100vw)!important;
+  height:auto!important;aspect-ratio:9/10!important;
+  max-width:none!important;max-height:none!important;
+  object-fit:contain!important;image-rendering:pixelated;
+  box-shadow:0 0 0 1px #476c7738,0 0 35px #07131b70;
+}
+/* Surface invisible plus accueillante, contrôle visuel toujours compact. */
+body.ashfall-expedition #stage #joystickZone{
+  width:min(74vw,300px)!important;height:180px!important;
+  max-width:calc(100vw - 20px)!important;
+  left:50%!important;right:auto!important;
+  top:auto!important;bottom:calc(10px + env(safe-area-inset-bottom))!important;
+  transform:translateX(-50%)!important;
+  border:0!important;border-radius:85px!important;
+  background:radial-gradient(ellipse at 50% 62%,#28536129 0%,#15344312 54%,transparent 75%)!important;
+  touch-action:none!important;overscroll-behavior:contain;
+}
+body.ashfall-expedition #stage #joyBase{width:92px!important;height:92px!important;flex-shrink:0;}
+body.ashfall-expedition #stage #joyKnob{width:49px!important;height:49px!important;}
+@media(orientation:landscape){
+  body.ashfall-expedition #stage #joystickZone{
+    width:min(42vw,260px)!important;height:min(39dvh,154px)!important;
+    bottom:calc(5px + env(safe-area-inset-bottom))!important;
+  }
+  body.ashfall-expedition #stage #joyBase{width:76px!important;height:76px!important;}
+  body.ashfall-expedition #stage #joyKnob{width:42px!important;height:42px!important;}
+}
