@@ -105,3 +105,16 @@ Les salles étendues conservent pour cette phase les coffres, terminaux, dangers
 - Correctif ciblé : calcul de la présence dans le cercle directement dans `hudStatus()`, sans modifier les durées, les renforts, les récompenses ou les sauvegardes.
 - Le numéro de cache PWA est modifié pour éviter le chargement d'une ancienne version de JavaScript sur iPhone.
 - Test automatisé du cycle complet activation → deux vagues → succès → sauvegarde → refuge. Test réel sur iPhone toujours nécessaire.
+
+
+## 0.8.9.44 — Phase 2.5A, architecture graphique des salles
+
+- Quatre sols industriels distincts, rendus dans toutes les cellules des formats 1×1, 2×1, 1×2 et en L.
+- Uniformisation des dalles et accents de sol, retrait des fonds hétérogènes des extensions.
+- Murs plus lisibles avec surfaces, liserés, ombres et rivets — hitbox et largeur des portes inchangées.
+- Portes avec encadrements et code couleur de l'état, sans changer leur fonctionnement.
+- Décors fixes (sol, panneaux, textures, obstacles dessinés) pré-rendus dans des canvases hors écran, avec un cache limité à 2,4 millions de pixels (~9,6 Mio RGBA bruts).
+- Dangers, signalisation d'extraction, sprites, projectiles et effets animés restent mis à jour en temps réel hors cache.
+- Les particules des cellules hors champ ne sont pas dessinées.
+- Cache non persistant, compatible avec les sauvegardes antérieures et son mode de repli sans cache.
+- Visuels d'ennemis/Nomade et combat inchangés ; extraction 0.8.9.43 conservée.

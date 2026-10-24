@@ -1,5 +1,7 @@
 (()=>{'use strict';
-const $=id=>document.getElementById(id), cv=$('canvas'),cx=cv.getContext('2d'), KEY='ashfall_pwa_v1';
+const $=id=>document.getElementById(id), cv=$('canvas'), KEY='ashfall_pwa_v1';
+let cx=cv.getContext('2d'); // V44: le contexte est temporairement redirige pendant le pre-rendu des decors fixes.
+
 const pick=(a,b)=>Math.floor(a+Math.random()*(b-a+1)), clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), length=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
 const uid=()=> 'af-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10);
 const starter=()=>({id:uid(),name:'Pistolet usé',rar:'Commun',dmg:13,rate:1.8});
@@ -149,8 +151,27 @@ function cameraFor(room){
  return roomCamera;
 }
 function drawRoomWalls(room,r){
- const g=roomGeom(room);cx.fillStyle='#495864';
- for(const [x,y,w,h] of roomWalls(room))cx.fillRect(x,y,w,h);
+ const g=roomGeom(room),sec=sectorOf(room);
+ const dark=['#263c3d','#243e4b','#49392f','#383349'][sec],edge=['#84947e','#6892a6','#ad795a','#987da6'][sec];
+ for(const [x,y,w,h] of roomWalls(room)){
+  const vertical=h>w;
+  cx.fillStyle='#07192399';cx.fillRect(x+3,y+4,w,h);
+  cx.fillStyle=dark;cx.fillRect(x,y,w,h);
+  cx.fillStyle='#00000055';
+  if(vertical)cx.fillRect(x+(w>9?w-6:0),y,5,h);
+  else cx.fillRect(x,y+h-6,w,5);
+  cx.fillStyle=edge;cx.globalAlpha=.65;
+  if(vertical)cx.fillRect(x+2,y+2,3,Math.max(0,h-4));
+  else cx.fillRect(x+2,y+2,Math.max(0,w-4),3);
+  cx.globalAlpha=1;
+  // Rivets espacés ; le mur reste plat en collision mais gagne du relief visuel.
+  const count=Math.floor((vertical?h:w)/72);
+  cx.fillStyle='#bfcbd17d';
+  for(let i=0;i<count;i++){
+   if(vertical)cx.fillRect(x+8,y+27+i*72,3,3);
+   else cx.fillRect(x+27+i*72,y+9,3,3);
+  }
+ }
  for(const d of doors(room.id)){
   const anchor=roomDoor(room,d.side),side=d.side;
   const vertical=side==='left'||side==='right';
@@ -158,9 +179,15 @@ function drawRoomWalls(room,r){
   const y=vertical?anchor.y-38:anchor.y-(side==='bottom'?20:0);
   const w=vertical?20:70,h=vertical?76:20;
   const arenaEntry=(isArena(d.to,r)||isBoss(d.to,r))&&!r.rooms[d.to].cleared;
-  cx.fillStyle=!canPassDoor(d.to)?'#d76b63':arenaEntry?'#d9933f':'#55b8a3';cx.fillRect(x,y,w,h);
-  cx.fillStyle='#122832';if(vertical)cx.fillRect(x,y+6,w,h-12);else cx.fillRect(x+6,y,w-12,h);
-  if(!canPassDoor(d.to)||arenaEntry){cx.strokeStyle=arenaEntry?'#ffe0a2':'#ffaaa4';cx.lineWidth=2;cx.strokeRect(x+2,y+2,w-4,h-4)}
+  const lockedDoor=!canPassDoor(d.to),color=lockedDoor?'#df7066':arenaEntry?'#e1ab5b':'#64bda8';
+  cx.fillStyle='#061d25';cx.fillRect(x-2,y-2,w+4,h+4);
+  cx.fillStyle=color;cx.fillRect(x,y,w,h);
+  cx.fillStyle='#142c34';if(vertical)cx.fillRect(x+5,y+5,w-10,h-10);else cx.fillRect(x+5,y+5,w-10,h-10);
+  cx.fillStyle=color;cx.globalAlpha=.52;
+  if(vertical){cx.fillRect(x+7,y+8,w-14,4);cx.fillRect(x+7,y+h-12,w-14,4)}
+  else{cx.fillRect(x+8,y+7,8,h-14);cx.fillRect(x+w-16,y+7,8,h-14)}
+  cx.globalAlpha=1;
+  if(lockedDoor||arenaEntry){cx.strokeStyle=lockedDoor?'#ffb1a6':'#ffe0a2';cx.lineWidth=2;cx.strokeRect(x+2,y+2,w-4,h-4)}
  }
 }
 function paintExtraCells(room,theme){
@@ -910,7 +937,7 @@ function drawScenicProps(room,sec,theme){
    cx.fillStyle='#c19b5b';cx.fillRect(x+w/2-4,y+1,8,4);
   }else if(sec===1){
    scenePanel(x,y,w,h,'#2d5c72','#163847','#6fb5ce');
-   for(let py=y+9;py<y+h-5;py+=14){cx.fillStyle='#0d2c40';cx.fillRect(x+3,py,w-6,7);cx.fillStyle=room.cleared?'#507c81':theme.accent;cx.fillRect(x+5,py+2,3,2)}
+   for(let py=y+9;py<y+h-5;py+=14){cx.fillStyle='#0d2c40';cx.fillRect(x+3,py,w-6,7);cx.fillStyle=theme.accent;cx.fillRect(x+5,py+2,3,2)}
   }else if(sec===2){
    scenePanel(x,y,w,h,'#72503a','#382c2a','#b28055');
    cx.fillStyle='#271f1f';cx.fillRect(x+5,y+9,w-10,h-17);
@@ -929,6 +956,8 @@ function drawScenicLife(room,sec,theme){
  cx.save();
  for(const cell of scene.cells){
   const {x,y,motes,open}=cell;
+  const cam=roomCamera,pad=50,viewW=360/cam.zoom,viewH=400/cam.zoom;
+  if(x>cam.x+viewW+pad||x+CELL_W<cam.x-pad||y>cam.y+viewH+pad||y+CELL_H<cam.y-pad)continue;
   // Petites étincelles, poussières ou particules ionisées, sans bande lumineuse opaque.
   for(const [i,m] of motes.entries()){
    let offset=(t*m.speed*13+i*3)%30;
@@ -962,11 +991,69 @@ function drawScenicLife(room,sec,theme){
  cx.restore();
 }
 
+// V44 — un sol distinct pour chaque secteur, uniquement de la peinture au sol.
+// La cellule de 360x400 est une unite graphique, pas une nouvelle salle logique.
+function drawSectorSurface(room,sec,theme){
+ const cells=sceneData(room).cells;
+ for(const cell of cells){
+  const {x,y,number,variation}=cell;
+  // Plaques fines en teintes proches, sans barre opaque ni element trompeusement solide.
+  cx.lineWidth=1;
+  for(let row=0;row<5;row++)for(let col=0;col<4;col++){
+   const px=x+26+col*77+(row%2)*4,py=y+27+row*70;
+   cx.fillStyle=((row*11+col*7+number)%4===0)?'#ffffff08':'#0000000b';
+   cx.fillRect(px,py,72,65);
+   cx.strokeStyle=theme.grid;cx.globalAlpha=.28;
+   cx.strokeRect(px+.5,py+.5,72,65);cx.globalAlpha=1;
+  }
+  if(sec===0){
+   // Peripherie : reprises de beton, marques effacees et fissures superficielles.
+   cx.fillStyle='#6d796342';cx.fillRect(x+44,y+160,92,3);
+   cx.fillStyle='#c6b07926';cx.fillRect(x+54,y+170,63,2);
+   sceneLine(x+232,y+89,x+249,y+101,'#121f2388',2);
+   sceneLine(x+249,y+101,x+239,y+123,'#121f2388',2);
+   cx.fillStyle='#a38f6840';cx.fillRect(x+251,y+305,35,3);
+  }else if(sec===1){
+   // Laboratoires : pistes de maintenance fines, joints et points d'inspection.
+   sceneLine(x+44,y+113,x+44,y+273,'#437d9569',2);
+   sceneLine(x+44,y+273,x+92,y+273,'#437d9569',2);
+   sceneLine(x+314,y+113,x+314,y+271,'#437d9569',2);
+   cx.fillStyle='#69b3c350';cx.fillRect(x+36,y+123,16,4);cx.fillRect(x+306,y+261,16,4);
+   cx.strokeStyle='#54879a72';cx.strokeRect(x+151.5,y+168.5,58,52);
+   cx.fillStyle='#29536b99';cx.fillRect(x+164,y+181,32,3);
+  }else if(sec===2){
+   // Fonderie : bandes de securite peintes et evacuation de chaleur au sol.
+   cx.save();cx.beginPath();cx.rect(x+59,y+319,72,16);cx.clip();
+   for(let i=-4;i<9;i++)sceneLine(x+65+i*13,y+339,x+83+i*13,y+315,'#af795075',4);
+   cx.restore();
+   for(let i=0;i<6;i++){
+    cx.fillStyle=i%2?'#704e39':'#aa7a4f';cx.globalAlpha=.34;
+    cx.fillRect(x+261,y+151+i*7,46,3);
+   }cx.globalAlpha=1;
+   cx.fillStyle='#e39a5240';cx.fillRect(x+139,y+73,53,3);
+  }else{
+   // Citadelle : panneaux blindes, coutures symetriques et marquage de defense.
+   cx.strokeStyle='#8f71936e';cx.lineWidth=2;cx.strokeRect(x+136,y+148,88,90);
+   sceneLine(x+147,y+162,x+213,y+227,'#9877a159',2);
+   sceneLine(x+213,y+162,x+147,y+227,'#9877a159',2);
+   for(let i=0;i<4;i++){
+    cx.fillStyle='#d69aca55';cx.fillRect(x+60+i*10,y+96,5,3);
+    cx.fillRect(x+262+i*10,y+292,5,3);
+   }
+  }
+  // Repere au sol, non interactif. Le label de la cellule reste discret.
+  cx.fillStyle='#d5dce047';cx.font='bold 9px monospace';cx.textAlign='right';
+  cx.fillText('K17-'+String(number).padStart(2,'0'),x+CELL_W-37,y+CELL_H-36);
+ }
+}
+
 function drawPixelFloor(room,sec,theme){
- // Dalles, coutures, usure et lumières fixes; pas de nouvel obstacle invisible.
+ // Textures locales reutilisees sur chaque cellule, y compris les ailes de L.
+ for(const [tx,ty] of roomGeom(room).cells){
+  cx.save();cx.translate(tx*CELL_W,ty*CELL_H);
  cx.save();cx.globalAlpha=.45;
  for(let yy=20;yy<380;yy+=40)for(let xx=20;xx<340;xx+=40){
-  let hash=((xx*17+yy*31+room.id*97)>>>0)%11;
+  let hash=((xx*17+yy*31+room.id*97+tx*41+ty*67)>>>0)%11;
   if(hash<4){px(xx+5,yy+5,25,2,theme.grid);px(xx+5,yy+5,2,12,theme.grid)}
   if(hash===7){px(xx+23,yy+28,8,2,theme.accent);px(xx+27,yy+25,2,6,theme.accent)}
   if(hash===9){px(xx+7,yy+24,3,3,'#71828b');px(xx+15,yy+29,4,2,'#71828b')}
@@ -976,27 +1063,72 @@ function drawPixelFloor(room,sec,theme){
  if(sec===1){for(let i=0;i<4;i++){let x=42+(i*82+room.id*7)%256;px(x,62,22,4,'#316781');px(x+3,66,5,3,'#5bb5c9')}}
  if(sec===2){for(let i=0;i<6;i++){let x=41+(i*55+room.id*9)%260,y=61+(i*47)%245;px(x,y,7,3,'#845641');px(x+3,y-4,2,4,'#e59c57')}}
  if(sec===3){for(let i=0;i<5;i++){let x=47+(i*61+room.id*7)%245;px(x,46,15,3,'#70446e');px(x+4,49,4,5,'#8b5c9b')}}
+ cx.restore();
+ }
 }
+
+// V44 : cache LRU des couches fixes par objet-salle et budget de pixels.
+// Ne contient jamais les ennemis, projectiles, hazards, portes verrouillees ou UI.
+const staticSurfaces=new Map();
+const STATIC_MAX_PIXELS=2400000; // env. 9.6 Mio en RGBA, sans compter les overheads navigateur.
+let staticSurfacePixels=0,staticPaintCount=0;
+function paintStaticSurface(room,sec,theme){
+ drawScenicFloor(room,sec,theme);
+ drawSectorSurface(room,sec,theme);
+ drawPixelFloor(room,sec,theme);
+ drawScenicProps(room,sec,theme);
+ cx.font='bold 10px monospace';cx.fillStyle=theme.accent;cx.textAlign='left';
+ cx.fillText('SECTEUR '+(sec+1)+' · '+theme.name,27,32);
+}
+function drawCachedSurface(room,sec,theme){
+ const geom=roomGeom(room);
+ let canvas=staticSurfaces.get(room);
+ if(canvas){staticSurfaces.delete(room);staticSurfaces.set(room,canvas);cx.drawImage(canvas,0,0);return}
+ try{
+  canvas=document.createElement('canvas');canvas.width=geom.w;canvas.height=geom.h;
+  const off=canvas.getContext('2d',{alpha:false});if(!off)throw Error('offscreen context unavailable');
+  const onscreen=cx;cx=off;
+  try{cx.fillStyle='#091b25';cx.fillRect(0,0,geom.w,geom.h);paintStaticSurface(room,sec,theme)}finally{cx=onscreen}
+  staticPaintCount++;
+  staticSurfaces.set(room,canvas);staticSurfacePixels+=geom.w*geom.h;
+  while(staticSurfacePixels>STATIC_MAX_PIXELS&&staticSurfaces.size>1){
+   const [oldRoom,oldCanvas]=staticSurfaces.entries().next().value;
+   staticSurfacePixels-=oldCanvas.width*oldCanvas.height;staticSurfaces.delete(oldRoom);
+  }
+  cx.drawImage(canvas,0,0);
+ }catch(err){
+  // Safe-mode: la piece reste dessinable sur Safari en cas de manque de memoire.
+  paintStaticSurface(room,sec,theme);
+ }
+}
+function drawDynamicHazard(room,sec){
+ if(room.cleared)return;
+ cx.save();
+ if(sec===1){
+  cx.strokeStyle=room.hazardOn?'#7fe8ff':'#418baa';cx.lineWidth=room.hazardOn?7:2;
+  cx.beginPath();cx.moveTo(room.hazardX||180,42);cx.lineTo(room.hazardX||180,356);cx.stroke();
+  cx.fillStyle='#bfeeff';cx.font='10px monospace';cx.textAlign='left';
+  cx.fillText(room.hazardOn?'⚠ LASER ACTIF':'LASER EN CHARGE',170,54);
+ }else if(sec===2){
+  cx.beginPath();cx.arc(room.hazardX||240,205,42,0,Math.PI*2);
+  cx.fillStyle=room.hazardOn?'#ff773977':'#b16d2f33';cx.fill();
+  cx.strokeStyle=room.hazardOn?'#ffc178':'#a7784c';cx.lineWidth=3;cx.stroke();
+  cx.fillStyle='#ffd6a8';cx.font='10px monospace';cx.textAlign='left';
+  cx.fillText(room.hazardOn?'⚠ CHALEUR':'ÉVENT EN CHARGE',170,53);
+ }
+ cx.restore();
+}
+// Test hook en lecture seule: compte les rendus statiques et l'espace du cache.
+window.__ashfallVisualStats=()=>({paints:staticPaintCount,rooms:staticSurfaces.size,pixels:staticSurfacePixels});
 
 function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=sectorOf(room),theme=SECTORS[sec];
  cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,360,400);cx.save();
  const camera=cameraFor(room);window.__ashfallCamera={x:camera.x,y:camera.y,zoom:camera.zoom};cx.setTransform(camera.zoom,0,0,camera.zoom,-camera.x*camera.zoom,-camera.y*camera.zoom);
  cx.fillStyle='#091b25';cx.fillRect(camera.x,camera.y,360/camera.zoom,400/camera.zoom);
- paintExtraCells(room,theme);
- cx.fillStyle=isArena(r.current,r)||isBoss(r.current,r)?'#282631':isExit(r.current,r)?'#1a3436':theme.bg;cx.fillRect(0,0,360,400);cx.lineWidth=1;cx.strokeStyle=theme.grid;for(let x=20;x<360;x+=40){cx.beginPath();cx.moveTo(x,20);cx.lineTo(x,380);cx.stroke()}for(let y=20;y<400;y+=40){cx.beginPath();cx.moveTo(20,y);cx.lineTo(340,y);cx.stroke()}
- drawScenicFloor(room,sec,theme);
-// Micro-textures déterministes : ambiance pixel-art sans assets externes, ne changent jamais les hitbox.
-cx.save();for(let j=0;j<23;j++){let x=27+(j*83+(r.current*19))%302,y=45+(j*137+r.current*11)%302;cx.fillStyle=j%3===0?theme.accent:'#83939a';cx.globalAlpha=j%3===0?.14:.08;cx.fillRect(x,y,j%4===0?11:4,j%4===0?3:4)}cx.restore();drawPixelFloor(room,sec,theme);
-// Identité visuelle des secteurs et dangers annoncés.
-cx.save();cx.globalAlpha=.75;
-if(sec===0){cx.fillStyle='#55665b';for(let [x,y,w,h] of roomObstacles(room)){cx.fillRect(x,y,w,h);cx.strokeStyle='#9bab89';cx.strokeRect(x,y,w,h)}}
-if(sec===1){cx.fillStyle='#254f6c';for(let x of [55,290]){cx.fillRect(x,44,16,43);cx.fillRect(x,275,16,54)}if(!room.cleared){cx.strokeStyle=room.hazardOn?'#7fe8ff':'#418baa';cx.lineWidth=room.hazardOn?7:2;cx.beginPath();cx.moveTo(room.hazardX||180,42);cx.lineTo(room.hazardX||180,356);cx.stroke();cx.fillStyle='#bfeeff';cx.font='10px sans-serif';cx.fillText(room.hazardOn?'⚠ LASER ACTIF':'LASER EN CHARGE',180,54)}}
-if(sec===2){for(let x of [65,290]){cx.fillStyle='#624432';cx.fillRect(x-20,62,35,37);cx.fillRect(x-20,276,35,37)}if(!room.cleared){cx.beginPath();cx.arc(room.hazardX||240,205,42,0,Math.PI*2);cx.fillStyle=room.hazardOn?'#ff773977':'#b16d2f33';cx.fill();cx.strokeStyle=room.hazardOn?'#ffc178':'#a7784c';cx.lineWidth=3;cx.stroke();cx.fillStyle='#ffd6a8';cx.font='10px sans-serif';cx.fillText(room.hazardOn?'⚠ CHALEUR':'ÉVENT EN CHARGE',180,53)}}
-if(sec===3){cx.strokeStyle='#b478a9';cx.lineWidth=3;for(let x of [47,313]){cx.strokeRect(x-11,72,22,35);cx.strokeRect(x-11,273,22,35)}}
-cx.restore();
- drawScenicProps(room,sec,theme);
+ // V44: la couche statique couvre toutes les cellules ; aucun effet anime n'entre dans le cache.
+ drawCachedSurface(room,sec,theme);
+ drawDynamicHazard(room,sec);
  drawScenicLife(room,sec,theme);
- cx.font='bold 10px sans-serif';cx.fillStyle=theme.accent;cx.textAlign='left';cx.fillText('SECTEUR '+(sec+1)+' · '+theme.name,27,32);
 drawRoomWalls(room,r);
 if((room.chestFx||0)>0){cx.save();cx.globalAlpha=Math.min(1,room.chestFx);cx.strokeStyle='#f7d58b';cx.lineWidth=5;cx.beginPath();cx.arc(180,110,25+(1.15-room.chestFx)*38,0,Math.PI*2);cx.stroke();cx.restore()}if(room.chest==='closed'){cx.fillStyle='#b98b4d';cx.fillRect(159,91,42,35);cx.fillStyle='#f0c878';cx.fillRect(177,91,7,35);px(162,94,36,3,'#674e39');px(163,121,34,3,'#674e39');px(169,103,4,14,'#d4a36a');cx.font='10px sans-serif';cx.textAlign='center';cx.fillText(isGuarded(r.current,r)?room.enemies.length?'🔒 GARDÉ':'DÉVERROUILLÉ':'COFFRE',180,79)}if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost'){cx.strokeStyle='#81cafd';cx.lineWidth=3;cx.strokeRect(145,159,70,70);cx.fillStyle='#b8e9ff';cx.textAlign='center';cx.font='bold 11px sans-serif';cx.fillText('📡 BALISE',180,192);cx.font='9px sans-serif';cx.fillText(region().outposts.includes(room.sector)?'ACTIVÉ':'APPROCHE POUR ACTIVER',180,208)}if(isExit(r.current,r)){cx.strokeStyle='#6ddfc3';cx.lineWidth=4;cx.beginPath();cx.arc(180,195,39,0,7);cx.stroke();cx.fillStyle='#c1f9e8';cx.font='bold 11px sans-serif';cx.textAlign='center';cx.fillText(r.exitStarted?'RESTE DANS LE CERCLE':'RESTE DANS LE CERCLE',180,199);if(!r.exitStarted){cx.strokeStyle='#ffca72';cx.lineWidth=7;cx.beginPath();cx.arc(180,195,44,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,(r.exitCharge||0)/3));cx.stroke();cx.fillText(Math.round(Math.min(100,(r.exitCharge||0)/3*100))+' %',180,214)}}
 lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}pixelActor(e.x,e.y,e.type,performance.now()/1000+(e.x*.04));cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-22,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-22,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){pixelActor(player.x,player.y,'player',performance.now()/1000,player.facingX||1,player.facingY||0)}cx.restore();}
