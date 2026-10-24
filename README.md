@@ -1,18 +1,25 @@
-# ASHFALL — Alpha PWA 0.8.9.71
+# ASHFALL 0.8.9.72 — Exploration et événements
 
-Correctif de collecte et de lisibilité en expédition. Déployer tous les fichiers à la racine de l'hébergement ; sauvegarder/exporter sa progression avant installation.
+Version complète, créée à partir de **0.8.9.70**, sans fusion de la branche boss 0.8.9.71.
 
-- Dès qu'une salle est effectivement sécurisée, l'XP et les crédits au sol sont crédités en une seule transaction locale, avec un effet visuel d'aspiration de 0,62 seconde. Les boss et arènes attendent la fin de toutes leurs vagues.
-- Les armes ne sont jamais aspirées automatiquement. Au sol, elles affichent une petite silhouette tactique colorée selon leur rareté ; les illustrations originales restent inchangées dans les sacs et fenêtres.
-- Le bonus de magnétisme n'est plus proposé. Les choix déjà stockés dans un ancien run sont régénérés parmi les quatre bonus restants, sans toucher aux effets déjà appliqués.
-- HUD supérieur raccourci pour conserver une meilleure visibilité du terrain sur iPhone.
-- Prix de coffre, autres bonus, dégâts, combat, économie et clé de sauvegarde inchangés (`ashfall_pwa_v1`). Les points de recherche restent calculés selon les objectifs d'expédition existants.
+## Nouveautés
+- 7 découvertes facultatives générées sur les nouvelles cartes : 2 relais d’écho, 3 dépôts abandonnés, 2 signaux de détresse.
+- Sites répartis dans 3 ou 4 secteurs selon les contraintes géométriques et les salles existantes ; aucune superposition avec les incidents ou terminaux.
+- Relais : révèle jusqu’à quatre salles et fournit 5 XP.
+- Dépôt : 36 à 72 crédits selon secteur et salle, 3 XP, jusqu’à 10 PV si blessé.
+- Signal : deux renforts ; 70 à 106 crédits et 7 XP **uniquement après victoire** ; récompense sauvegardée une fois.
+- Marqueur D/d sur la carte pour les sites visités et le compteur de découvertes dans la carte et la pause.
+- Activation par proximité après nettoyage, sans bouton supplémentaire.
 
-## Correctif 0.8.9.71
-- Terrain agrandi jusqu’à 13 % selon l’espace réellement disponible, positionné entre HUD et surface joystick.
-- Joystick : zone tactile de 74vw (max 300 px) × 180 px en portrait, cercle visible de 92 px ; centre mobile modéré.
-- Paysage : terrain à droite des commandes, sans superposition.
-- Aucun changement des données sauvegardées et des règles d’expédition.
+## Compatibilité et économie
+- Sauvegarde locale : `ashfall_pwa_v1` inchangée, export/import compatibles.
+- Les expéditions commencées avant la 0.8.9.72 ne reçoivent pas de nouveaux événements rétroactivement.
+- Les crédits de découvertes font partie du butin d’expédition et **ne sont conservés qu’après extraction**.
+- Prix des coffres inchangés : 900 / 2 800 / 7 500 crédits.
+- Graphismes d’armes, coffres, contrôles tactiles, combat et HUD de la 0.8.9.70 conservés.
 
-## 0.8.9.71
-Combat tactique : Gardien à 3 phases, télégraphes améliorés, adversaires mobiles à distance. Aucun changement économique ni de format de sauvegarde.
+## Installer
+Exporter d’abord la sauvegarde. Déployer **tous** les fichiers à la racine du site (y compris le sous-dossier `assets`). Vérifier l’affichage **0.8.9.72**. Ne pas écraser la sauvegarde locale.
+
+## Validation
+Tests Chromium sur 320, 390, 416 et 430 px, reprises d’événements, attribution une fois, ancien run et 150 générations procédurales. Un essai réel sur Safari iPhone demeure nécessaire.
