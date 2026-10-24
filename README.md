@@ -1,5 +1,7 @@
-# ASHFALL 0.8.9.65 — Phase B : Combat
+# ASHFALL 0.8.9.66 — Phase C : butin et inventaire
 
-Archive complète jouable. Déployer tous les fichiers à la racine de l’hébergement web, y compris `game.js`, `immersion.js`, `index.html`, `service-worker.js` et les ressources. Ne pas effacer les données locales / sauvegardes ; exporter une sauvegarde avant mise à jour. Contrôler l'affichage `0.8.9.65`.
+Archive PWA complète. Publier **tous** les fichiers et conserver leur structure : `index.html`, `game.js`, `loot-phase.css`, `service-worker.js`, `assets/` et les autres ressources. Avant mise à jour, exporter la sauvegarde. La clé locale reste `ashfall_pwa_v1`.
 
-Détails dans `CHANGELOG_08965.md`. Les effets ne touchent ni aux mécaniques ni aux sauvegardes.
+Principales nouveautés : recherche et filtre d'arsenal, comparaison détaillée, affichage amélioré des armes ramassées, sac trié à l'écran et bilan de raretés. Aucun changement d'équilibrage.
+
+Détails : `CHANGELOG_08966.md`.
