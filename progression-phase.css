@@ -1,0 +1,27 @@
+/* ASHFALL 0.8.9.67 — Carrière et contrats. Safe pour petits écrans. */
+.ash-contract-picker{margin:14px 0;padding:12px;background:linear-gradient(145deg,#0d2634,#102c3b);border:1px solid #456374;border-radius:12px;min-width:0;box-sizing:border-box}
+.ash-contract-heading,.ash-career-subtitle{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;color:#e6bc79;font-size:11px;font-weight:900;letter-spacing:.1em}
+.ash-contract-heading small,.ash-career-subtitle small{font-size:10px;color:#acc6d3;letter-spacing:0;font-weight:600}
+.ash-contract-options{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:11px 0}
+.ash-contract-option{margin:0!important;padding:9px 6px!important;min-height:66px!important;width:100%;min-width:0;border:1px solid #456777!important;border-radius:8px!important;background:#0c2130!important;color:#c6d9e2!important;box-shadow:none!important;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;text-align:center}
+.ash-contract-option.active{border-color:#edb866!important;background:#283725!important;color:#ffe6b4!important;box-shadow:inset 0 0 0 1px #b88b50!important}
+.ash-contract-label{font-weight:900;letter-spacing:.02em;font-size:clamp(8px,2.4vw,11px);overflow-wrap:anywhere;line-height:1.12}
+.ash-contract-mini{font-size:clamp(8px,2vw,10px);line-height:1.2;font-weight:700;color:#a4cfde;overflow-wrap:anywhere}
+.ash-contract-option.active .ash-contract-mini{color:#ffdf9f}
+.ash-contract-description{min-width:0;display:grid;gap:4px;padding-top:10px;border-top:1px solid #315366;text-align:left}
+.ash-contract-description strong{font-size:13px;color:#f3f8fc}.ash-contract-description p{font-size:12px;line-height:1.5;color:#c3d4de;margin:0}.ash-contract-description small{font-size:10px;line-height:1.4;color:#99b9c9}
+.ash-contract-hud{margin:5px 0 0;padding:5px 7px;border:1px solid #3c6b7b;border-radius:5px;font-size:9px;font-weight:800;line-height:1.2;letter-spacing:.025em;color:#b9d7e3;background:#0e2735;white-space:normal;overflow-wrap:anywhere}.ash-contract-hud[hidden]{display:none!important}.ash-contract-hud.complete{color:#f0ca86;border-color:#c4934b}
+.ash-career{margin:15px 0;padding:15px 12px;border:1px solid #4b7080;background:linear-gradient(150deg,#123144,#0e2230);border-radius:14px;min-width:0}
+.ash-career-heading h3{font-size:clamp(19px,5vw,23px);color:#f0f7fa;letter-spacing:.04em;margin:5px 0 5px}.ash-career-heading p{font-size:12px;line-height:1.5;color:#a8c7d5;margin:0 0 14px}
+.ash-career-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0 16px}
+.ash-career-metrics>div{min-width:0;padding:10px;border:1px solid #395d70;background:#0c2230;border-radius:9px;display:grid;gap:6px}
+.ash-career-metrics small{color:#b3cbd9;font-size:10px;font-weight:800;letter-spacing:.05em;line-height:1.25}.ash-career-metrics strong{color:#f1c783;font-size:21px;line-height:1.1}
+.ash-career-subtitle{padding-top:12px;border-top:1px solid #36576a;margin:12px 0 9px}
+.ash-career-medals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.ash-career-medal{background:#102432;border:1px solid #3c5668;border-radius:9px;padding:10px 5px;display:flex;flex-direction:column;gap:7px;opacity:.66;min-width:0}.ash-career-medal.unlocked{border-color:#dfb470;opacity:1;background:#27352c}.ash-career-medal strong{font-size:10px;line-height:1.25;color:#c4d6e0;overflow-wrap:anywhere}.ash-career-medal.unlocked strong{color:#f0c67f}.ash-career-medal span{font-size:10px;color:#a8c4d1}
+.ash-career-history{display:grid;gap:6px}.ash-career-row{border:1px solid #375a6d;background:#0a2230;border-radius:9px;display:flex;align-items:center;gap:9px;padding:9px;flex-wrap:wrap;min-width:0}
+.ash-career-result{font-size:9px;font-weight:900;letter-spacing:.05em;flex:0 0 46px;color:#ffc0a8}.ash-career-result.won{color:#89dcc4}
+.ash-career-row-main{display:grid;gap:3px;flex:1;min-width:105px}.ash-career-row-main b{color:#e8f2f6;font-size:11px}.ash-career-row-main small{font-size:10px;line-height:1.3;color:#abc1ce}.ash-career-row>strong{font-size:12px;color:#f2bd77;white-space:nowrap}.ash-career-contract-done{font-size:9px;color:#81dab4;font-weight:900;width:100%;text-align:right}.ash-career-empty{color:#acc6d2;font-size:12px;padding:9px;margin:0}
+.ash-end-contract{margin:10px 0 14px;border:1px solid #4b7184;background:#102b3b;border-radius:10px;padding:11px}.ash-end-contract-title{font-size:10px;color:#c3d8e3;font-weight:900;letter-spacing:.1em;margin-bottom:6px}.ash-end-contract-result{display:grid;gap:5px;color:#bfd0d9;font-size:11px}.ash-end-contract-result.complete{color:#91dfbc}.ash-end-contract-result strong{color:#ebb975;font-size:12px}
+@media(max-width:360px){.ash-contract-picker{padding:9px}.ash-contract-options{gap:4px}.ash-contract-option{padding:7px 4px!important}.ash-career{padding:11px 9px}.ash-career-row{gap:6px}.ash-career-metrics strong{font-size:18px}}
+@media(prefers-reduced-motion:reduce){.ash-contract-option{transition:none!important}}

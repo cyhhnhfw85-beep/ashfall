@@ -39,6 +39,77 @@ try{
 }catch(e){}
 
 function region(){if(!data.regions)data.regions={k17:{maxSector:0,bossDefeated:false,expeditions:0}};if(!data.regions.k17)data.regions.k17={maxSector:0,bossDefeated:false,expeditions:0};if(!Array.isArray(data.regions.k17.outposts))data.regions.k17.outposts=[];return data.regions.k17}
+
+// ASHFALL 0.8.9.67 — Contrats d'extraction. Aucun multiplicateur de loot ni de combat.
+// Le contrat est fixé dans le snapshot au départ. Récompense UNIQUE au moment de finish(true).
+const ASH_CONTRACTS=Object.freeze([
+ {id:'survey',name:'RECONNAISSANCE',short:'EXPLORER',subtitle:'Cartographier le danger',detail:'Visiter au moins 12 salles différentes puis réussir une extraction.',kind:'rooms',target:12,credits:80,research:2},
+ {id:'clear',name:'NETTOYAGE',short:'COMBATTRE',subtitle:'Affronter les hostiles',detail:'Éliminer au moins 20 ennemis puis réussir une extraction.',kind:'kills',target:20,credits:110,research:3},
+ {id:'recover',name:'RÉCUPÉRATION',short:'RAPPORTER',subtitle:'Rapporter du matériel',detail:'Revenir avec au moins 2 armes dans le sac, puis réussir une extraction.',kind:'weapons',target:2,credits:100,research:2}
+]);
+const ashFindContract=id=>ASH_CONTRACTS.find(c=>c.id===id)||null;
+const ashChosenContract=()=>ashFindContract(data.contractChoice)||ASH_CONTRACTS[0];
+function ashContractProgress(r,c){
+ if(!r||!c)return 0;
+ if(c.kind==='rooms')return new Set((r.visited||[]).filter(Number.isFinite)).size;
+ if(c.kind==='kills')return Math.max(0,Math.floor(Number(r.kills)||0));
+ if(c.kind==='weapons')return Array.isArray(r.bag)?r.bag.length:0;
+ return 0;
+}
+function ashContractStatus(r){
+ const c=ashFindContract(r?.contractId);
+ if(!c)return null; // anciennes expéditions : jamais de contrat rétroactif
+ const actual=ashContractProgress(r,c);
+ return {id:c.id,name:c.name,actual,target:c.target,complete:actual>=c.target,credits:c.credits,research:c.research};
+}
+function ashRenderContractSelection(){
+ const host=$('ashContractPicker');if(!host||data.run)return;
+ const selected=ashChosenContract();
+ host.innerHTML=`<div class="ash-contract-heading"><span>CONTRAT D’EXPÉDITION</span><small>1 par départ · prime à l’extraction</small></div><div class="ash-contract-options" role="group" aria-label="Sélection du contrat">${ASH_CONTRACTS.map(c=>`<button class="ash-contract-option ${selected.id===c.id?'active':''}" type="button" data-contract-choice="${c.id}" aria-pressed="${selected.id===c.id}"><span class="ash-contract-label">${uiSafe(c.short)}</span><span class="ash-contract-mini">+${c.credits} CR · +${c.research} RECH.</span></button>`).join('')}</div><div class="ash-contract-description"><strong>${uiSafe(selected.name)} · ${uiSafe(selected.subtitle)}</strong><p>${uiSafe(selected.detail)}</p><small>Prime uniquement après extraction réussie. Échec ou abandon : 0 prime.</small></div>`;
+}
+function ashSelectContract(id){
+ if(data.run||data.pendingDebrief||data.chestPending||!ashFindContract(id))return;
+ const before=data.contractChoice;data.contractChoice=id;
+ if(!persist()){data.contractChoice=before;ashRenderContractSelection();return}
+ ashRenderContractSelection();
+}
+function ashRefreshContractHud(r){
+ const hud=$('ashContractHud');if(!hud)return;
+ const contract=ashContractStatus(r);hud.hidden=!contract;
+ if(!contract)return;
+ hud.textContent=`CONTRAT ${contract.name} · ${Math.min(contract.actual,contract.target)}/${contract.target}${contract.complete?' · OBJECTIF ATTEINT':''}`;
+ hud.classList.toggle('complete',contract.complete);
+}
+function ashRegisterCareer(summary){
+ // Seulement les expéditions achevées à partir de cette version.
+ if(!data.career||typeof data.career!=='object')data.career={history:[],totalCredits:0,totalResearch:0,contracts:0};
+ const career=data.career;
+ if(!Array.isArray(career.history))career.history=[];
+ const clean=n=>Math.max(0,Math.floor(Number(n)||0));
+ const row={id:clean(summary.runIndex),when:Date.now(),win:!!summary.won,credits:clean(summary.credits),research:clean(summary.research),rooms:clean(summary.rooms),kills:summary.kills===null?null:clean(summary.kills),seconds:Number.isFinite(summary.elapsed)?clean(summary.elapsed):null,contract:summary.contract?{id:summary.contract.id,completed:!!summary.contract.completed}:null};
+ career.history=[row,...career.history.filter(x=>x&&x.id!==row.id)].slice(0,12);
+ career.totalCredits=clean(career.totalCredits)+row.credits;
+ career.totalResearch=clean(career.totalResearch)+row.research;
+ career.contracts=clean(career.contracts)+(row.contract?.completed?1:0);
+}
+function ashRenderCareer(){
+ const host=$('ashCareerBoard');if(!host)return;
+ const career=(data.career&&typeof data.career==='object')?data.career:{};
+ const history=Array.isArray(career.history)?career.history.filter(x=>x&&typeof x==='object').slice(0,12):[];
+ const runs=history.length,wins=history.filter(x=>x.win).length;
+ const earned=history.reduce((n,x)=>n+(Number(x.credits)||0),0);
+ const average=runs?Math.round(earned/runs):null;
+ const best=history.filter(x=>x.win).reduce((n,x)=>Math.max(n,Number(x.credits)||0),0);
+ const extractions=Math.max(0,Number(data.stats?.extractions)||0);
+ const medals=[{name:'PREMIER RETOUR',need:1},{name:'OPÉRATEUR K-17',need:5},{name:'VÉTÉRAN',need:20}];
+ const fmt=n=>Number(n||0).toLocaleString('fr-FR');
+ host.innerHTML=`<div class="ash-career-heading"><span class="ui-eyebrow">ARCHIVES // OPÉRATIONS</span><h3>DOSSIER DE CARRIÈRE</h3><p>Historique conservé sur 12 expéditions depuis la version 0.8.9.67. Les anciennes statistiques globales restent comptées, sans inventer leur détail.</p></div>
+ <div class="ash-career-metrics"><div><small>EXTRACTIONS TOTALES</small><strong>${fmt(extractions)}</strong></div><div><small>CONTRATS RÉUSSIS</small><strong>${fmt(career.contracts)}</strong></div><div><small>MOY. CRÉDITS / RUN</small><strong>${average===null?'—':fmt(average)}</strong></div><div><small>MEILLEUR RETOUR RÉCENT</small><strong>${runs?fmt(best):'—'}</strong></div></div>
+ <div class="ash-career-subtitle">PALIERS D’EXPÉDITION <small>Distinctions sans bonus de puissance</small></div><div class="ash-career-medals">${medals.map(m=>`<div class="ash-career-medal ${extractions>=m.need?'unlocked':''}"><strong>${uiSafe(m.name)}</strong><span>${Math.min(extractions,m.need)}/${m.need} extractions</span></div>`).join('')}</div>
+ <div class="ash-career-subtitle">JOURNAL DES 12 DERNIÈRES <small>${runs?`${wins} extraction${wins>1?'s':''} / ${runs} rapport${runs>1?'s':''}`:'Aucune donnée enregistrée'}</small></div>
+ <div class="ash-career-history">${history.length?history.map(x=>`<div class="ash-career-row"><span class="ash-career-result ${x.win?'won':'lost'}">${x.win?'EXTRAIT':'ÉCHEC'}</span><span class="ash-career-row-main"><b>Expédition #${fmt(x.id)}</b><small>${fmt(x.rooms)} salles · ${x.kills===null?'—':fmt(x.kills)} élim. · ${x.seconds===null?'—':formatRunDuration(x.seconds)}</small></span><strong>${x.win?'+':''}${fmt(x.credits)} CR</strong>${x.contract?.completed?'<span class="ash-career-contract-done">CONTRAT OK</span>':''}</div>`).join(''):'<p class="ash-career-empty">Ton prochain rapport d’expédition apparaîtra ici après la partie.</p>'}</div>`;
+}
+
 function isLarge(r=data.run){return !!(r&&r.rooms&&r.rooms.length===50)}
 function isArena(id,r=data.run){return isLarge(r)?r.arenaIds.includes(id):id===4}
 function isExit(id,r=data.run){return isLarge(r)?r.exitIds.includes(id):id===8}
@@ -363,7 +434,7 @@ function createRun(){
   if(!kind)continue; // On prefere moins d'incidents a une surrepresentation artificielle.
   room.incidentRole=kind;typeCounts[kind]++;
  }
- return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,interactiveV54:true,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,elapsedSeconds:0,kills:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,exitRoom:null,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}};
+ return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,interactiveV54:true,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,contractId:ashChosenContract().id,earnedCredits:0,elapsedSeconds:0,kills:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,exitRoom:null,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}};
 }
 function setPlayer(){player=data.run?.player||null}
 
@@ -445,7 +516,7 @@ function lootUpdate(room,dt){
    if(d.kind==='xp'){collectXp(d.amount);d.got=true}
    else if(d.kind==='credits'){data.run.earnedCredits+=d.amount;data.run.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};data.run.economy[d.source==='chest'?'chest':'enemy']=(data.run.economy[d.source==='chest'?'chest':'enemy']||0)+d.amount;d.got=true}
    else if(d.kind==='weapon'){
-    if(data.run.bag.length<6){data.run.bag.push(d.item);msg(d.item.rar+' : '+d.item.name+' ramassé !');ashLootPickupToast(d.item);d.got=true}
+    if(data.run.bag.length<6){data.run.bag.push(d.item);ashRefreshContractHud(data.run);msg(d.item.rar+' : '+d.item.name+' ramassé !');ashLootPickupToast(d.item);d.got=true}
     else if(!d.warned){d.warned=true;msg('Sac plein : arme au sol conservée. Libère une place dans SAC.')}
    }
   }
@@ -730,7 +801,7 @@ function igniteInteractable(room,obj){
  msg(obj.kind==='capacitor'?'⚡ Module instable : éloigne-toi !':'⚠ Baril instable : explosion imminente !');
  return true;
 }
-function runnableKill(run){if(Number.isFinite(run.kills))run.kills++;}
+function runnableKill(run){if(Number.isFinite(run.kills))run.kills++;ashRefreshContractHud(run);}
 function updateInteractables(room,dt){
  for(const obj of room.interactables||[]){
   if(obj.fx>0)obj.fx=Math.max(0,obj.fx-dt);
@@ -888,14 +959,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.66';
+const ASHFALL_RUNTIME_VERSION='0.8.9.67';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.66, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.67, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -1010,7 +1081,11 @@ function finish(won,cause='combat'){
  const insured=objects.find(w=>w.id===r.insuredId);
  const previousResearch=data.research;
  const allCredits=Math.max(0,Math.floor(r.earnedCredits||0));
- const earnedCredits=won?allCredits+60:0;
+ const contract=ashContractStatus(r);
+ const contractCompleted=!!(won&&contract&&contract.complete);
+ const contractCredits=contractCompleted?contract.credits:0;
+ const contractResearch=contractCompleted?contract.research:0;
+ const earnedCredits=won?allCredits+60+contractCredits:0;
  const retainedWeapons=won?objects:(insured?[insured]:[]);
  const lostWeapons=won?[]:objects.filter(w=>!insured||w.id!==insured.id);
  const summary={
@@ -1019,12 +1094,13 @@ function finish(won,cause='combat'){
   research:0,xp:Math.floor(r.xpTotal||r.xp||0),rooms:Math.max(1,new Set(r.visited||[r.current]).size),
   kills:Number.isFinite(r.kills)?r.kills:null,elapsed:Number.isFinite(r.elapsedSeconds)?r.elapsedSeconds:null,
   retained:retainedWeapons.map(formatLootName),lost:lostWeapons.map(formatLootName),
-  savedBag:won?r.bag.length:0,runIndex:data.runs+1
+   savedBag:won?r.bag.length:0,runIndex:data.runs+1,
+   contract:contract?{id:contract.id,name:contract.name,actual:contract.actual,target:contract.target,completed:contractCompleted,credits:contractCredits,research:contractResearch}:null
  };
  if(won){
   data.equipped=equipped;data.stash.push(...r.bag);data.credits+=earnedCredits;
-  data.lastEconomy={...r.economy,total:earnedCredits,extraction:60,run:data.runs+1};
-  data.research+=r.objectives.length+Math.floor(r.visited.length/3);
+  data.lastEconomy={...r.economy,total:earnedCredits,extraction:60,contract:contractCredits,run:data.runs+1};
+  data.research+=r.objectives.length+Math.floor(r.visited.length/3)+contractResearch;
   data.stats.extractions++;
   msg(`EXTRACTION ! ${r.bag.length} objet(s) rapporté(s), +${earnedCredits} crédits · ${summary.xp} XP récoltée.`);
  }else{
@@ -1034,6 +1110,7 @@ function finish(won,cause='combat'){
  }
  summary.research=data.research-previousResearch;
  data.runs++;data.insured=null;data.run=null;data.pendingDebrief=summary;
+ ashRegisterCareer(summary);
  ensureMerchant();bullets=[];closeOverlay();persist();render();showRunDebrief();
  // Conserver l'objet player jusqu'au retour de la fonction update() : une mort
  // provoquée par une attaque ne doit pas rendre le reste de la frame invalide.
@@ -1057,7 +1134,8 @@ function showRunDebrief(){
    <div><small>XP GAGNÉE EN RUN</small><strong>${Math.max(0,s.xp||0)}</strong></div>
    <div><small>SALLES EXPLORÉES</small><strong>${Math.max(0,s.rooms||0)} / 50</strong></div></div>
   <div class="ash-end-secondary"><span class="ash-end-stat"><span class="ash-end-stat-icon ash-end-stat-elims" aria-hidden="true"></span><b>${s.kills===null?'—':s.kills}</b><small>éliminations</small></span><span class="ash-end-stat"><span class="ash-end-stat-icon ash-end-stat-time" aria-hidden="true"></span><b>${formatRunDuration(s.elapsed)}</b><small>durée</small></span></div>
-  <section class="ash-end-loot"><h3>${ok?'BUTIN CONSERVÉ':'ÉQUIPEMENT PERDU'}</h3>${raritySummary(ok?s.retained:s.lost)}<div class="ash-end-items">${formatWeapons(ok?s.retained:s.lost)}</div></section>
+  ${s.contract?`<section class="ash-end-contract"><div class="ash-end-contract-title">CONTRAT · ${uiSafe(s.contract.name)}</div><div class="ash-end-contract-result ${s.contract.completed?'complete':''}"><span>${s.contract.completed?'OBJECTIF ACCOMPLI':ok?'OBJECTIF NON ATTEINT':'ÉCHEC D’EXTRACTION'} · ${Math.min(s.contract.actual,s.contract.target)}/${s.contract.target}</span><strong>${s.contract.completed?`+${s.contract.credits} crédits · +${s.contract.research} recherche`:'Aucune prime'}</strong></div></section>`:''}
+   <section class="ash-end-loot"><h3>${ok?'BUTIN CONSERVÉ':'ÉQUIPEMENT PERDU'}</h3>${raritySummary(ok?s.retained:s.lost)}<div class="ash-end-items">${formatWeapons(ok?s.retained:s.lost)}</div></section>
   ${!ok&&s.retained?.length?`<section class="ash-end-loot ash-end-insured"><h3>RÉCUPÉRÉ GRÂCE À L’ASSURANCE</h3><div class="ash-end-items">${formatWeapons(s.retained)}</div></section>`:''}
   <p class="ash-end-note">${ok?'Les récompenses sont enregistrées dans le refuge.':'Les crédits non extraits et l’XP temporaire ne sont pas conservés.'}</p>
   <button type="button" class="ash-end-return" data-end-action="return">RETOUR AU REFUGE</button>
@@ -1070,7 +1148,7 @@ function closeRunDebrief(){
  if(!data.run)render();
 }
 function uiSafe(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-// 0.8.9.66 — Présentation du butin uniquement. Aucun calcul de combat ne dépend de cette valeur.
+// 0.8.9.67 — Présentation du butin uniquement. Aucun calcul de combat ne dépend de cette valeur.
 // Puissance indicative = dégâts de base × tirs/s ; n'est PAS un DPS réel (dispersion, bonus, armures).
 const LOOT_RARITY_RANK={Commun:0,Inhabituel:1,Rare:2,'Épique':3,'Légendaire':4,Mythique:5};
 const lootNumber=n=>Number.isFinite(Number(n))?Number(n):0;
@@ -1438,13 +1516,14 @@ function render(){let r=data.run;if(!r&&$('ashLootToast'))$('ashLootToast').hidd
  $('upHp').textContent=data.hpLv>=8?'NIVEAU MAX':`Améliorer +15 PV · ${4+data.hpLv*4} recherche`;
  $('upDmg').textContent=data.dmgLv>=8?'NIVEAU MAX':`Améliorer +3 dégâts · ${4+data.dmgLv*4} recherche`;$('upHp').disabled=data.hpLv>=8||data.research<4+data.hpLv*4;$('upDmg').disabled=data.dmgLv>=8||data.research<4+data.dmgLv*4;$('equipped').textContent=data.equipped?`${data.equipped.name} · ${data.equipped.rar} · ${data.equipped.dmg} dégâts · ${data.equipped.rate} tirs/s`:'Aucune';$('insurance').textContent=data.insured===data.equipped?.id?'ASSURÉE':'Non assurée';$('insure').textContent=`Assurer · ${premium()} ¤`;$('insure').disabled=data.insured===data.equipped.id||data.credits<premium();$('stash').innerHTML='<p class="ui-help">Armes stockées au refuge · appuie sur ÉQUIPER pour changer d’arme.</p>'+(data.stash.length?data.stash.map((g,i)=>itemRow(g,i,'stash')).join(''):'<p class="ui-empty">Réserve vide : extrais des armes pour remplir ton stock.</p>');if($('merchantLaunch'))$('merchantLaunch').innerHTML=afIcon('merchant')+' OUVRIR LE COMPTOIR · '+data.credits+' crédits';$('log').dataset.region=region().maxSector;
  
- const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();if(refugeActivePage==='merchant')merchantRender();if(refugeActivePage==='chests')ashChestRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission().replace(/^[⚠⚡✦✓⚔📡◈]\s*/u,'');$('roomTitle').textContent=isBoss(r.current,r)?'BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'BALISE':`K-17 · ${r.current+1}/50`;$('hpText').textContent=`${Math.ceil(player.hp)} / ${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;if($('hpFill'))$('hpFill').classList.toggle('ash-critical',player.hp/player.max<.28);runProgress();$('bagCount').textContent=`${r.bag.length}/6`;ashRenderMiniMap(r);const xp=$('xpDisplay');if(xp){xp.textContent=`NIV. ${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)}`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
+ const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();ashRenderContractSelection();ashRenderCareer();ashRefreshContractHud(null);if(refugeActivePage==='merchant')merchantRender();if(refugeActivePage==='chests')ashChestRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission().replace(/^[⚠⚡✦✓⚔📡◈]\s*/u,'');$('roomTitle').textContent=isBoss(r.current,r)?'BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'BALISE':`K-17 · ${r.current+1}/50`;$('hpText').textContent=`${Math.ceil(player.hp)} / ${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;if($('hpFill'))$('hpFill').classList.toggle('ash-critical',player.hp/player.max<.28);runProgress();$('bagCount').textContent=`${r.bag.length}/6`;ashRenderMiniMap(r);const xp=$('xpDisplay');if(xp){xp.textContent=`NIV. ${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)}`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}ashRefreshContractHud(r);const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
 function closeOverlay(){if(overlay==='level'&&data.run?.pendingLevels>0)return;if(overlayReturn==='pause'&&data.run&&(overlay==='bag'||overlay==='map')){overlayReturn='';openOverlay('pause');return;}overlayReturn='';overlay='';$('overlay').hidden=true;$('overlay').innerHTML=''}
 function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html='<button class="close" data-op="close">'+afIcon('close')+' Fermer</button>';if(mode==='bag'){html+=`<h3>${afIcon("bag")} SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>({w,i})).sort((a,b)=>(LOOT_RARITY_RANK[b.w.rar]||0)-(LOOT_RARITY_RANK[a.w.rar]||0)||lootPower(b.w)-lootPower(a.w)||a.i-b.i).map(({w,i})=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">${afIcon("info")} Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
 }else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy));if(coords.length){html+='<h3>'+afIcon('map')+' CARTE TACTIQUE — K-17</h3><p class="muted">La forme de chaque pièce reflète sa géométrie : 1×1, 2×1, 1×2 ou en L. Un ? représente un indice de salle non visitée.</p><div class="ash-map-scroll">'+ashMapMarkup(r,false)+'</div><p class="muted">'+r.visited.length+'/50 salles explorées · ● Vous · B Gardien · A Arène · E Extraction · P Balise. Glisse pour explorer la carte.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else if(mode==='pause')html=`<section class="ash-pause-card" role="dialog" aria-modal="true" aria-labelledby="ash-pause-title"><div class="ash-pause-emblem" aria-hidden="true">${afIcon("pause")}</div><div class="ash-pause-eyebrow">K-17 · EXPÉDITION EN COURS</div><h2 id="ash-pause-title">PAUSE</h2><p class="ash-pause-subtitle">Le temps est suspendu. Ton expédition est sauvegardée.</p><div class="ash-pause-stats"><span>${afIcon("map")} ${r.visited.length}/50 SALLES</span><span>${afIcon("bag")} ${r.bag.length}/6 OBJETS</span><span>${afIcon("xp")} NIV. ${r.runLevel||1}</span></div><div class="ash-pause-actions"><button type="button" class="ash-pause-primary" data-op="resume">${afIcon("resume")} REPRENDRE</button><div class="ash-pause-shortcuts"><button type="button" data-op="bag">${afIcon("bag")} SAC</button><button type="button" data-op="map">${afIcon("map")} CARTE</button></div><button type="button" class="ash-pause-danger" data-op="retreat">Abandonner l’expédition</button></div><div class="ash-pause-footer">${afIcon("save")} Sauvegarde locale active</div></section>`;
 else if(mode==='retreatConfirm')html=`<section class="ash-pause-card ash-pause-confirm" role="dialog" aria-modal="true" aria-labelledby="ash-pause-confirm-title"><div class="ash-pause-emblem danger" aria-hidden="true">${afIcon("danger")}</div><h2 id="ash-pause-confirm-title">ABANDONNER ?</h2><p>Ton équipement non assuré et les crédits gagnés pendant cette expédition seront perdus.</p><button type="button" class="ash-pause-primary" data-op="backPause">CONTINUER L’EXPÉDITION</button><button type="button" class="ash-pause-danger" data-op="confirmRetreat">CONFIRMER L’ABANDON</button></section>`;$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
 function tool(title,html){$('toolsTitle').textContent=title;$('toolsBody').innerHTML=html;$('tools').hidden=false}
 function backup(){persist();const code=btoa(unescape(encodeURIComponent(JSON.stringify(data))));tool('EXPORT / IMPORT',`<p>Le code inclut le refuge et l’expédition en cours. Conserve-le dans Notes ou Fichiers.</p><textarea id="exportCode" readonly></textarea><button id="copyCode">Copier le code</button><p>Restaurer une sauvegarde :</p><textarea id="importCode" placeholder="Colle ici une sauvegarde..."></textarea><button id="restoreCode">Restaurer</button>`);$('exportCode').value=code;$('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('exportCode').value);msg('Code copié.')}catch(e){$('exportCode').select();msg('Sélectionne le texte pour le copier.')}};$('restoreCode').onclick=()=>{try{const decoded=JSON.parse(decodeURIComponent(escape(atob($('importCode').value.trim()))));if(!valid(decoded))throw Error('format');if(!confirm('Remplacer toute la progression actuelle ?'))return;data=decoded;setPlayer();if(data.run&&isArena(data.run.current,data.run))enforceArena();bullets=[];closeOverlay();runProgress();persist();render();if(data.run?.pendingLevels>0)openLevelChoice();$('tools').hidden=true;msg('Sauvegarde restaurée.')}catch(e){msg('Code invalide ou incompatible.')}}}
+$('ashContractPicker').addEventListener('click',e=>{const b=e.target.closest('[data-contract-choice]');if(b)ashSelectContract(b.dataset.contractChoice);});
 $('upHp').onclick=()=>upgrade('hp');$('upDmg').onclick=()=>upgrade('dmg');$('insure').onclick=insure;$('merchantLaunch').onclick=()=>merchantOpen();$('start').onclick=start;
 $('bagBtn').onclick=()=>openOverlay('bag');$('mapBtn').onclick=()=>openOverlay('map');$('pauseBtn').onclick=()=>openOverlay('pause');
 // Le clic synthetique iOS peut etre annule quand un autre doigt tient le joystick.
@@ -2408,7 +2487,7 @@ function drawExtractionCountdown(r,room){
 }
 
 
-// 0.8.9.66 — Moteur de ressenti de combat, 100 % cosmetique.
+// 0.8.9.67 — Moteur de ressenti de combat, 100 % cosmetique.
 // Aucun effet ne touche aux dommages, cadences, collisions, AI, drops ou sauvegardes.
 const COMBAT_FX_LIMIT={particles:72,flashes:12,numbers:12};
 const combatFx={room:null,particles:[],flashes:[],numbers:[],hit:new WeakMap(),hitList:[],hurt:0};
@@ -2705,7 +2784,7 @@ function refugeNavigate(tab){
  if(tab==='progress'){
   const target=$('refuge-progress-mirror'),source=$('regionStatus');
   if(target&&source)target.textContent=source.textContent;
-  renderRefugeProgress();
+  renderRefugeProgress();ashRenderCareer();
  }
  if(tab==='character'){survivorSwitch('equipment');renderRefugeCharacter();}
  $('home').scrollIntoView({block:'start',behavior:'instant'});

@@ -1,7 +1,9 @@
-# ASHFALL 0.8.9.66 — Phase C : butin et inventaire
+# ASHFALL — Alpha PWA 0.8.9.67
 
-Archive PWA complète. Publier **tous** les fichiers et conserver leur structure : `index.html`, `game.js`, `loot-phase.css`, `service-worker.js`, `assets/` et les autres ressources. Avant mise à jour, exporter la sauvegarde. La clé locale reste `ashfall_pwa_v1`.
+Version complète jouable hors ligne après chargement initial. Déployer tous les fichiers à la racine du site, y compris progression-phase.css ; conserver une exportation des sauvegardes avant mise à jour.
 
-Principales nouveautés : recherche et filtre d'arsenal, comparaison détaillée, affichage amélioré des armes ramassées, sac trié à l'écran et bilan de raretés. Aucun changement d'équilibrage.
+## Changements de la phase D
+Trois contrats optionnels dont la récompense nécessite une extraction réussie. Carrière accessible dans **Secteurs**, historique limité à 12 rapports à partir de la 0.8.9.67. Aucun changement des chances de coffre, ni des mécaniques de combat.
 
-Détails : `CHANGELOG_08966.md`.
+## Compatibilité
+La clé de stockage `ashfall_pwa_v1` reste identique ; les anciens snapshots continuent de fonctionner. Les runs entamés avant la 0.8.9.67 n'ont pas de contrat attribué rétroactivement.
