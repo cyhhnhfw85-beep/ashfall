@@ -1,20 +1,21 @@
-# ASHFALL 0.8.9.54 — Équilibrage et variété
+# ASHFALL 0.8.9.55 — Validation globale / Correctif de variété
 
-Base : 0.8.9.53. Jeu complet. Sauvegarde `ashfall_pwa_v1` inchangée.
+Base : ASHFALL 0.8.9.54. Jeu complet, refuge et économie inchangés.
 
-## Changements uniquement dans les nouvelles expéditions
-- Incidents : distribution moins prévisible, environ 6 à 9 par carte selon la répartition des salles ordinaires ; maximum 3 par famille et répartition sectorielle plafonnée. Degré de risque plus élevé dans la Fonderie et la Citadelle.
-- Terminaux : six postes au maximum, répartis selon l'utilité (scanner en amont, régulateurs près des zones dangereuses, soins plus loin), avec variantes d'emplacement.
-- Scanner : si aucune salle inconnue n'est dans les trois connexions proches, il peut révéler jusqu'à deux fronts plus éloignés encore inconnus ; il ne crée ni passage ni checkpoint.
-- Caches secrètes : environ 30–65 crédits par cache selon le secteur, collectés uniquement à l'extraction, au lieu de 18–32. Aucun changement aux crédits des ennemis, aux armes, ni aux coffres.
+## Seule modification fonctionnelle
+Le générateur garantit désormais la présence des quatre formes (1×1, 2×1, 1×2, L) dans chaque NOUVELLE expédition. Cette correction ne change pas les cartes, récompenses, distances, dégâts, sauvegardes ou systèmes d'extraction existants.
+Les anciennes expéditions restent inchangées. Le nom de version et le cache PWA ont été actualisés.
 
-## Invariants
-- Une ancienne expédition conserve ses incidents, ses terminaux, ses caches et l'ancien barème de récompenses.
-- Le système de combat, les ennemis, les dommages, les soins (22 PV), l'extraction, les checkpoints supprimés et l'économie du refuge sont préservés.
-- Les terminaux restent activés par proximité sans bouton supplémentaire.
-- Le service worker utilise un cache versionné 0.8.9.54.
+## Couverture des tests
+- Génération de plusieurs centaines de cartes et connexité des 50 salles.
+- Comptage des sorties, arènes, caches et avant-postes.
+- Sauvegarde et récupération après altération de la copie principale, par simulation de stockage.
+- Extraction activée, annulée, réactivée, puis terminée avec retour au refuge.
+- Rendu des quatre formes dans Chromium et contrôles 320, 390 et 430 px.
+- Tests de régression des versions 0.8.9.53/54 pour les coffres, embuscades, récompenses et incidents.
 
-## Vérifications recommandées sur iPhone
-1. Exporter sa sauvegarde avant publication.
-2. Vérifier que l'accueil affiche 0.8.9.54 et lancer une nouvelle expédition.
-3. Contrôler les scanners (carte), les soins, les régulateurs, les caches puis une extraction complète.
+## Limites de la validation
+Le chargement HTTP/HTTPS local est bloqué dans l'environnement de test : le navigateur exécute HTML/JS injectés et un stockage local simulé. Cela ne constitue PAS un test Safari, iOS, service worker, hors-ligne ou de 60 FPS sur appareil réel. Aucun parcours humain exhaustif des 50 salles n'a été réalisé.
+
+## Installation sur iPhone
+Exporter votre sauvegarde avant de remplacer les fichiers publiés sur votre hébergement. Vérifier « 0.8.9.55 » dans l'accueil, puis lancer une nouvelle expédition pour obtenir les quatre formes garanties. Ne pas effacer le stockage Safari/PWA sans sauvegarde.

@@ -89,6 +89,14 @@ function chooseShapes(rooms){
   else if(room.kind==='boss')room.shape='wide';
   else {const r=Math.random();room.shape=r<.40?'single':r<.65?'wide':r<.85?'tall':'ell'}
  }
+ // Validation 0.8.9.55 : une expedition contient toujours les quatre formes.
+ // Le depart garantit single, le boss garantit wide; assurer tall et ell dans
+ // des salles ordinaires, sans toucher aux salles speciales ni aux anciennes saves.
+ for(const required of ['tall','ell']){
+  if(rooms.some(room=>room.shape===required))continue;
+  const ordinary=rooms.filter(room=>room.kind==='standard'&&room.shape!=='tall'&&room.shape!=='ell');
+  if(ordinary.length)ordinary[pick(0,ordinary.length-1)].shape=required;
+ }
 }
 function wallDoorAnchor(room,side){
  const g=roomGeom(room);
@@ -291,7 +299,7 @@ function spawnReinforcement(room,count){for(let k=0;k<count;k++){
 
 function createRun(){
  let m=makeLargeMap();region().expeditions++;
- // Phase 3B/3C - equilibrage 0.8.9.54 : uniquement pour les nouvelles expeditions.
+ // Phase 3B/3C - equilibrage 0.8.9.55 : uniquement pour les nouvelles expeditions.
  // Les terminaux sont places en fonction de leur utilite : cartographie tot,
  // regulateurs pres des dangers, soins plutot dans les secteurs difficiles.
  // Une salle ne peut recevoir qu'un seul terminal et aucun incident concurrent.
@@ -626,7 +634,7 @@ function triggerFieldEvent(room){
  if(ev.kind==='medic'&&player.hp>=player.max-1)return false;
  ev.state='used';ev.hold=0;
  if(ev.kind==='cache'){
-  // Nouvelle economie 0.8.9.54 : bonus legerement revalorise dans les secteurs difficiles.
+  // Nouvelle economie 0.8.9.55 : bonus legerement revalorise dans les secteurs difficiles.
   // L'ancien montant reste applicable aux expeditions sauvegardees avant cette version.
   const credits=data.run.interactiveV54?(30+room.sector*6+((room.id*7)%17)):(18+((room.id*7)%15));
   const r=data.run;r.earnedCredits+=credits;

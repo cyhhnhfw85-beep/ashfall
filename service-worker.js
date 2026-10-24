@@ -1,5 +1,5 @@
-const CACHE='ashfall-08954-equilibrage-variete';
-const FILES=['./','./index.html','./game.css?v=08954','./game.js?v=08954','./immersion.js?v=08954','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='ashfall-08955-validation-globale';
+const FILES=['./','./index.html','./game.css?v=08955','./game.js?v=08955','./immersion.js?v=08955','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ashfall-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
