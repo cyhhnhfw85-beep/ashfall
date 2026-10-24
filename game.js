@@ -569,10 +569,10 @@ function drawIncidentSignal(room){
  cx.fillStyle='rgba(8,23,31,.85)';cx.fillRect(x-76,y-14,152,37);
  cx.strokeStyle=ev.kind==='blackout'?'#84bbdd':'#ffb56e';cx.lineWidth=1;cx.strokeRect(x-76,y-14,152,37);
  cx.fillStyle=ev.kind==='blackout'?'#bfe7fa':'#ffe2b3';
- cx.fillText(INCIDENT_TITLES[ev.kind],x,y);
+ cx.fillText(ev.kind==='blackout'?'⚡':'⚠',x,y);
  if(ev.state==='warning'||ev.kind==='blackout'){
   cx.font='bold 13px sans-serif';cx.fillText(Math.ceil(ev.time)+' s',x,y+16);
- }else{cx.font='10px sans-serif';cx.fillText('Repousse les renforts',x,y+16)}
+ }else{cx.font='bold 12px sans-serif';cx.fillText('⚠',x,y+16)}
  cx.restore();
 }
 // Phase 3B (0.8.9.51) — exploration sans bouton, sans objets bloquants.
@@ -690,7 +690,7 @@ function drawFieldEvent(room){
  }
  if(!used&&room.cleared&&distanceToPlayer<105){
   cx.fillStyle='#e4f4f5';cx.font='bold 10px sans-serif';cx.textAlign='center';
-  cx.fillText(cache?'CACHE À FOUILLER':ev.kind==='medic'?'SOINS':ev.kind==='stabilizer'?'RÉGULATEUR':'TERMINAL',0,-33);
+  /* Le pictogramme et l'anneau de proximité suffisent. */
   if(distanceToPlayer<43){
    cx.strokeStyle=accent;cx.lineWidth=4;cx.beginPath();cx.arc(0,0,25,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,ev.hold/.9));cx.stroke();
   }
@@ -1124,6 +1124,53 @@ function merchantSell(i){
 
 function upgrade(t){let lv=t==='hp'?data.hpLv:data.dmgLv,cost=4+lv*4;if(lv>=8||data.research<cost)return;data.research-=cost;if(t==='hp')data.hpLv++;else data.dmgLv++;persist();render()}
 function insure(){if(!data.equipped||data.insured===data.equipped.id||data.credits<premium())return;data.credits-=premium();data.insured=data.equipped.id;persist();render();msg('Objet assuré pour la prochaine expédition.')}
+// V56 : empreintes exactes des salles sur la mini-carte et la carte complete.
+// La grille de navigation contient une salle logique par noeud ; chaque noeud
+// represente ici ses 1, 2 ou 3 cellules, sans les confondre avec des salles voisines.
+const ASH_MAP_COLORS=['#5d998d','#66bad1','#dc9d67','#ad8aca'];
+function ashMapMarkup(run,mini=false){
+ if(!run||!run.rooms||!run.rooms.some(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy)))return mini?'<span class="ash-map-unavailable">—</span>':'';
+ const base=mini?39:39, sx=base,sy=base*1.06,subx=mini?18:13,suby=mini?19:13.7;
+ const current=run.rooms[run.current],mapNodes=run.rooms.filter(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy));
+ const known=z=>!!z.seen||(run.intelRooms||[]).includes(z.id)||z.id===run.current;
+ const nodes=mini?mapNodes.filter(z=>known(z)&&Math.abs(z.gx-current.gx)<=1&&Math.abs(z.gy-current.gy)<=1):mapNodes.filter(known);
+ const minx=mini?current.gx-1:Math.min(...mapNodes.map(z=>z.gx));
+ const miny=mini?current.gy-1:Math.min(...mapNodes.map(z=>z.gy));
+ const maxx=mini?current.gx+1:Math.max(...mapNodes.map(z=>z.gx));
+ const maxy=mini?current.gy+1:Math.max(...mapNodes.map(z=>z.gy));
+ const pad=mini?8:24,W=(maxx-minx)*sx+2*pad+2*subx,H=(maxy-miny)*sy+2*pad+2*suby;
+ const center=z=>({x:(z.gx-minx)*sx+pad+subx/2,y:(z.gy-miny)*sy+pad+suby/2});
+ const visibleIds=new Set(nodes.map(z=>z.id));
+ const links=(run.edges||[]).filter(e=>e.length===2&&visibleIds.has(e[0])&&visibleIds.has(e[1])).map(e=>{
+  const a=center(run.rooms[e[0]]),b=center(run.rooms[e[1]]);
+  return `<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="#648596" stroke-opacity=".7" stroke-width="${mini?2.8:4}" stroke-linecap="round"/>`;
+ }).join('');
+ const tiles=nodes.map(z=>{
+  const px=(z.gx-minx)*sx+pad,py=(z.gy-miny)*sy+pad;
+  const type=roomGeom(z).type, scanned=!z.seen&&z.id!==run.current,here=z.id===run.current;
+  const sector=Number.isFinite(z.sector)?z.sector:Math.min(3,Math.floor(z.id/13));
+  const fill=scanned?'#344752':here?'#eab96e':ASH_MAP_COLORS[sector]||ASH_MAP_COLORS[0];
+  const shape=type==='wide'?`M${px} ${py}h${subx*2}v${suby}h${-subx*2}z`:
+   type==='tall'?`M${px} ${py}h${subx}v${suby*2}h${-subx}z`:
+   type==='ell'?`M${px} ${py}h${subx*2}v${suby}h${-subx}v${suby}h${-subx}z`:
+   `M${px} ${py}h${subx}v${suby}h${-subx}z`;
+  const label=here?'●':scanned?'?':isBoss(z.id,run)?'B':isArena(z.id,run)?'A':isExit(z.id,run)?'E':z.kind==='outpost'?'P':'';
+  const cx=px+subx/2,cy=py+suby/2;
+  return `<g><path d="${shape}" fill="${fill}" fill-opacity="${scanned?.52:.96}" stroke="${here?'#fff3cc':'#a8cad3'}" stroke-width="${here?1.8:.9}" stroke-linejoin="round"/>${here?`<circle cx="${cx}" cy="${cy}" r="${mini?3.7:4.9}" fill="#11202a"/><circle cx="${cx}" cy="${cy}" r="${mini?2:2.7}" fill="#fff0ca"/>`:label?`<text x="${cx}" y="${cy+3}" fill="#f8f6ee" font-size="${mini?8:11}" text-anchor="middle" font-weight="900">${label}</text>`:''}</g>`;
+ }).join('');
+ if(mini)return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" focusable="false"><rect width="${W}" height="${H}" rx="6" fill="#0b1b25"/>${links}${tiles}</svg>`;
+ return `<svg class="ash-map-full-svg" xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(W)}" height="${Math.ceil(H)}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Carte des salles découvertes, avec leurs formes réelles">${links}${tiles}</svg>`;
+}
+let ashLastMiniSignature='';
+function ashRenderMiniMap(run){
+ const target=$('ashMiniMap');if(!target)return;
+ if(!run){target.innerHTML='';ashLastMiniSignature='';return}
+ const discovered=(run.rooms||[]).reduce((a,z)=>a+(z.seen?1:0),0);
+ const scanned=(run.intelRooms||[]).length;
+ // La carte est réactualisée à chaque changement de salle ou découverte.
+ const signature=[run.current,discovered,scanned,(run.intelRooms||[]).join(',')].join('|');
+ if(signature!==ashLastMiniSignature){target.innerHTML=ashMapMarkup(run,true);ashLastMiniSignature=signature;}
+}
 function render(){let r=data.run;document.body.classList.toggle('ashfall-expedition',!!r);$('home').hidden=!!r;$('game').hidden=!r;$('phase').textContent=r?'EXPÉDITION':'REFUGE';$('credits').textContent=data.credits;$('research').textContent=data.research;$('runs').textContent=data.runs;if(!r){if($('xpDisplay'))$('xpDisplay').style.display='none';$('hpLevel').textContent='Nv. '+data.hpLv+' / 8';$('dmgLevel').textContent='Nv. '+data.dmgLv+' / 8';
  if($('workshopResearchMirror'))$('workshopResearchMirror').textContent=data.research;
  if($('hpUpgradeFill'))$('hpUpgradeFill').style.width=(data.hpLv/8*100)+'%';
@@ -1133,10 +1180,10 @@ function render(){let r=data.run;document.body.classList.toggle('ashfall-expedit
  $('upHp').textContent=data.hpLv>=8?'NIVEAU MAX':`Améliorer +15 PV · ${4+data.hpLv*4} ✦`;
  $('upDmg').textContent=data.dmgLv>=8?'NIVEAU MAX':`Améliorer +3 dégâts · ${4+data.dmgLv*4} ✦`;$('upHp').disabled=data.hpLv>=8||data.research<4+data.hpLv*4;$('upDmg').disabled=data.dmgLv>=8||data.research<4+data.dmgLv*4;$('equipped').textContent=data.equipped?`${data.equipped.name} · ${data.equipped.rar} · ${data.equipped.dmg} dégâts · ${data.equipped.rate} tirs/s`:'Aucune';$('insurance').textContent=data.insured===data.equipped?.id?'🛡 ASSURÉE':'⚠ Non assurée';$('insure').textContent=`Assurer · ${premium()} ¤`;$('insure').disabled=data.insured===data.equipped.id||data.credits<premium();$('stash').innerHTML='<p class="ui-help">Armes stockées au refuge · appuie sur ÉQUIPER pour changer d’arme.</p>'+(data.stash.length?data.stash.map((g,i)=>itemRow(g,i,'stash')).join(''):'<p class="ui-empty">Réserve vide : extrais des armes pour remplir ton stock.</p>');if($('merchantLaunch'))$('merchantLaunch').textContent='¤ OUVRIR LE COMPTOIR · '+data.credits+' crédits';$('log').dataset.region=region().maxSector;
  
- const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();if(refugeActivePage==='merchant')merchantRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission();$('roomTitle').textContent=isBoss(r.current,r)?'⚠ BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'📡 BALISE':`K-17 · ${r.current+1}/50 · ${SECTORS[sectorOf(room)].name} · ${({single:'1×1',wide:'2×1',tall:'1×2',ell:'EN L'})[roomGeom(room).type]}`;$('hpText').textContent=`${Math.ceil(player.hp)}/${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;runProgress();$('bagCount').textContent=`Sac ${r.bag.length}/6 · Nv.${r.runLevel}`;const xp=$('xpDisplay');if(xp){xp.textContent=`✦ Nv.${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)} XP`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
+ const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();if(refugeActivePage==='merchant')merchantRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission();$('roomTitle').textContent=isBoss(r.current,r)?'⚠ BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'📡 BALISE':`K-17 · ${r.current+1}/50`;$('hpText').textContent=`${Math.ceil(player.hp)} / ${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;if($('hpFill'))$('hpFill').classList.toggle('ash-critical',player.hp/player.max<.28);runProgress();$('bagCount').textContent=`${r.bag.length}/6`;ashRenderMiniMap(r);const xp=$('xpDisplay');if(xp){xp.textContent=`NIV. ${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)}`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
 function closeOverlay(){if(overlay==='level'&&data.run?.pendingLevels>0)return;overlay='';$('overlay').hidden=true;$('overlay').innerHTML=''}
 function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html='<button class="close" data-op="close">✕ Fermer</button>';if(mode==='bag'){html+=`<h3>🎒 SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">💡 Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
-}else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx));if(coords.length){let minx=Math.min(...coords.map(z=>z.gx)),miny=Math.min(...coords.map(z=>z.gy)),maxx=Math.max(...coords.map(z=>z.gx)),maxy=Math.max(...coords.map(z=>z.gy));let width=maxx-minx+1,height=maxy-miny+1,cell=Math.max(12,Math.min(26,Math.floor(310/Math.max(width,height))));let tiles=r.rooms.filter(z=>z.seen||(r.intelRooms||[]).includes(z.id)).map(z=>`<div style="position:absolute;left:${(z.gx-minx)*cell}px;top:${(z.gy-miny)*cell}px;width:${cell-2}px;height:${cell-2}px;background:${!z.seen?'#243e4c':z.id===r.current?'#dfac58':isBoss(z.id,r)?'#a45770':isArena(z.id,r)?'#945d36':isExit(z.id,r)?'#3d9b8b':z.kind==='outpost'?'#5092c4':'#35576b'};border:1px solid #97a4b6;border-radius:3px;color:white;font-size:9px;text-align:center;line-height:${cell-3}px">${!z.seen?'?':z.id===r.current?'●':isBoss(z.id,r)?'B':isArena(z.id,r)?'A':isExit(z.id,r)?'E':z.kind==='outpost'?'P':''}</div>`).join('');html+='<h3>🗺 CARTE TACTIQUE — K-17</h3><p class="muted">🟡 Position actuelle · ? signal détecté par terminal (salle encore inconnue).</p><div style="overflow:auto;max-width:100%"><div style="position:relative;width:'+(width*cell)+'px;height:'+(height*cell)+'px;min-height:150px;background:#101a26">'+tiles+'</div></div><p class="muted">'+r.visited.length+'/50 découvertes · secteurs débloqués : '+(region().maxSector+1)+'/4 · B boss · A arène · E extraction · P avant-poste. Les salles se régénèrent à chaque nouvelle expédition.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else html+='<h3>PAUSE</h3><p>La partie est suspendue. La sauvegarde inclut l’expédition.</p><button data-op="resume">Reprendre</button><button data-op="retreat">Abandonner l’expédition (mort)</button>';$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
+}else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy));if(coords.length){html+='<h3>◈ CARTE TACTIQUE — K-17</h3><p class="muted">La forme de chaque pièce reflète sa géométrie : 1×1, 2×1, 1×2 ou en L. Un ? représente un indice de salle non visitée.</p><div class="ash-map-scroll">'+ashMapMarkup(r,false)+'</div><p class="muted">'+r.visited.length+'/50 salles explorées · ● Vous · B Gardien · A Arène · E Extraction · P Balise. Glisse pour explorer la carte.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else html+='<h3>PAUSE</h3><p>La partie est suspendue. La sauvegarde inclut l’expédition.</p><button data-op="resume">Reprendre</button><button data-op="retreat">Abandonner l’expédition (mort)</button>';$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
 function tool(title,html){$('toolsTitle').textContent=title;$('toolsBody').innerHTML=html;$('tools').hidden=false}
 function backup(){persist();const code=btoa(unescape(encodeURIComponent(JSON.stringify(data))));tool('EXPORT / IMPORT',`<p>Le code inclut le refuge et l’expédition en cours. Conserve-le dans Notes ou Fichiers.</p><textarea id="exportCode" readonly></textarea><button id="copyCode">Copier le code</button><p>Restaurer une sauvegarde :</p><textarea id="importCode" placeholder="Colle ici une sauvegarde..."></textarea><button id="restoreCode">Restaurer</button>`);$('exportCode').value=code;$('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('exportCode').value);msg('Code copié.')}catch(e){$('exportCode').select();msg('Sélectionne le texte pour le copier.')}};$('restoreCode').onclick=()=>{try{const decoded=JSON.parse(decodeURIComponent(escape(atob($('importCode').value.trim()))));if(!valid(decoded))throw Error('format');if(!confirm('Remplacer toute la progression actuelle ?'))return;data=decoded;setPlayer();if(data.run&&isArena(data.run.current,data.run))enforceArena();bullets=[];closeOverlay();runProgress();persist();render();if(data.run?.pendingLevels>0)openLevelChoice();$('tools').hidden=true;msg('Sauvegarde restaurée.')}catch(e){msg('Code invalide ou incompatible.')}}}
 $('upHp').onclick=()=>upgrade('hp');$('upDmg').onclick=()=>upgrade('dmg');$('insure').onclick=insure;$('merchantLaunch').onclick=()=>merchantOpen();$('start').onclick=start;
@@ -1636,7 +1683,7 @@ function drawScenicFloor(room,sec,theme){
    }
   }
   cx.fillStyle='#b2c0c745';cx.font='bold 11px monospace';cx.textAlign='left';
-  cx.fillText(`${scene.role} / ${cell.number}`,x+46,y+374);
+  /* Décor sans texte : la fonction du lieu se lit dans les volumes. */
  }
  cx.restore();
 }
@@ -1762,7 +1809,7 @@ function drawSectorSurface(room,sec,theme){
   }
   // Repere au sol, non interactif. Le label de la cellule reste discret.
   cx.fillStyle='#d5dce047';cx.font='bold 9px monospace';cx.textAlign='right';
-  cx.fillText('K17-'+String(number).padStart(2,'0'),x+CELL_W-37,y+CELL_H-36);
+  /* Numérotation au sol supprimée. */
  }
 }
 
@@ -1789,7 +1836,7 @@ function drawSectorIdentity(room,sec,theme){
    cx.strokeStyle='#b9aa7773';cx.lineWidth=3;cx.setLineDash([17,12]);
    cx.strokeRect(x+111,y+130,138,132);cx.setLineDash([]);
    cx.font='bold 11px monospace';cx.fillStyle='#b2a57875';cx.textAlign='center';
-   cx.fillText('ZONE DE TRANSIT',x+180,y+150);
+   /* Signalisation textuelle supprimée. */
    for(let k=0;k<3;k++){
     cx.fillStyle=k===1?'#81917d32':'#a39f7834';
     cx.fillRect(x+40+k*21,y+196+(k%2)*9,14,4);
@@ -1802,7 +1849,7 @@ function drawSectorIdentity(room,sec,theme){
    cx.fillStyle='#397d9850';cx.fillRect(x+119,y+133,122,12);
    cx.fillStyle='#6ac7e188';for(let k=0;k<5;k++)cx.fillRect(x+124+k*22,y+136,12,2);
    cx.fillStyle='#76b9d359';cx.font='bold 10px monospace';cx.textAlign='center';
-   cx.fillText('MODULE  /  '+String(n).padStart(2,'0'),x+180,y+165);
+   /* Label supprimé, le motif technique suffit. */
    for(let k=0;k<4;k++){
     L(44,115+k*21,66,115+k*21,'#4388a98c',2);
     cx.fillStyle='#75c9db6e';cx.fillRect(x+63,y+113+k*21,4,4);
@@ -1830,7 +1877,7 @@ function drawSectorIdentity(room,sec,theme){
     const a=k*Math.PI/4;
     L(180+Math.cos(a)*15,197+Math.sin(a)*15,180+Math.cos(a)*28,197+Math.sin(a)*28,'#a86c46af',4);
    }
-   cx.fillStyle='#b97f4e9a';cx.font='bold 10px monospace';cx.textAlign='center';cx.fillText('THERMIQUE',x+180,y+149);
+   cx.fillStyle='#b97f4e9a';cx.font='bold 10px monospace';cx.textAlign='center';/* Label thermique supprimé. */
    for(let row=0;row<2;row++){
     const sy=row?y+307:y+78;
     cx.fillStyle='#b87a4569';cx.fillRect(x+54,sy,67,4);
@@ -1848,7 +1895,7 @@ function drawSectorIdentity(room,sec,theme){
    cx.beginPath();cx.arc(ox,oy,33,0,Math.PI*2);cx.stroke();
    L(180,150,180,174,'#b98fbd9c',3);L(180,222,180,248,'#b98fbd9c',3);
    L(130,199,154,199,'#b98fbd9c',3);L(206,199,232,199,'#b98fbd9c',3);
-   cx.font='bold 10px monospace';cx.fillStyle='#d3a0c198';cx.textAlign='center';cx.fillText('CITADELLE',ox,oy+5);
+   cx.font='bold 10px monospace';cx.fillStyle='#d3a0c198';cx.textAlign='center';/* Label citadelle supprimé. */
    for(let k=0;k<3;k++){
     cx.fillStyle=k%2?'#d9a6cd67':'#795777a1';
     cx.fillRect(x+57+k*10,y+77,6,12);
@@ -1858,7 +1905,7 @@ function drawSectorIdentity(room,sec,theme){
   // La signaletique au sol appartient a la salle et non a l'interface.
   cx.globalAlpha=.72;cx.font='bold 10px monospace';cx.textAlign='left';
   cx.fillStyle=theme.accent;
-  cx.fillText(['TR-','LAB-','TH-','CT-'][sec]+String(n).padStart(2,'0'),x+45,y+361);
+  /* Références alphanumériques supprimées. */
   cx.globalAlpha=1;
  }
  cx.restore();
@@ -1925,7 +1972,7 @@ function paintStaticSurface(room,sec,theme){
  drawInteriorFloorSeams(room,sec,theme);
  drawScenicProps(room,sec,theme);
  cx.font='bold 10px monospace';cx.fillStyle=theme.accent;cx.textAlign='left';
- cx.fillText('SECTEUR '+(sec+1)+' · '+theme.name,27,32);
+ /* Les sols sont dépourvus de texte : secteur indiqué uniquement dans le HUD. */
 }
 function drawCachedSurface(room,sec,theme){
  const geom=roomGeom(room);
@@ -1955,13 +2002,13 @@ function drawDynamicHazard(room,sec){
   cx.strokeStyle=room.hazardOn?'#7fe8ff':'#418baa';cx.lineWidth=room.hazardOn?7:2;
   cx.beginPath();cx.moveTo(room.hazardX||180,42);cx.lineTo(room.hazardX||180,356);cx.stroke();
   cx.fillStyle='#bfeeff';cx.font='10px monospace';cx.textAlign='left';
-  cx.fillText(room.hazardOn?'⚠ LASER ACTIF':'LASER EN CHARGE',170,54);
+  /* Le faisceau avertit visuellement du danger. */
  }else if(sec===2){
   cx.beginPath();cx.arc(room.hazardX||240,205,42,0,Math.PI*2);
   cx.fillStyle=room.hazardOn?'#ff773977':'#b16d2f33';cx.fill();
   cx.strokeStyle=room.hazardOn?'#ffc178':'#a7784c';cx.lineWidth=3;cx.stroke();
   cx.fillStyle='#ffd6a8';cx.font='10px monospace';cx.textAlign='left';
-  cx.fillText(room.hazardOn?'⚠ CHALEUR':'ÉVENT EN CHARGE',170,53);
+  /* Le cercle thermique avertit visuellement du danger. */
  }
  cx.restore();
 }
@@ -2019,7 +2066,7 @@ function drawRefinedChest(room,r){
   cx.globalAlpha=1;
  }
  cx.textAlign='center';cx.font='bold 10px sans-serif';cx.fillStyle=guarded?'#ffd5ae':opened?'#a8c8d2':col;
- cx.fillText(opened?'COFFRE OUVERT':guarded?'COFFRE GARDÉ':isEpic?'COFFRE ÉPIQUE':'COFFRE PRÊT',0,-40);
+ /* Le coffre communique son état par la serrure et le couvercle, sans étiquette. */
  cx.restore();
 }
 
@@ -2042,7 +2089,7 @@ function drawRefinedOutpost(room){
  if(active){cx.globalAlpha=.36;cx.strokeStyle='#7af8db';cx.lineWidth=2;cx.beginPath();cx.arc(0,-33,11+2*Math.sin(t*2),-Math.PI*.85,Math.PI*.15);cx.stroke();cx.restore();}
  else cx.restore();
  cx.save();cx.textAlign='center';cx.fillStyle=active?'#a0f7e2':'#d4e8ee';cx.font='bold 10px sans-serif';
- cx.fillText(active?'BALISE ACTIVÉE':'BALISE · APPROCHE',180,141);cx.restore();
+ /* La lumière de la balise indique son état, sans étiquette. */cx.restore();
 }
 
 function extractionContested(room){return room.enemies.some(e=>length(e,{x:180,y:195})<105);}
@@ -2075,7 +2122,7 @@ function drawExtractionGround(r,room){
  // Pendant les 3 secondes, garder les textes au-dessus du socle, le Nomade reste visible
  if(!active){
   cx.save();cx.textAlign='center';cx.font='bold 11px sans-serif';cx.fillStyle='#c4f9eb';
-  cx.fillText('EXTRACTION',x,y-13);
+  /* Le cercle lui-même identifie l'extraction. */
   cx.fillStyle='#f8d69c';cx.font='bold 17px sans-serif';cx.fillText(Math.round(progress*100)+' %',x,y+6);
   cx.restore();
  }
@@ -2091,9 +2138,9 @@ function drawExtractionCountdown(r,room){
  cx.beginPath();cx.arc(0,0,25,0,Math.PI*2);cx.stroke();
  cx.fillStyle='#fff';cx.textAlign='center';cx.font='bold 29px sans-serif';cx.fillText(String(seconds),0,10);
  cx.font='bold 10px sans-serif';cx.fillStyle=contested?'#ffc1a3':'#acffec';
- cx.fillText(contested?'CONTESTÉE':'EXTRACTION',0,-34);
+ /* Rouge et halo pulsant en cas de contestation. */
  cx.font='bold 9px sans-serif';cx.fillStyle=contested?'#ffc1a3':'#d1eae8';
- cx.fillText(contested?'COMPTEUR EN PAUSE':'RESTE DANS LE CERCLE',0,38);
+ /* Le chiffre central est la seule indication textuelle conservée. */
  cx.restore();
 }
 
@@ -2112,9 +2159,9 @@ drawInteractables(room);
 if(room.enemies.length){
  const visible=room.enemies.filter(e=>hasLineOfSight(player.x,player.y,e.x,e.y,room));
  const tactical=tacticalObjectToTarget(room,visible);
- if(tactical){cx.save();cx.strokeStyle='#f8d68b';cx.lineWidth=2;cx.setLineDash([4,3]);cx.beginPath();cx.arc(tactical.x,tactical.y,25,0,Math.PI*2);cx.stroke();cx.setLineDash([]);cx.fillStyle='#ffe8b3';cx.font='bold 9px sans-serif';cx.textAlign='center';cx.fillText('CIBLE TACTIQUE',tactical.x,tactical.y-37);cx.restore()}
+ if(tactical){cx.save();cx.strokeStyle='#f8d68b';cx.lineWidth=2;cx.setLineDash([4,3]);cx.beginPath();cx.arc(tactical.x,tactical.y,25,0,Math.PI*2);cx.stroke();cx.setLineDash([]);cx.fillStyle='#ffe8b3';cx.font='bold 9px sans-serif';cx.textAlign='center';/* La cible tactique est identifiée par un anneau doré en pointillés. */cx.restore()}
 }
-drawFieldEvent(room);drawRefinedChest(room,r);drawIncidentSignal(room);if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
+drawFieldEvent(room);drawRefinedChest(room,r);if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
 lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),room.kind==='boss'&&e.type==='sentinel');cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-39,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-39,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);cx.restore();}
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){

@@ -678,3 +678,64 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 .ash-update-panel button:disabled{opacity:.65;cursor:wait}
 .ash-update-panel small{width:100%;display:block;color:#b5cfda;line-height:1.5;font-size:12px;letter-spacing:0}
 .ash-update-panel small:empty{display:none}
+
+/* ASHFALL 0.8.9.56 — HUD clair, carte persistante, textes ambiants retires */
+body.ashfall-expedition .gamebar{
+ display:grid!important;grid-template-columns:minmax(0,1fr) min(37vw,144px)!important;
+ grid-template-rows:auto!important;column-gap:7px!important;align-items:start!important;
+ padding:calc(env(safe-area-inset-top) + 7px) 8px 0!important;background:none!important;
+}
+body.ashfall-expedition .hud-main{
+ background:linear-gradient(165deg,#142c3beF,#0c1c2aec)!important;
+ border:1px solid #668493!important;border-radius:13px!important;
+ padding:10px 10px 11px!important;min-width:0!important;
+ box-shadow:0 7px 20px #0007!important;
+}
+body.ashfall-expedition .hud-topline{margin:0 0 10px!important;min-height:12px;}
+body.ashfall-expedition #roomTitle{font-size:10px!important;color:#9fb6c3!important;font-weight:750!important;max-width:none!important;}
+body.ashfall-expedition .ash-vital-line,body.ashfall-expedition .ash-xp-line{
+ display:flex;align-items:baseline;justify-content:space-between;gap:5px;
+}
+body.ashfall-expedition .ash-vital-name{color:#ff989a;font-size:18px;letter-spacing:.05em;font-weight:1000;line-height:1.3;white-space:nowrap;}
+body.ashfall-expedition #hpText{font-size:14px!important;color:#fff1ed!important;font-weight:900;white-space:nowrap;}
+body.ashfall-expedition .health.ash-vital-track{
+ height:17px!important;border-radius:5px!important;margin:6px 0 13px!important;background:#4c303a!important;border:1px solid #98606a!important;
+ box-shadow:inset 0 0 8px #0009!important;overflow:hidden;
+}
+body.ashfall-expedition #hpFill{height:100%;background:linear-gradient(180deg,#ff9188,#e34754)!important;box-shadow:inset 0 2px 2px #fff5,0 0 10px #f3555555!important;transition:width .16s;}
+body.ashfall-expedition #hpFill.ash-critical{background:linear-gradient(180deg,#ffce8e,#ed675b)!important;}
+body.ashfall-expedition .ash-xp-name{font-size:13px;color:#9ce9ff;font-weight:950;letter-spacing:.08em;white-space:nowrap;}
+body.ashfall-expedition #xpDisplay{font-size:10px!important;color:#d8ebf3!important;font-weight:850;white-space:nowrap;}
+body.ashfall-expedition .xp-track.ash-xp-track{height:11px!important;margin:6px 0 0!important;border-radius:4px!important;background:#1f4155!important;border:1px solid #4d859c!important;overflow:hidden;}
+body.ashfall-expedition #xpFill{height:100%;background:linear-gradient(180deg,#90eaff,#389bc8)!important;transition:width .16s;}
+body.ashfall-expedition .ash-hud-right{display:grid;gap:5px;min-width:0;grid-column:2;grid-row:1;pointer-events:auto;}
+body.ashfall-expedition .ash-minimap-button{
+ width:100%;min-width:0!important;min-height:109px!important;height:115px;padding:5px 4px 4px!important;
+ display:flex;flex-direction:column;align-items:stretch;gap:3px;
+ background:#0c2231ed!important;border:1px solid #668b9d!important;border-radius:12px!important;box-shadow:0 7px 20px #0008!important;
+}
+body.ashfall-expedition .ash-minimap-topline{display:flex;justify-content:space-between;align-items:center;color:#cae3e9;font-size:8px;font-weight:950;letter-spacing:.07em;white-space:nowrap;padding:0 3px;}
+body.ashfall-expedition .ash-minimap-image{display:block;flex:1;width:100%;min-height:0;overflow:hidden;border-radius:6px;background:#0b1b25;}
+body.ashfall-expedition .ash-minimap-image svg{display:block;width:100%;height:100%;}
+body.ashfall-expedition .hud-actions{display:flex!important;gap:5px!important;width:100%;align-items:stretch!important;justify-content:stretch;}
+body.ashfall-expedition .hud-actions button{min-height:42px!important;padding:5px!important;border-radius:10px!important;font-weight:900!important;}
+body.ashfall-expedition #bagBtn{flex:1;font-size:12px!important;display:flex;gap:4px;align-items:center;justify-content:center;min-width:0!important;white-space:nowrap;}
+body.ashfall-expedition #bagCount{display:inline-block;padding:4px 4px;border-radius:6px;background:#dca86b;color:#132634!important;font-size:12px!important;font-weight:1000;}
+body.ashfall-expedition #pauseBtn{flex:0 0 32px;min-width:32px!important;font-size:17px!important;}
+body.ashfall-expedition .ui-mission{display:none!important;}
+body.ashfall-expedition #stage #hint{display:none!important;}
+body.ashfall-expedition #log{left:-10000px!important;}
+.ash-map-scroll{overflow:auto;max-width:100%;max-height:56dvh;border:1px solid #436276;background:#071923;border-radius:12px;overscroll-behavior:contain;padding:10px;}
+.ash-map-full-svg{display:block;max-width:none;}
+.ash-map-unavailable{display:grid;place-items:center;width:100%;height:100%;color:#8eabb5;}
+@media(max-width:350px){body.ashfall-expedition .gamebar{grid-template-columns:minmax(0,1fr) 116px!important;gap:5px!important;padding-left:5px!important;padding-right:5px!important}body.ashfall-expedition .hud-main{padding:8px 7px!important}body.ashfall-expedition .ash-vital-name{font-size:16px}body.ashfall-expedition #hpText{font-size:12px!important}body.ashfall-expedition #bagBtn{font-size:11px!important}body.ashfall-expedition #bagCount{font-size:11px!important}body.ashfall-expedition .ash-minimap-button{height:106px!important;min-height:106px!important}}
+@media(orientation:landscape){body.ashfall-expedition .gamebar{grid-template-columns:minmax(0,220px) min(24vw,135px)!important}body.ashfall-expedition .ash-minimap-button{height:95px!important;min-height:95px!important}body.ashfall-expedition .hud-main{padding:7px 9px!important}body.ashfall-expedition .health.ash-vital-track{height:13px!important;margin:4px 0 7px!important}}
+
+/* Fix legacy grid positioning of map button when embedded in the new right HUD column. */
+body.ashfall-expedition .ash-hud-right{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto!important;}
+body.ashfall-expedition #mapBtn.ash-minimap-button{grid-column:1!important;grid-row:1!important;position:relative!important;left:auto!important;right:auto!important;top:auto!important;}
+body.ashfall-expedition .ash-hud-right .hud-actions{grid-column:1!important;grid-row:2!important;}
+/* Les anciennes règles #mapBtn positionnaient la mini-carte hors de sa colonne. */
+body.ashfall-expedition .ash-hud-right #mapBtn{grid-column:1!important;grid-row:1!important;justify-self:stretch!important;align-self:stretch!important;min-width:0!important;max-width:100%!important;}
+body.ashfall-expedition .ash-hud-right .hud-actions{grid-column:1!important;grid-row:2!important;min-width:0!important;}
+body.ashfall-expedition .gamebar::before{display:none!important;content:none!important;}
