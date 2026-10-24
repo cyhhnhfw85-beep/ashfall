@@ -1,13 +1,15 @@
-# ASHFALL 0.8.9.52 — Phase 3C : incidents de salle
+# ASHFALL 0.8.9.53 — Stabilisation de la phase 3
 
-Basée sur la 0.8.9.51. Les nouveaux incidents existent uniquement sur les **nouvelles expéditions** (`interactiveV52`) :
+Base : archive complète 0.8.9.52. Compatible avec la sauvegarde `ashfall_pwa_v1` : aucune migration ni remise à zéro.
 
-- **Embuscade** : une alerte de 3 secondes annonce deux renforts. Le coffre ne peut pas s’ouvrir avant leur élimination ; la salle ne peut pas être sécurisée trop tôt.
-- **Surcharge** : un module destructible existant est annoncé pendant 4 secondes, puis devient instable. Le joueur peut le déclencher avant l’alarme en lui tirant dessus. Aucun nouvel obstacle n’est créé.
-- **Coupure** : ambiance de sécurité défaillante pendant 7 secondes, avec visibilité réduite modérément et voyants d’urgence. La lumière revient ensuite.
+## Corrections
 
-Au maximum huit incidents par carte de 50 salles, exclusivement dans des salles ordinaires sans terminal, sans nouvelle commande tactile, ni checkpoint.
+- Les coffres ne s'ouvrent automatiquement que lorsque la salle est réellement sécurisée, tous ennemis éliminés, et toute embuscade résolue. Corrige le bug reproduit où un coffre s'ouvrait pendant les 3 secondes précédant les renforts.
+- L'ancienne action d'ouverture du coffre applique la même validation, même si l'interface mobile n'utilise plus de bouton d'action.
+- Pendant l'embuscade, le joueur peut battre en retraite par une porte déjà visitée mais ne peut pas progresser vers une nouvelle salle avant de sécuriser celle-ci.
+- Le tir automatique privilégie les ennemis et ne vise les explosifs que si deux ennemis ou plus sont exposés, ou s'il ne voit pas directement d'ennemi. L'explosion et les éventuelles réactions en chaîne ne doivent pas menacer immédiatement le Nomade.
+- Marqueur visuel « CIBLE TACTIQUE » lorsqu'un explosif est choisi automatiquement.
 
-Conservé : refuge, Nomade, ennemis, coffres, terminaux, caches, extraction, économie existante, sauvegardes, collisions et équilibre des dégâts. Les deux renforts d'une embuscade conservent leurs drops ordinaires.
+## Invariants
 
-Test sur iPhone conseillé après export préalable de la sauvegarde.
+Aucune modification des dégâts, récompenses, valeurs des objets, fréquence des événements, progression, refuge, nouveaux sprites ou géométrie. L'extraction et son compte à rebours conservent leurs règles. La version PWA et son cache passent à 0.8.9.53.
