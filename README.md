@@ -118,3 +118,16 @@ Les salles étendues conservent pour cette phase les coffres, terminaux, dangers
 - Les particules des cellules hors champ ne sont pas dessinées.
 - Cache non persistant, compatible avec les sauvegardes antérieures et son mode de repli sans cache.
 - Visuels d'ennemis/Nomade et combat inchangés ; extraction 0.8.9.43 conservée.
+
+
+## 0.8.9.45 — Identité visuelle des quatre secteurs
+- Signatures graphiques sectorielles au sol sur toutes les cellules (1x1, 2x1, 1x2, L), sans modifier la logique de génération ni les collisions.
+- Périphérie : beton fissure, marquages de depot / transit et usure.
+- Laboratoires : sol technique, pistes de donnees et zone de diagnostic.
+- Fonderie : structure metallique, motifs thermiques, grilles et marquages de sécurité.
+- Citadelle : plaques blindees, motifs militaires symetriques, emblème de defense.
+- Appareillages solides existants affinés selon le secteur (mêmes hitbox).
+- Coutures entre les cellules adjacentes des grandes salles comblees visuellement sans modifier les collisions.
+- Cache de la 0.8.9.44 réutilisé, sans animation dans la couche statique ; effets et gameplay inchangés.
+- Nomade gameplay et nouveaux sprites ennemis prevus pour les 0.8.9.46/47.
+- Extractions et sauvegardes inchangées.

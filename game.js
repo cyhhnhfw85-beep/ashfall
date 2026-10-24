@@ -935,18 +935,23 @@ function drawScenicProps(room,sec,theme){
    sceneLine(x+7,y+7,x+w-7,y+h-8,'#394d43',2);
    if(w>25)sceneLine(x+w-7,y+7,x+7,y+h-8,'#394d43',2);
    cx.fillStyle='#c19b5b';cx.fillRect(x+w/2-4,y+1,8,4);
+   cx.fillStyle='#c4b78caa';cx.fillRect(x+5,y+4,Math.min(12,w-10),3);
+   cx.fillStyle='#182a28';cx.fillRect(x+6,y+h-9,Math.min(9,w-12),3);
   }else if(sec===1){
    scenePanel(x,y,w,h,'#2d5c72','#163847','#6fb5ce');
    for(let py=y+9;py<y+h-5;py+=14){cx.fillStyle='#0d2c40';cx.fillRect(x+3,py,w-6,7);cx.fillStyle=theme.accent;cx.fillRect(x+5,py+2,3,2)}
+   if(w>20){cx.fillStyle='#83d6e3a9';cx.fillRect(x+w-11,y+5,5,3);cx.fillRect(x+w-11,y+10,5,2);}
   }else if(sec===2){
    scenePanel(x,y,w,h,'#72503a','#382c2a','#b28055');
    cx.fillStyle='#271f1f';cx.fillRect(x+5,y+9,w-10,h-17);
    cx.fillStyle='#cc8b4c';for(let j=0;j<3;j++)cx.fillRect(x+7+j*7,y+12,3,Math.max(3,h-22));
+   cx.fillStyle='#d7a46a';cx.fillRect(x+3,y+h-9,Math.max(4,w-6),3);
   }else{
    scenePanel(x,y,w,h,'#5a4766','#242337','#9875aa');
    cx.fillStyle='#2b233f';cx.fillRect(x+4,y+6,w-8,h-11);
    sceneLine(x+5,y+9,x+w-6,y+h-8,theme.accent,2);
    cx.fillStyle=theme.accent;cx.fillRect(x+6,y+9,4,4);
+   cx.fillStyle='#c29bd0a1';cx.fillRect(x+w-9,y+7,4,Math.max(4,h-14));
   }
  }
  cx.restore();
@@ -1047,6 +1052,132 @@ function drawSectorSurface(room,sec,theme){
  }
 }
 
+
+// V45 — signatures de secteur deterministes. Peinture au sol et signaletique,
+// jamais de nouvelles hitboxes ni d'objets bloquants.
+function drawSectorIdentity(room,sec,theme){
+ const sc=sceneData(room);
+ cx.save();
+ for(const cell of sc.cells){
+  const x=cell.x,y=cell.y,n=cell.number;
+  const L=(a,b,c,d,color,w=2)=>sceneLine(x+a,y+b,x+c,y+d,color,w);
+  if(sec===0){
+   // Peripherie : dalles de beton inegales, reprise bitumee, traces de convoyage.
+   cx.fillStyle='#66726621';cx.fillRect(x+49,y+64,78,32);
+   cx.fillStyle='#070f1426';cx.fillRect(x+139,y+74,82,8);
+   cx.fillStyle='#9b8e6440';cx.fillRect(x+62,y+307,82,5);
+   cx.fillStyle='#c1a56b4c';for(let k=0;k<4;k++)cx.fillRect(x+66+k*17,y+315,9,3);
+   // Une empreinte de fissure irréguliere mais fixe.
+   L(210,86,224,97,'#0c1c20a5',2);L(224,97,215,114,'#0c1c20a5',2);
+   L(215,114,238,132,'#0c1c20a5',2);L(224,97,242,89,'#0c1c2090',1);
+   L(72,241,89,234,'#81917e33',2);L(89,234,107,242,'#81917e33',2);
+   // Marquage de chargement efface : plat et semi-transparent.
+   cx.strokeStyle='#b9aa7773';cx.lineWidth=3;cx.setLineDash([17,12]);
+   cx.strokeRect(x+111,y+130,138,132);cx.setLineDash([]);
+   cx.font='bold 11px monospace';cx.fillStyle='#b2a57875';cx.textAlign='center';
+   cx.fillText('ZONE DE TRANSIT',x+180,y+150);
+   for(let k=0;k<3;k++){
+    cx.fillStyle=k===1?'#81917d32':'#a39f7834';
+    cx.fillRect(x+40+k*21,y+196+(k%2)*9,14,4);
+   }
+  }else if(sec===1){
+   // Laboratoires : anneau de diagnostic sous verre, pistes de donnees, plots.
+   cx.fillStyle='#102b3b78';cx.fillRect(x+102,y+114,156,152);
+   cx.strokeStyle='#4c94b07c';cx.lineWidth=2;cx.strokeRect(x+106.5,y+118.5,147,143);
+   cx.strokeStyle='#79d0df35';cx.strokeRect(x+114.5,y+127.5,131,126);
+   cx.fillStyle='#397d9850';cx.fillRect(x+119,y+133,122,12);
+   cx.fillStyle='#6ac7e188';for(let k=0;k<5;k++)cx.fillRect(x+124+k*22,y+136,12,2);
+   cx.fillStyle='#76b9d359';cx.font='bold 10px monospace';cx.textAlign='center';
+   cx.fillText('MODULE  /  '+String(n).padStart(2,'0'),x+180,y+165);
+   for(let k=0;k<4;k++){
+    L(44,115+k*21,66,115+k*21,'#4388a98c',2);
+    cx.fillStyle='#75c9db6e';cx.fillRect(x+63,y+113+k*21,4,4);
+    L(294,241-k*21,316,241-k*21,'#4388a98c',2);
+   }
+   for(let k=0;k<5;k++){
+    cx.fillStyle=k%2?'#57b0ca64':'#143849';
+    cx.fillRect(x+122+k*22,y+227,16,7);
+   }
+   cx.strokeStyle='#6eb9d666';cx.lineWidth=2;
+   cx.beginPath();cx.arc(x+180,y+199,23,0,Math.PI*2);cx.stroke();
+   L(180,176,180,222,'#60bdd655',1);L(157,199,203,199,'#60bdd655',1);
+  }else if(sec===2){
+   // Fonderie : metal strie, cercle de refroidissement et chemins securises.
+   cx.fillStyle='#1d2122aa';cx.fillRect(x+97,y+110,166,169);
+   cx.strokeStyle='#ad734c8e';cx.lineWidth=4;cx.strokeRect(x+102,y+115,157,159);
+   cx.strokeStyle='#e5a3634a';cx.lineWidth=2;cx.strokeRect(x+109,y+121,144,148);
+   for(let k=0;k<11;k++){
+    cx.fillStyle=k%2?'#744b345e':'#503c3377';
+    cx.fillRect(x+119+k*12,y+133,6,124);
+   }
+   cx.fillStyle='#201d1c';cx.beginPath();cx.arc(x+180,y+197,37,0,Math.PI*2);cx.fill();
+   cx.strokeStyle='#d28b525c';cx.lineWidth=6;cx.beginPath();cx.arc(x+180,y+197,30,0,Math.PI*2);cx.stroke();
+   for(let k=0;k<8;k++){
+    const a=k*Math.PI/4;
+    L(180+Math.cos(a)*15,197+Math.sin(a)*15,180+Math.cos(a)*28,197+Math.sin(a)*28,'#a86c46af',4);
+   }
+   cx.fillStyle='#b97f4e9a';cx.font='bold 10px monospace';cx.textAlign='center';cx.fillText('THERMIQUE',x+180,y+149);
+   for(let row=0;row<2;row++){
+    const sy=row?y+307:y+78;
+    cx.fillStyle='#b87a4569';cx.fillRect(x+54,sy,67,4);
+    for(let k=0;k<5;k++)L(57+k*13,sy+5,65+k*13,sy+16,'#e4a65f6a',4);
+   }
+  }else{
+   // Citadelle : blindage geometrique, cible tactique et symetrie militaire.
+   cx.fillStyle='#42334c7a';cx.fillRect(x+83,y+97,194,205);
+   cx.strokeStyle='#9f76b380';cx.lineWidth=3;cx.strokeRect(x+88,y+103,184,194);
+   cx.strokeStyle='#765a866e';cx.lineWidth=2;cx.strokeRect(x+97,y+113,166,173);
+   const ox=x+180,oy=y+199;
+   cx.fillStyle='#32273c88';cx.beginPath();cx.moveTo(ox,oy-65);cx.lineTo(ox+68,oy);cx.lineTo(ox,oy+65);cx.lineTo(ox-68,oy);cx.closePath();cx.fill();
+   cx.strokeStyle='#d19bc58c';cx.lineWidth=3;cx.stroke();
+   cx.strokeStyle='#a97ca56d';cx.lineWidth=2;
+   cx.beginPath();cx.arc(ox,oy,33,0,Math.PI*2);cx.stroke();
+   L(180,150,180,174,'#b98fbd9c',3);L(180,222,180,248,'#b98fbd9c',3);
+   L(130,199,154,199,'#b98fbd9c',3);L(206,199,232,199,'#b98fbd9c',3);
+   cx.font='bold 10px monospace';cx.fillStyle='#d3a0c198';cx.textAlign='center';cx.fillText('CITADELLE',ox,oy+5);
+   for(let k=0;k<3;k++){
+    cx.fillStyle=k%2?'#d9a6cd67':'#795777a1';
+    cx.fillRect(x+57+k*10,y+77,6,12);
+    cx.fillRect(x+277-k*10,y+306,6,12);
+   }
+  }
+  // La signaletique au sol appartient a la salle et non a l'interface.
+  cx.globalAlpha=.72;cx.font='bold 10px monospace';cx.textAlign='left';
+  cx.fillStyle=theme.accent;
+  cx.fillText(['TR-','LAB-','TH-','CT-'][sec]+String(n).padStart(2,'0'),x+45,y+361);
+  cx.globalAlpha=1;
+ }
+ cx.restore();
+}
+
+
+function drawInteriorFloorSeams(room,sec,theme){
+ const g=roomGeom(room),keys=new Set(g.cells.map(([x,y])=>x+','+y));
+ const bridge=['#304043','#234457','#47372e','#403348'][sec];
+ cx.save();
+ for(const [tx,ty] of g.cells){
+  const x=tx*CELL_W,y=ty*CELL_H;
+  if(keys.has((tx+1)+','+ty)){
+   cx.fillStyle=bridge;cx.fillRect(x+CELL_W-21,y+20,42,CELL_H-40);
+   cx.strokeStyle=theme.grid;cx.globalAlpha=.35;cx.lineWidth=2;
+   sceneLine(x+CELL_W,y+25,x+CELL_W,y+CELL_H-25,theme.grid,2);cx.globalAlpha=1;
+   for(let i=0;i<5;i++){
+    cx.fillStyle=theme.accent;cx.globalAlpha=.27;
+    cx.fillRect(x+CELL_W-2,y+58+i*62,4,9);
+   }cx.globalAlpha=1;
+  }
+  if(keys.has(tx+','+(ty+1))){
+   cx.fillStyle=bridge;cx.fillRect(x+20,y+CELL_H-21,CELL_W-40,42);
+   sceneLine(x+25,y+CELL_H,x+CELL_W-25,y+CELL_H,theme.grid,2);
+   for(let i=0;i<5;i++){
+    cx.fillStyle=theme.accent;cx.globalAlpha=.27;
+    cx.fillRect(x+53+i*57,y+CELL_H-2,9,4);
+   }cx.globalAlpha=1;
+  }
+ }
+ cx.restore();
+}
+
 function drawPixelFloor(room,sec,theme){
  // Textures locales reutilisees sur chaque cellule, y compris les ailes de L.
  for(const [tx,ty] of roomGeom(room).cells){
@@ -1076,6 +1207,8 @@ function paintStaticSurface(room,sec,theme){
  drawScenicFloor(room,sec,theme);
  drawSectorSurface(room,sec,theme);
  drawPixelFloor(room,sec,theme);
+ drawSectorIdentity(room,sec,theme);
+ drawInteriorFloorSeams(room,sec,theme);
  drawScenicProps(room,sec,theme);
  cx.font='bold 10px monospace';cx.fillStyle=theme.accent;cx.textAlign='left';
  cx.fillText('SECTEUR '+(sec+1)+' · '+theme.name,27,32);
