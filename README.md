@@ -1,12 +1,15 @@
-# ASHFALL 0.8.9.46b — Nomade articulé top-down
+# ASHFALL 0.8.9.47 — Cinq familles d’ennemis
 
-Base : 0.8.9.46. Correctif graphique spécifique au personnage en expédition.
+Base : **0.8.9.46b Nomade articulé validé**. Modification du rendu des ennemis uniquement.
 
-- **Jambes et bassin** : marche dans 8 directions, avec mouvement indépendant des jambes.
-- **Buste, bras, capuche, arme** : visée continue 360° avec projection orientée, membres reliés aux épaules, sans rotation de l’illustration entière.
-- **Silhouette verticale** : capuche toujours au-dessus du buste et bottes sous le bassin dans la projection caméra (corrige l'effet de personnage rampant).
-- **Armes** : pistolet, SMG, fusil et énergétique affichés selon la véritable arme équipée, sans nouveau comportement de tir.
-- Capuche sable, visage sombre, sac à dos et équipement du Nomade déjà validé dans le refuge.
-- **Inchangés** : refuge, illustrations originales, ennemis, cartes, portes, hitbox, inventaire, sauvegardes, dégâts, extraction.
+- Chaser (Traqueur) : silhouette étroite, griffes et vêtements déchirés.
+- Ranged (Tireur) : casque, visière et fusil orienté vers le joueur.
+- Drone : ailes flottantes, noyau lumineux animé et appendices.
+- Brute : épaules massives, blindage, grosses mains.
+- Sentinel (Sentinelle/Gardien) : armure facettée et arme énergétique, version Gardien accentuée.
+- Variantes cohérentes avec les 4 secteurs (matières, palettes et inscriptions), et animation légère.
+- Barre de vie déplacée au-dessus des nouvelles silhouettes.
 
-La compatibilité des sauvegardes existantes est conservée ; recharger le jeu pour actualiser le cache PWA.
+**Inchangés** : IA, vitesse, dégâts, PV, hitbox, apparitions, récompenses, caméra, salles, sauvegardes, extraction, Nomade et refuge.
+
+Les ennemis étant dessinés en Canvas, aucun asset supplémentaire n'est nécessaire. Test navigateur non équivalent à une validation iPhone réelle.
