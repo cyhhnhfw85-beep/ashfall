@@ -1,5 +1,24 @@
-const CACHE='ashfall-08947-ennemis-stylises';
-const FILES=['./','./index.html','./game.css?v=08947','./game.js?v=08947','./immersion.js?v=08947','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
-self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(FILES)).then(()=>self.skipWaiting())));
-self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('ashfall-')&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim())));
-self.addEventListener('fetch',e=>{if(e.request.method!=='GET'||new URL(e.request.url).origin!==location.origin)return;e.respondWith(fetch(e.request).then(resp=>{if(resp.ok){let cp=resp.clone();caches.open(CACHE).then(c=>c.put(e.request,cp))}return resp}).catch(()=>caches.match(e.request)))});
+const CACHE='ashfall-08947b-ennemis-update';
+const FILES=['./','./index.html','./game.css?v=08947b','./game.js?v=08947b','./immersion.js?v=08947b','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ashfall-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{
+ const request=event.request;
+ if(request.method!=='GET'||new URL(request.url).origin!==location.origin)return;
+ event.respondWith((async()=>{
+  try{
+   const fresh=await fetch(request,{cache:'no-store'});
+   if(fresh.ok){
+    const parsed=new URL(request.url);
+    if(!parsed.searchParams.has('ashfall_check')&&!parsed.searchParams.has('ashfall_refresh')){
+     const copy=fresh.clone();
+     const key=request.mode==='navigate'?'./index.html':request;
+     event.waitUntil(caches.open(CACHE).then(cache=>cache.put(key,copy)).catch(()=>{}));
+    }
+   }
+   return fresh;
+  }catch(err){
+   return (await caches.match(request))||(request.mode==='navigate'?await caches.match('./index.html'):null)||Response.error();
+  }
+ })());
+});
