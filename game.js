@@ -233,7 +233,7 @@ function makeLargeMap(){
  let outpostIds=[];
  for(let sector=1;sector<=3;sector++){
   let eligible=rooms.filter(z=>z.sector===sector&&z.kind==='standard'&&z.id!==bossId).sort((a,b)=>a.depth-b.depth);
-  if(!eligible.length)eligible=rooms.filter(z=>z.sector===sector&&z.id!==bossId&&!exitIds.includes(z.id)&&!arenaIds.includes(z.id));
+  if(!eligible.length)eligible=rooms.filter(z=>z.sector===sector&&(z.kind==='standard'||z.kind==='guarded'));
   if(!eligible.length&&sector===3){eligible=rooms.filter(z=>z.sector===2&&z.kind==='standard').sort((a,b)=>b.depth-a.depth);if(eligible.length)eligible[0].sector=3}
   if(eligible.length){let z=eligible[0];z.kind='outpost';z.chest='none';outpostIds.push(z.id)}
  }
@@ -291,29 +291,70 @@ function spawnReinforcement(room,count){for(let k=0;k<count;k++){
 
 function createRun(){
  let m=makeLargeMap();region().expeditions++;
- // Phase 3B : quatre caches dans les salles secretes deja generees et
- // jusqu'a six terminaux repartis dans les salles ordinaires.
- const terminals=m.rooms.filter(z=>z.kind==='standard').sort((a,b)=>(a.sector-b.sector)||(a.depth-b.depth));
- let chosen=[];
- for(let sector=0;sector<4;sector++){
-  const group=terminals.filter(z=>z.sector===sector);
-  chosen.push(...group.slice(0,sector%2===0?2:1));
+ // Phase 3B/3C - equilibrage 0.8.9.54 : uniquement pour les nouvelles expeditions.
+ // Les terminaux sont places en fonction de leur utilite : cartographie tot,
+ // regulateurs pres des dangers, soins plutot dans les secteurs difficiles.
+ // Une salle ne peut recevoir qu'un seul terminal et aucun incident concurrent.
+ const available=m.rooms.filter(z=>z.kind==='standard');
+ const assigned=new Set();
+ const terminalPlan=[
+  {sector:0,role:'scanner'}, {sector:1,role:'scanner'},
+  {sector:1,role:'stabilizer'}, {sector:2,role:'stabilizer'},
+  {sector:2,role:'medic'}, {sector:3,role:'medic'}
+ ];
+ for(const spec of terminalPlan){
+  let options=available.filter(z=>z.sector===spec.sector&&!assigned.has(z.id));
+  // Secours dans un secteur voisin lorsque la generation n'offre plus de salles ordinaires.
+  if(!options.length)options=available.filter(z=>!assigned.has(z.id)).sort((a,b)=>Math.abs(a.sector-spec.sector)-Math.abs(b.sector-spec.sector)||a.depth-b.depth).slice(0,4);
+  if(!options.length)continue;
+  options.sort((a,b)=>a.depth-b.depth||a.id-b.id);
+  // Echantillonnage parmi les premieres salles : utile sans etre toujours au meme endroit.
+  const window=options.slice(0,Math.min(4,options.length));
+  const room=window[pick(0,window.length-1)];
+  room.fieldRole=spec.role;assigned.add(room.id);
  }
- if(chosen.length<6)chosen.push(...terminals.filter(z=>!chosen.includes(z)).slice(0,6-chosen.length));
- chosen=chosen.slice(0,6);
- chosen.forEach((z,i)=>{z.fieldRole=['scanner','medic','stabilizer'][i%3]});
  m.rooms.filter(z=>z.kind==='secret').forEach(z=>{z.fieldRole='cache'});
- // Phase 3C : huit incidents au maximum, uniquement hors salles spéciales
- // et hors emplacements de terminaux. Aucun nouveau bouton ni checkpoint.
- const pool=m.rooms.filter(z=>z.kind==='standard'&&!z.fieldRole&&z.depth>=2);
- const kinds=['ambush','overload','blackout','ambush','overload','blackout','ambush','blackout'];
- const picked=new Set();
- kinds.forEach((kind,i)=>{
-  const eligible=pool.filter(z=>!picked.has(z.id)&&(kind!=='overload'||(z.id*11+z.sector*7)%10<7));
-  eligible.sort((a,b)=>Math.abs(a.sector-i%4)*100+Math.abs(a.depth-(i+3)*2)- (Math.abs(b.sector-i%4)*100+Math.abs(b.depth-(i+3)*2))||a.id-b.id);
-  if(eligible.length){eligible[0].incidentRole=kind;picked.add(eligible[0].id)}
- });
- return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}};
+ // 6 a 9 incidents selon la structure des secteurs. Distribution aleatoire,
+ // moins agressive au debut; zones plus avancees plus mouvementees.
+ const incidentPool=m.rooms.filter(z=>z.kind==='standard'&&!z.fieldRole&&z.depth>=2);
+ const chosenIncidents=[];
+ const caps=[2,2,3,3];
+ const minimum=[1,1,2,2];
+ const shuffle=items=>{
+  const a=items.slice();for(let i=a.length-1;i>0;i--){const j=pick(0,i);[a[i],a[j]]=[a[j],a[i]]}return a;
+ };
+ // Une repartition par secteur puis un appoint pour ne pas surcharger quelques salles.
+ for(let sec=0;sec<4;sec++){
+  const group=shuffle(incidentPool.filter(z=>z.sector===sec));
+  const target=Math.min(caps[sec],minimum[sec]+(Math.random()<(sec===0?.35:.55)?1:0));
+  chosenIncidents.push(...group.slice(0,target));
+ }
+ if(chosenIncidents.length<6){
+  const used=new Set(chosenIncidents.map(z=>z.id));
+  const rest=shuffle(incidentPool.filter(z=>!used.has(z.id)));
+  for(const z of rest){if(chosenIncidents.length>=6)break;const n=chosenIncidents.filter(p=>p.sector===z.sector).length;if(n<caps[z.sector])chosenIncidents.push(z)}
+  // S'il manque un secteur entier, combler uniquement le minimum dans les autres
+  // secteurs, sans dépasser trois incidents par secteur.
+  if(chosenIncidents.length<6){
+   const usedFinal=new Set(chosenIncidents.map(z=>z.id));
+   for(const z of rest){
+    if(chosenIncidents.length>=6)break;
+    if(!usedFinal.has(z.id)&&chosenIncidents.filter(p=>p.sector===z.sector).length<3){chosenIncidents.push(z);usedFinal.add(z.id)}
+   }
+  }
+ }
+ // Maximum neuf evenements et jamais plus de trois d'un meme type si le tirage le permet.
+ const typeWeights=[['ambush','blackout','overload'],['blackout','overload','ambush'],['overload','ambush','blackout'],['ambush','blackout','overload']];
+ const typeCounts={ambush:0,overload:0,blackout:0};
+ for(const room of shuffle(chosenIncidents).slice(0,9)){
+  const canOverload=(room.id*11+room.sector*7)%10<7;
+  const order=shuffle(typeWeights[room.sector]);
+  order.sort((a,b)=>typeCounts[a]-typeCounts[b]);
+  const kind=order.find(k=>(k!=='overload'||canOverload)&&typeCounts[k]<3);
+  if(!kind)continue; // On prefere moins d'incidents a une surrepresentation artificielle.
+  room.incidentRole=kind;typeCounts[kind]++;
+ }
+ return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,interactiveV54:true,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}};
 }
 function setPlayer(){player=data.run?.player||null}
 
@@ -563,7 +604,19 @@ function revealFieldIntel(room){
   }
  }
  let intel=Array.isArray(run.intelRooms)?run.intelRooms:[];
- const available=[...distances.entries()].filter(([id,d])=>id!==orig&&!run.rooms[id].seen&&!intel.includes(id)).sort((a,b)=>a[1]-b[1]||a[0]-b[0]).slice(0,3);
+ let available=[...distances.entries()].filter(([id,d])=>id!==orig&&!run.rooms[id].seen&&!intel.includes(id)).sort((a,b)=>a[1]-b[1]||a[0]-b[0]).slice(0,3);
+ // Si toute la zone proche a deja ete exploree, sonder les fronts non visites
+ // au lieu de consommer inutilement un terminal. Exploration sans teleportation.
+ if(!available.length&&run.interactiveV54){
+  for(let i=0;i<queue.length;i++){
+   const here=queue[i],dist=distances.get(here);
+   for(const e of run.edges||[]){
+    const to=e[0]===here?e[1]:e[1]===here?e[0]:-1;
+    if(to>=0&&!distances.has(to)){distances.set(to,dist+1);queue.push(to)}
+   }
+  }
+  available=[...distances.entries()].filter(([id,d])=>id!==orig&&!run.rooms[id].seen&&!intel.includes(id)).sort((a,b)=>a[1]-b[1]||a[0]-b[0]).slice(0,2);
+ }
  intel=[...new Set([...intel,...available.map(v=>v[0])])];run.intelRooms=intel;
  return available.length;
 }
@@ -573,7 +626,9 @@ function triggerFieldEvent(room){
  if(ev.kind==='medic'&&player.hp>=player.max-1)return false;
  ev.state='used';ev.hold=0;
  if(ev.kind==='cache'){
-  const credits=18+((room.id*7)%15);
+  // Nouvelle economie 0.8.9.54 : bonus legerement revalorise dans les secteurs difficiles.
+  // L'ancien montant reste applicable aux expeditions sauvegardees avant cette version.
+  const credits=data.run.interactiveV54?(30+room.sector*6+((room.id*7)%17)):(18+((room.id*7)%15));
   const r=data.run;r.earnedCredits+=credits;
   r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};
   r.economy.discovery=(r.economy.discovery||0)+credits;

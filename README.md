@@ -1,15 +1,20 @@
-# ASHFALL 0.8.9.53 — Stabilisation de la phase 3
+# ASHFALL 0.8.9.54 — Équilibrage et variété
 
-Base : archive complète 0.8.9.52. Compatible avec la sauvegarde `ashfall_pwa_v1` : aucune migration ni remise à zéro.
+Base : 0.8.9.53. Jeu complet. Sauvegarde `ashfall_pwa_v1` inchangée.
 
-## Corrections
-
-- Les coffres ne s'ouvrent automatiquement que lorsque la salle est réellement sécurisée, tous ennemis éliminés, et toute embuscade résolue. Corrige le bug reproduit où un coffre s'ouvrait pendant les 3 secondes précédant les renforts.
-- L'ancienne action d'ouverture du coffre applique la même validation, même si l'interface mobile n'utilise plus de bouton d'action.
-- Pendant l'embuscade, le joueur peut battre en retraite par une porte déjà visitée mais ne peut pas progresser vers une nouvelle salle avant de sécuriser celle-ci.
-- Le tir automatique privilégie les ennemis et ne vise les explosifs que si deux ennemis ou plus sont exposés, ou s'il ne voit pas directement d'ennemi. L'explosion et les éventuelles réactions en chaîne ne doivent pas menacer immédiatement le Nomade.
-- Marqueur visuel « CIBLE TACTIQUE » lorsqu'un explosif est choisi automatiquement.
+## Changements uniquement dans les nouvelles expéditions
+- Incidents : distribution moins prévisible, environ 6 à 9 par carte selon la répartition des salles ordinaires ; maximum 3 par famille et répartition sectorielle plafonnée. Degré de risque plus élevé dans la Fonderie et la Citadelle.
+- Terminaux : six postes au maximum, répartis selon l'utilité (scanner en amont, régulateurs près des zones dangereuses, soins plus loin), avec variantes d'emplacement.
+- Scanner : si aucune salle inconnue n'est dans les trois connexions proches, il peut révéler jusqu'à deux fronts plus éloignés encore inconnus ; il ne crée ni passage ni checkpoint.
+- Caches secrètes : environ 30–65 crédits par cache selon le secteur, collectés uniquement à l'extraction, au lieu de 18–32. Aucun changement aux crédits des ennemis, aux armes, ni aux coffres.
 
 ## Invariants
+- Une ancienne expédition conserve ses incidents, ses terminaux, ses caches et l'ancien barème de récompenses.
+- Le système de combat, les ennemis, les dommages, les soins (22 PV), l'extraction, les checkpoints supprimés et l'économie du refuge sont préservés.
+- Les terminaux restent activés par proximité sans bouton supplémentaire.
+- Le service worker utilise un cache versionné 0.8.9.54.
 
-Aucune modification des dégâts, récompenses, valeurs des objets, fréquence des événements, progression, refuge, nouveaux sprites ou géométrie. L'extraction et son compte à rebours conservent leurs règles. La version PWA et son cache passent à 0.8.9.53.
+## Vérifications recommandées sur iPhone
+1. Exporter sa sauvegarde avant publication.
+2. Vérifier que l'accueil affiche 0.8.9.54 et lancer une nouvelle expédition.
+3. Contrôler les scanners (carte), les soins, les régulateurs, les caches puis une extraction complète.
