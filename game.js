@@ -303,7 +303,17 @@ function createRun(){
  chosen=chosen.slice(0,6);
  chosen.forEach((z,i)=>{z.fieldRole=['scanner','medic','stabilizer'][i%3]});
  m.rooms.filter(z=>z.kind==='secret').forEach(z=>{z.fieldRole='cache'});
- return {...m,interactiveV50:true,interactiveV51:true,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}};
+ // Phase 3C : huit incidents au maximum, uniquement hors salles spéciales
+ // et hors emplacements de terminaux. Aucun nouveau bouton ni checkpoint.
+ const pool=m.rooms.filter(z=>z.kind==='standard'&&!z.fieldRole&&z.depth>=2);
+ const kinds=['ambush','overload','blackout','ambush','overload','blackout','ambush','blackout'];
+ const picked=new Set();
+ kinds.forEach((kind,i)=>{
+  const eligible=pool.filter(z=>!picked.has(z.id)&&(kind!=='overload'||(z.id*11+z.sector*7)%10<7));
+  eligible.sort((a,b)=>Math.abs(a.sector-i%4)*100+Math.abs(a.depth-(i+3)*2)- (Math.abs(b.sector-i%4)*100+Math.abs(b.depth-(i+3)*2))||a.id-b.id);
+  if(eligible.length){eligible[0].incidentRole=kind;picked.add(eligible[0].id)}
+ });
+ return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}};
 }
 function setPlayer(){player=data.run?.player||null}
 
@@ -431,6 +441,89 @@ function prepareRoomInteractables(room){
   }
   if(chosen)room.interactables.push({id:'v50-'+room.id+'-'+i,kind,x:chosen.x,y:chosen.y,radius:17,state:'intact',fuse:0,fx:0});
  }
+}
+// Phase 3C (0.8.9.52) : evenements legers et sauvegardables.
+// Une salle = un incident maximum. Les sorties, boss, caches et arenes sont exclus.
+const INCIDENT_TITLES={ambush:'RENFORTS HOSTILES',overload:'SURCHARGE IMMINENTE',blackout:'COUPURE DE COURANT'};
+function initializeIncident(room){
+ if(!data.run?.interactiveV52||!room.incidentRole||room.incident)return;
+ const kind=room.incidentRole;
+ const target=kind==='overload'?(room.interactables||[]).find(o=>o.state==='intact'):null;
+ room.incident={kind,state:'warning',time:kind==='ambush'?3:kind==='overload'?4:7,sourceId:target?.id||null};
+ if(kind==='overload'&&!target){room.incident.state='resolved';room.incident.time=0}
+}
+function incidentBlocksClear(room){
+ const event=room.incident;
+ return !!(data.run?.interactiveV52&&event?.kind==='ambush'&&event.state==='warning');
+}
+function updateIncident(room,dt){
+ const event=room.incident;
+ if(!data.run?.interactiveV52||!event||event.state==='resolved')return;
+ event.time=Math.max(0,(event.time||0)-dt);
+ if(event.kind==='blackout'){
+  if(event.time<=0){event.state='resolved';msg('◈ Alimentation rétablie dans la salle.');persist()}
+  return;
+ }
+ if(event.kind==='overload'){
+  const target=(room.interactables||[]).find(o=>o.id===event.sourceId);
+  // Si l'objet a deja ete touche par le joueur, pas de deuxieme explosion.
+  if(!target||target.state!=='intact'){
+   event.state='resolved';event.time=0;persist();return;
+  }
+  if(event.time<=0){igniteInteractable(room,target);event.state='resolved';persist()}
+  return;
+ }
+ if(event.kind==='ambush'){
+  if(event.state==='warning'&&event.time<=0){
+   const before=room.enemies.length;
+   spawnReinforcement(room,2);
+   event.state=room.enemies.length>before?'active':'resolved';
+   msg(event.state==='active'?'⚠ EMBUSCADE : deux renforts sont arrivés !':'⚠ Signal hostile perdu : aucun renfort.');
+   persist();
+  }
+  if(event.state==='active'&&room.enemies.length===0){
+   event.state='resolved';msg('✓ Renforts éliminés. Salle sécurisable.');persist();
+  }
+ }
+}
+function drawIncidentAmbient(room){
+ const ev=room.incident;
+ if(!data.run?.interactiveV52||!ev||ev.state==='resolved')return;
+ const geo=roomGeom(room),clock=performance.now()/1000;
+ cx.save();
+ if(ev.kind==='blackout'){
+  const tint=cx.createRadialGradient(player.x,player.y,35,player.x,player.y,250);
+  tint.addColorStop(0,'rgba(5,14,26,.04)');tint.addColorStop(1,'rgba(2,7,19,.43)');
+  cx.fillStyle=tint;cx.fillRect(0,0,geo.w,geo.h);
+  // petits voyants d'urgence, non bloquants
+  const col=clock%1.5<.45?'#ed9c75':'#634139';
+  cx.fillStyle=col;
+  for(const [gx,gy] of geo.cells){cx.fillRect(gx*CELL_W+25,gy*CELL_H+27,9,4);cx.fillRect(gx*CELL_W+325,gy*CELL_H+370,9,4)}
+ }
+ if(ev.kind==='overload'){
+  const o=(room.interactables||[]).find(z=>z.id===ev.sourceId);
+  if(o&&o.state==='intact'){
+   cx.strokeStyle=clock%0.6<.3?'#ffad78':'#ffc85f';cx.lineWidth=3;
+   cx.beginPath();cx.arc(o.x,o.y,27+3*Math.sin(clock*8),0,Math.PI*2);cx.stroke();
+  }
+ }
+ cx.restore();
+}
+function drawIncidentSignal(room){
+ const ev=room.incident;
+ if(!data.run?.interactiveV52||!ev||ev.state==='resolved')return;
+ // Coordonnees d'ecran : le bandeau reste visible meme dans une grande salle
+ // lorsque la camera suit le joueur loin de la cellule centrale.
+ cx.save();cx.setTransform(1,0,0,1,0,0);cx.textAlign='center';cx.font='bold 10px sans-serif';
+ const x=180,y=68;
+ cx.fillStyle='rgba(8,23,31,.85)';cx.fillRect(x-76,y-14,152,37);
+ cx.strokeStyle=ev.kind==='blackout'?'#84bbdd':'#ffb56e';cx.lineWidth=1;cx.strokeRect(x-76,y-14,152,37);
+ cx.fillStyle=ev.kind==='blackout'?'#bfe7fa':'#ffe2b3';
+ cx.fillText(INCIDENT_TITLES[ev.kind],x,y);
+ if(ev.state==='warning'||ev.kind==='blackout'){
+  cx.font='bold 13px sans-serif';cx.fillText(Math.ceil(ev.time)+' s',x,y+16);
+ }else{cx.font='10px sans-serif';cx.fillText('Repousse les renforts',x,y+16)}
+ cx.restore();
 }
 // Phase 3B (0.8.9.51) — exploration sans bouton, sans objets bloquants.
 // Les evenements appartiennent a l'expedition, sont uniques et persistants.
@@ -645,7 +738,7 @@ if(r.interactiveV51&&(r.hazardShields||0)>0&&(sectorOf(room)===1||sectorOf(room)
  room.hazardDisabled=true;room.hazardOn=false;r.hazardShields--;
  room.hazardNeutralizedByTerminal=true;
 }
-prepareRoomInteractables(room);prepareRoomFieldEvent(room);if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(id);}
+prepareRoomInteractables(room);prepareRoomFieldEvent(room);initializeIncident(room);if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(id);}
 if(from!==null){
   const [a,b]=pos(from),[x,y]=pos(id),g=roomGeom(room);
   if(x>a){player.x=47;player.y=195}
@@ -667,7 +760,7 @@ function activateOutpost(){let r=data.run,room=r.rooms[r.current];if(room.kind!=
  room.activated=true;persist();render();return true;}
 function enforceArena(){let r=data.run;if(!r||!isArena(r.current,r))return false;let room=r.rooms[r.current];if(!room||room.cleared)return false;if(room.activated&&room.arenaWave>=1)return false;room.activated=true;room.arenaWave=1;if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(r.current)}if(!room.enemies?.length)room.enemies=enemiesFor(r.current);msg('⚠ ARÈNE : portes scellées automatiquement ! Vague 1/3.');persist();return true}
 function locked(){let r=data.run;return !!(r&&((isArena(r.current,r)||isBoss(r.current,r))&&!r.rooms[r.current].cleared))}
-function autoSecure(room){if(room&&!room.cleared&&room.spawned&&room.enemies.length===0&&room.kind!=='arena'&&room.kind!=='boss'){room.cleared=true;return true}return false}
+function autoSecure(room){if(room&&!room.cleared&&room.spawned&&room.enemies.length===0&&room.kind!=='arena'&&room.kind!=='boss'&&!incidentBlocksClear(room)){room.cleared=true;return true}return false}
 function canPassDoor(to){let r=data.run;if(!r||locked())return false;let room=r.rooms[r.current];return !!(room.cleared||r.visited.includes(to)||r.rooms[to].seen)}
 
 function interaction(){let r=data.run;if(!r)return null;let room=r.rooms[r.current];if(room.chest==='closed'&&Math.hypot(player.x-180,player.y-110)<62)return'chest';if(isExit(r.current,r)&&!r.exitStarted&&Math.hypot(player.x-180,player.y-195)<66)return'exit';if(room.kind==='outpost'&&Math.hypot(player.x-180,player.y-195)<72)return'outpost';return null}
@@ -676,7 +769,12 @@ function finish(won){let r=data.run;if(!r)return;let equipped=r.equipped,oldHome
 function uiSafe(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function uiWeaponCard(w,i,source,eq){let own=data.run?data.run.equipped:data.equipped;let delta=own&&w!==own?Number(w.dmg)-Number(own.dmg):0;let rate=own&&w!==own?(Number(w.rate)-Number(own.rate)):0;let insured=data.run?w.id===data.run.insuredId:w.id===data.insured;
 return `<article class="ui-weapon" style="--item-rarity:${tint(w)}"><div class="ui-weapon-head"><span class="ui-weapon-icon">${weaponArt(w)}</span><div><b>${uiSafe(w.name)}</b><small>${uiSafe(w.rar)} ${insured?'· 🛡 Assurée':''}</small></div>${eq?'<span class="ui-tag">ÉQUIPÉE</span>':''}</div><div class="ui-weapon-stats"><span>⚔ ${Number(w.dmg)||0} dégâts</span><span>◉ ${Number(w.rate)||0} tirs/s</span><span>¤ ${source==='stash'?salvagePrice(w):value(w)} ${source==='stash'?'revente':'valeur'}</span></div>${!eq&&own?`<div class="ui-compare">Comparé à l'arme équipée : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${rate>=0?'ui-up':'ui-down'}">${rate>=0?'+':''}${rate.toFixed(1)} tirs/s</strong></div>`:''}${!eq?`<div class="ui-weapon-actions"><button data-op="${source==='stash'?'equipHome':'equipBag'}" data-idx="${i}">ÉQUIPER</button><button class="ui-secondary" data-op="${source==='stash'?'sell':'drop'}" data-idx="${i}">${source==='stash'?'VENDRE':'ABANDONNER'}</button></div>`:''}</article>`;}
-function uiMission(){let r=data.run;if(!r)return '';let z=r.rooms[r.current];if(isBoss(r.current,r))return '⚠ BOSS — Vaincre le Gardien K-17';if(isArena(r.current,r))return '⚔ ARÈNE — Terminer les vagues';if(isExit(r.current,r))return r.exitStarted?(extractionContested(z)?'⚠ Extraction contestée · repousse les ennemis':'⏳ Reste dans le cercle jusqu’à la fin'):'↥ Reste dans le cercle 3 s pour lancer l’extraction';if(z.enemies&&z.enemies.length)return '⚔ Sécurise la salle pour ouvrir les nouvelles portes';if(z.kind==='outpost')return '📡 Approche du terminal pour activer l’avant-poste';if(z.fieldEvent?.state==='ready'&&z.cleared)return z.fieldEvent.kind==='cache'?'✦ Fouille la salle : cache dissimulée':'◈ Approche du terminal pour l’activer';return '✓ Salle sécurisée — Explore les sorties';}
+function uiMission(){let r=data.run;if(!r)return '';let z=r.rooms[r.current];if(isBoss(r.current,r))return '⚠ BOSS — Vaincre le Gardien K-17';if(isArena(r.current,r))return '⚔ ARÈNE — Terminer les vagues';if(isExit(r.current,r))return r.exitStarted?(extractionContested(z)?'⚠ Extraction contestée · repousse les ennemis':'⏳ Reste dans le cercle jusqu’à la fin'):'↥ Reste dans le cercle 3 s pour lancer l’extraction';if(z.incident&&z.incident.state!=='resolved'){
+ const ev=z.incident;
+ if(ev.kind==='ambush')return ev.state==='warning'?'⚠ Renforts en approche · '+Math.ceil(ev.time)+' s':'⚠ Embuscade · élimine les renforts';
+ if(ev.kind==='overload')return '⚡ Surcharge imminente · '+Math.ceil(ev.time)+' s · éloigne-toi';
+ if(ev.kind==='blackout')return '◈ Coupure de courant · '+Math.ceil(ev.time)+' s';
+ }if(z.enemies&&z.enemies.length)return '⚔ Sécurise la salle pour ouvrir les nouvelles portes';if(z.kind==='outpost')return '📡 Approche du terminal pour activer l’avant-poste';if(z.fieldEvent?.state==='ready'&&z.cleared)return z.fieldEvent.kind==='cache'?'✦ Fouille la salle : cache dissimulée':'◈ Approche du terminal pour l’activer';return '✓ Salle sécurisée — Explore les sorties';}
 function hudStatus(){let r=data.run;if(!r)return '';let room=r.rooms[r.current];if(!room)return '';// 0.8.9.43: le HUD est hors de la portée locale de update(); recalculer sa position ici.
 if(r.exitStarted&&isExit(r.current,r)&&player&&Math.hypot(player.x-180,player.y-195)<39){let contested=room.enemies.some(e=>length(e,{x:180,y:195})<105);return `Extraction ${Math.max(0,Math.ceil(r.exitTime))} s${contested?' · contestée':''}`;}if(locked())return 'Portes verrouillées';if(isExit(r.current,r)&&!r.exitStarted)return `Cercle prêt · ${Math.round(Math.min(100,(r.exitCharge||0)/3*100))} %`;if(interaction()==='chest'&&!room.cleared)return 'Coffre protégé';if(isArena(r.current,r)&&room.enemies.length)return `Arène · vague ${room.arenaWave||1}/3`;if(room.fieldEvent?.state==='ready'&&room.cleared&&player&&Math.hypot(player.x-room.fieldEvent.x,player.y-room.fieldEvent.y)<70)return room.fieldEvent.kind==='cache'?'Cache dissimulée · approche-toi':room.fieldEvent.kind==='medic'&&player.hp>=player.max-1?'Station médicale · PV complets':'Terminal · approche-toi';if(room.cleared)return 'Portes ouvertes';return ''; }
 function uiActionName(){if(!data.run)return 'ACTION';let act=interaction();return act==='chest'?'OUVRIR':act==='outpost'?'ACTIVER':act==='exit'?'EXTRAIRE':'ACTION';}
@@ -1915,8 +2013,9 @@ function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=
  drawCachedSurface(room,sec,theme);
  drawDynamicHazard(room,sec);
  drawScenicLife(room,sec,theme);
+ drawIncidentAmbient(room);
 drawRoomWalls(room,r);
-drawInteractables(room);drawFieldEvent(room);drawRefinedChest(room,r);if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
+drawInteractables(room);drawFieldEvent(room);drawRefinedChest(room,r);drawIncidentSignal(room);if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
 lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),room.kind==='boss'&&e.type==='sentinel');cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-39,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-39,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);cx.restore();}
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){
@@ -1932,7 +2031,8 @@ function transition(){
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
 function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; updateInteractables(room,dt);if(!data.run)return; if(!room.cleared&&!room.hazardDisabled&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
 let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed'))*dt,vy*150*(1+perkBonus('speed'))*dt,12,room);if(transition())return;
-if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};const arenaReward=pick(150,250);r.earnedCredits+=arenaReward;r.economy.arena+=arenaReward;objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre épique en cours d’ouverture !')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=450;r.economy.boss+=450;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=20;r.economy.room+=20;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
+updateIncident(room,dt);
+if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};const arenaReward=pick(150,250);r.earnedCredits+=arenaReward;r.economy.arena+=arenaReward;objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre épique en cours d’ouverture !')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=450;r.economy.boss+=450;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)&&!incidentBlocksClear(room)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=20;r.economy.room+=20;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
 if(room.enemies.length&&player.fire<=0){
  const candidates=room.enemies.filter(e=>hasLineOfSight(player.x,player.y,e.x,e.y,room));
  const tactical=(room.interactables||[]).filter(o=>o.state==='intact'&&Math.hypot(o.x-player.x,o.y-player.y)>102&&canTargetInteractable(player.x,player.y,o,room)&&room.enemies.some(e=>Math.hypot(e.x-o.x,e.y-o.y)<65));

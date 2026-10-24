@@ -1,10 +1,13 @@
-# ASHFALL 0.8.9.51 — Phase 3B : découverte et terminaux
+# ASHFALL 0.8.9.52 — Phase 3C : incidents de salle
 
-Cette version conserve la 0.8.9.50 (destructibles) et ajoute des découvertes **sans nouveau bouton** uniquement pour les **nouvelles expéditions** (`interactiveV51`).
+Basée sur la 0.8.9.51. Les nouveaux incidents existent uniquement sur les **nouvelles expéditions** (`interactiveV52`) :
 
-- Caches : quatre salles secrètes préexistantes disposent maintenant d'une cache dissimulée. Approcher pour révéler, rester 0,9 s près du coffre pour fouiller après nettoyage. Le butin de crédits (18 à 32) n'est conservé qu'après extraction.
-- Terminaux : jusqu'à six terminaux répartis dans les salles ordinaires. Après nettoyage, rester 0,9 s à proximité pour activer. Scanner = trois indices de salles sur la carte sans les débloquer. Médical = jusqu'à 22 PV récupérés lorsque blessé. Régulateur = charge de sécurité conservée pendant l’expédition : neutralise le prochain danger laser/thermique rencontré (maximum trois charges en réserve).
-- Les découvertes sont à usage unique et sauvegardées avec l'expédition. Les armes, les portes, les hitbox, l'économie du Marchand, le refuge et les règles d'extraction ne changent pas.
-- Les anciennes expéditions continuent sans nouveaux objets placés.
+- **Embuscade** : une alerte de 3 secondes annonce deux renforts. Le coffre ne peut pas s’ouvrir avant leur élimination ; la salle ne peut pas être sécurisée trop tôt.
+- **Surcharge** : un module destructible existant est annoncé pendant 4 secondes, puis devient instable. Le joueur peut le déclencher avant l’alarme en lui tirant dessus. Aucun nouvel obstacle n’est créé.
+- **Coupure** : ambiance de sécurité défaillante pendant 7 secondes, avec visibilité réduite modérément et voyants d’urgence. La lumière revient ensuite.
 
-**Attention** : certains terminaux peuvent être invisibles si un espace libre n'est pas disponible ; c'est un mode de sécurité volontaire, sans forcer d'objet dans un mur.
+Au maximum huit incidents par carte de 50 salles, exclusivement dans des salles ordinaires sans terminal, sans nouvelle commande tactile, ni checkpoint.
+
+Conservé : refuge, Nomade, ennemis, coffres, terminaux, caches, extraction, économie existante, sauvegardes, collisions et équilibre des dégâts. Les deux renforts d'une embuscade conservent leurs drops ordinaires.
+
+Test sur iPhone conseillé après export préalable de la sauvegarde.
