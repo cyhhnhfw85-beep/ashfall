@@ -859,22 +859,29 @@ function ashChestRoll(tier){
  return ASH_CHEST_RARITIES[0];
 }
 function ashChestIcon(tier){
- const col=tier.accent;
- // SVG dessiné pour ASHFALL : aucune police d'émojis ou image externe.
- return `<svg class="ash-chest-art" viewBox="0 0 240 160" role="img" aria-label="Coffre ${tier.name}">
- <defs><linearGradient id="lid-${tier.id}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#5d7480"/><stop offset="1" stop-color="#1b3345"/></linearGradient></defs>
- <ellipse cx="120" cy="143" rx="96" ry="12" fill="#020b12" opacity=".48"/>
- <path d="M34 62L58 40H182L206 62L192 81H48Z" fill="url(#lid-${tier.id})" stroke="${col}" stroke-width="4" stroke-linejoin="round"/>
- <path d="M48 81H192V131Q120 149 48 131Z" fill="#233c4d" stroke="#8aabba" stroke-width="4" stroke-linejoin="round"/>
- <path d="M55 85H185V121H55Z" fill="#142b39" stroke="#506e7e" stroke-width="2"/>
- <path d="M70 49L170 49M65 97H177M62 124H178" stroke="${col}" stroke-width="5" opacity=".72"/>
- <rect x="106" y="72" width="28" height="35" rx="4" fill="#132532" stroke="${col}" stroke-width="3"/>
- <path d="M114 85h12v9h-12Z" fill="${col}"/>
- <path d="M52 82v42M188 82v42" stroke="#a9c7cf" stroke-width="4" opacity=".65"/>
- <path d="M86 40L81 62M154 40L159 62" stroke="${col}" stroke-width="6"/>
- </svg>`;
+ return `<img class="ash-chest-art" src="assets/chest_${tier.id}.webp" alt="Coffre ${tier.name}" loading="lazy">`;
 }
-function ashChestClearReveal(){const root=$('ashChestReveal');if(root){root.hidden=true;root.innerHTML='';}}
+const ASH_CHEST_DURATIONS={common:1600,rare:2700,epic:4300};
+let ashChestAnimationTimer=null;
+function ashChestStopTimer(){if(ashChestAnimationTimer!==null){clearInterval(ashChestAnimationTimer);ashChestAnimationTimer=null;}}
+function ashChestAnimateProgress(){
+ const p=data.chestPending,root=$('ashChestReveal');
+ if(!p||!root||root.hidden){ashChestStopTimer();return;}
+ const tier=p.tier||'common',duration=ASH_CHEST_DURATIONS[tier]||1600;
+ const elapsed=Number.isFinite(p.startedAt)?Math.max(0,Date.now()-p.startedAt):duration;
+ const ratio=Math.min(1,elapsed/duration),ready=ratio>=1;
+ const stage=ratio<.42?'locked':ratio<.78?'charging':'open';
+ const closed=root.querySelector('.ash-chest-stage-closed'),charging=root.querySelector('.ash-chest-stage-charging'),opened=root.querySelector('.ash-chest-stage-open');
+ if(closed)closed.hidden=stage!=='locked';
+ if(charging)charging.hidden=stage!=='charging';
+ if(opened)opened.hidden=stage!=='open';
+ const track=root.querySelector('.ash-chest-progress-fill');if(track)track.style.width=Math.round(ratio*100)+'%';
+ const status=root.querySelector('.ash-chest-phase-label');if(status)status.textContent=ready?'COFFRE OUVERT':stage==='locked'?'DÉVERROUILLAGE':stage==='charging'?'CHARGE ÉNERGÉTIQUE':'OUVERTURE';
+ const reward=root.querySelector('.ash-chest-reward');if(reward)reward.hidden=!ready;
+ const button=root.querySelector('#ashChestCollect');if(button){button.disabled=!ready;button.textContent=ready?'CONTINUER':'OUVERTURE EN COURS';}
+ if(ready)ashChestStopTimer();
+}
+function ashChestClearReveal(){ashChestStopTimer();const root=$('ashChestReveal');if(root){root.hidden=true;root.innerHTML='';}}
 function ashChestRender(){
  const host=$('ashChestOffers');if(!host)return;
  const bal=$('ashChestCredits');if(bal)bal.textContent=data.credits;
@@ -887,17 +894,27 @@ function ashChestRender(){
 }
 function ashChestRevealPending(){
  const pending=data.chestPending;
- if(!pending||data.run)return;
+ if(!pending||data.run){ashChestStopTimer();return;}
  const container=$('ashChestReveal');if(!container)return;
- const item=pending.item,rarity=item.rar;
- const accent=tint(item);
+ const item=pending.item,rarity=item.rar,accent=tint(item),tier=ASH_CHEST_TIERS.find(t=>t.id===(pending.tier||'common'))||ASH_CHEST_TIERS[0];
  container.hidden=false;
- container.innerHTML=`<div class="ash-chest-reveal-window" style="--item-rarity:${accent}"><div class="ash-chest-reveal-head">COFFRE ${uiSafe(pending.tierName)} · OUVERTURE</div>
- <div class="ash-chest-reveal-visual">${weaponArt(item)}</div>
+ // Résultat caché et inaccessible avant la fin. La récompense est déjà enregistrée, de manière atomique.
+ container.innerHTML=`<div class="ash-chest-reveal-window ash-chest-reveal-${tier.id}" style="--item-rarity:${accent};--chest-accent:${tier.accent}">
+ <div class="ash-chest-reveal-head">COFFRE ${uiSafe(pending.tierName)} · OUVERTURE</div>
+ <div class="ash-chest-animation-stage" aria-hidden="true">
+   <img class="ash-chest-stage-closed" src="assets/chest_${tier.id}.webp" alt="">
+   <img class="ash-chest-stage-charging" src="assets/chest_${tier.id}_charging.webp" alt="" hidden>
+   <img class="ash-chest-stage-open" src="assets/chest_${tier.id}_open.webp" alt="" hidden>
+ </div>
+ <div class="ash-chest-phase-label" role="status">DÉVERROUILLAGE</div>
+ <div class="ash-chest-progress"><span class="ash-chest-progress-fill"></span></div>
+ <div class="ash-chest-reward" hidden><div class="ash-chest-reveal-visual">${weaponArt(item)}</div>
  <div class="ash-chest-reveal-rarity">${uiSafe(rarity)}</div><h3>${uiSafe(item.name)}</h3>
  <div class="ash-chest-reveal-stats"><span>${item.dmg} DÉGÂTS</span><span>${item.rate} TIRS/S</span></div>
- <p>Arme ajoutée à ta réserve.</p><button type="button" id="ashChestCollect">CONTINUER</button></div>`;
- container.classList.remove('ash-chest-animate');void container.offsetWidth;container.classList.add('ash-chest-animate');
+ <p>Arme ajoutée à ta réserve.</p></div>
+ <button type="button" id="ashChestCollect" disabled>OUVERTURE EN COURS</button></div>`;
+ ashChestStopTimer();ashChestAnimateProgress();
+ if(ashChestAnimationTimer===null&&data.chestPending)ashChestAnimationTimer=setInterval(ashChestAnimateProgress,50);
 }
 function ashChestPurchase(id){
  if(data.run||data.pendingDebrief||data.chestPending)return;
@@ -907,7 +924,7 @@ function ashChestPurchase(id){
  const rarity=ashChestRoll(tier),item=ashChestWeapon(rarity,tier.price,tier.id);
  data.credits-=tier.price;
  data.stash.push(item);
- data.chestPending={tierName:tier.name,item:{...item}};
+ data.chestPending={tier:tier.id,tierName:tier.name,startedAt:Date.now(),item:{...item}};
  if(!persist(false)){
   data=JSON.parse(before);
   render();
@@ -918,6 +935,9 @@ function ashChestPurchase(id){
 }
 function ashChestCollect(){
  if(!data.chestPending)return;
+ const p=data.chestPending;
+ if(Date.now()-(p.startedAt||0)<(ASH_CHEST_DURATIONS[p.tier]||1600))return;
+ ashChestStopTimer();
  data.chestPending=null;
  if(!persist(false)){msg('Sauvegarde indisponible : vérifie la progression avant de continuer.');return;}
  ashChestClearReveal();ashChestRender();render();

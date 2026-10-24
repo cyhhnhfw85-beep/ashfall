@@ -1,4 +1,4 @@
-# ASHFALL 0.8.9.59 — Coffres du refuge
+# ASHFALL 0.8.9.60 — Coffres du refuge
 
 Trois coffres achetables en crédits, une arme par coffre, probabilités affichées.
 Commun : 150 crédits (78 % commun, 20 % rare, 1,9 % épique, 0,1 % légendaire).

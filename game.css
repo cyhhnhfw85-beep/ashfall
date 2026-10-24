@@ -837,3 +837,25 @@ body.ashfall-expedition #overlay:has(.ash-pause-card){
 #home .refuge-nav{grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
 #home .refuge-tab{font-size:9px;min-width:0;min-height:48px;padding:7px 1px;overflow-wrap:anywhere;letter-spacing:0}
 @media(max-width:360px){#home .refuge-tab{font-size:8px}}
+
+/* 0.8.9.60 — Coffres illustrés, ouverture cinématique progressive */
+.ash-chest-illustration{min-height:115px;overflow:hidden;background:radial-gradient(circle at 50% 55%,#36596a77,#0a1a27 76%)}
+.ash-chest-art{width:100%;height:112px;object-fit:contain;filter:drop-shadow(0 10px 7px #0009)}
+.ash-chest-animation-stage{height:188px;position:relative;display:flex;align-items:center;justify-content:center;isolation:isolate;margin:8px 0 4px;background:radial-gradient(ellipse at center,color-mix(in srgb,var(--chest-accent),transparent 82%),transparent 72%);border-radius:15px;overflow:hidden}
+.ash-chest-animation-stage img{position:absolute;width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 10px 12px #000b)}
+.ash-chest-animation-stage img[hidden],.ash-chest-reward[hidden]{display:none!important}
+.ash-chest-stage-closed{animation:ashChestHover .9s ease-in-out infinite alternate}
+.ash-chest-stage-charging{animation:ashChestCharge .45s ease-in-out infinite alternate}
+.ash-chest-stage-open{animation:ashChestBurst .65s cubic-bezier(.15,.8,.2,1) both}
+@keyframes ashChestHover{from{transform:translateY(3px) scale(.94);filter:drop-shadow(0 7px 10px #000b) brightness(.9)}to{transform:translateY(-3px) scale(.98);filter:drop-shadow(0 11px 13px #000b) brightness(1.12)}}
+@keyframes ashChestCharge{from{transform:scale(.99);filter:brightness(.95)}to{transform:scale(1.04);filter:brightness(1.35)}}
+@keyframes ashChestBurst{from{opacity:.45;transform:scale(.83);filter:brightness(1.7)}to{opacity:1;transform:scale(1);filter:brightness(1)}}
+.ash-chest-phase-label{font-size:11px;letter-spacing:.13em;color:var(--chest-accent);font-weight:900;min-height:18px}
+.ash-chest-progress{margin:12px 0 10px;height:6px;border-radius:20px;background:#081925;border:1px solid #355668;overflow:hidden}
+.ash-chest-progress-fill{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--chest-accent),#defaff);transition:width .06s linear;box-shadow:0 0 12px var(--chest-accent)}
+.ash-chest-reward{animation:ashChestReward .42s ease-out both}
+@keyframes ashChestReward{from{opacity:0;transform:translateY(11px)}to{opacity:1;transform:translateY(0)}}
+.ash-chest-reveal-visual{height:128px;margin:5px auto}
+.ash-chest-reveal-visual .weapon-art,.ash-chest-reveal-visual .weapon-art-img{height:118px}
+.ash-chest-reveal-window button:disabled{background:#233e4b;border-color:#537080;color:#91abba;opacity:1}
+@media(prefers-reduced-motion:reduce){.ash-chest-stage-closed,.ash-chest-stage-charging,.ash-chest-stage-open,.ash-chest-reward{animation:none}}
