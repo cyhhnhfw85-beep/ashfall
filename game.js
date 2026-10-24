@@ -791,101 +791,159 @@ function nomadWeaponStyle(w){
  if(/impulsion|\bion[ -]/.test(n))return 'energy';
  return 'rifle';
 }
+// V46b: Nomade 2.5D articule. Jambe/bassin: 8 directions de marche; buste,
+// epaules, bras, capuche et arme: orientation continue de la cible.
+// La silhouette reste verticale dans la projection de la camera: jamais une
+// image de personnage allongee que l'on fait tourner sur le plan du sol.
 function drawNomadGameplay(x,y,clock,fx,fy,weapon,room){
- const movement=Math.hypot(player?.dx||0,player?.dy||0);
- const walking=movement>.13;
- const swing=walking?Math.sin(clock*11)*3.4:0;
- const bounce=walking?Math.abs(Math.sin(clock*11))*1.15:Math.sin(clock*2.2)*.25;
- // Le canon vise la cible automatique si elle est visible ; sinon, derniere direction de deplacement.
+ const moving=Math.hypot(player?.dx||0,player?.dy||0)>.13;
+ let mx=player?.dx||0,my=player?.dy||0;
+ let moveAngle=Math.atan2(my,mx);
+ if(moving){
+  // Direction discretisee UNIQUEMENT pour l'animation des jambes.
+  moveAngle=Math.round(moveAngle/(Math.PI/4))*(Math.PI/4);
+ }else{
+  // A l'arret les pieds gardent leur derniere direction de marche.
+  moveAngle=Math.atan2(Number.isFinite(fy)?fy:1,Number.isFinite(fx)?fx:0);
+  moveAngle=Math.round(moveAngle/(Math.PI/4))*(Math.PI/4);
+ }
+ const dx=Math.cos(moveAngle),dy=Math.sin(moveAngle);
  let ax=Number.isFinite(fx)?fx:1,ay=Number.isFinite(fy)?fy:0;
- if(room&&room.enemies&&room.enemies.length){
-  let target=null,dd=Infinity;
+ if(room&&room.enemies?.length){
+  let target=null,closest=Infinity;
   for(const enemy of room.enemies){
-   const dist=Math.hypot(enemy.x-x,enemy.y-y);
-   if(dist<dd&&dist<380&&hasLineOfSight(x,y,enemy.x,enemy.y,room)){
-    dd=dist;target=enemy;
+   const d=Math.hypot(enemy.x-x,enemy.y-y);
+   if(d<closest&&d<380&&hasLineOfSight(x,y,enemy.x,enemy.y,room)){
+    target=enemy;closest=d;
    }
   }
   if(target){ax=target.x-x;ay=target.y-y;}
  }
- if(Math.hypot(ax,ay)<.001){ax=1;ay=0;}
- const ang=Math.atan2(ay,ax)+Math.PI/2;
- const mode=nomadWeaponStyle(weapon);
- const rifle=mode!=='pistol';
- const accent=mode==='energy'?'#82d2e8':mode==='smg'?'#9caeac':'#c3b1a0';
- function path(points,fill,stroke='#18232a',width=1.6){
-  cx.beginPath();cx.moveTo(points[0][0],points[0][1]);
-  for(let i=1;i<points.length;i++)cx.lineTo(points[i][0],points[i][1]);
-  cx.closePath();cx.fillStyle=fill;cx.fill();
-  if(stroke){cx.strokeStyle=stroke;cx.lineWidth=width;cx.lineJoin='round';cx.stroke();}
+ const norm=Math.hypot(ax,ay)||1;
+ const ux=ax/norm,uy=ay/norm;
+ // Projection au sol de vecteurs du corps/arme: le joueur est observe
+ // legerement de dessus, mais sa tete reste AU-DESSUS du buste a l'ecran.
+ const fx2=ux,fy2=uy*.62,sideX=-uy,sideY=ux*.62;
+ const step=moving?Math.sin(clock*11):0;
+ const hop=moving?Math.abs(step)*.85:0;
+ const bob=moving?Math.sin(clock*5.5)*.35:0;
+ const mode=nomadWeaponStyle(weapon),longGun=mode!=='pistol';
+ const accent=mode==='energy'?'#6cdeee':mode==='smg'?'#a5b7b6':'#a5a9ad';
+ const skin='#d59b60',coat='#c18b4e';
+ function poly(pts,color,edge='#17252c',width=1.45){
+  cx.beginPath();cx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++)cx.lineTo(pts[i][0],pts[i][1]);
+  cx.closePath();cx.fillStyle=color;cx.fill();
+  if(edge){cx.strokeStyle=edge;cx.lineWidth=width;cx.lineJoin='round';cx.stroke();}
  }
- function line(x1,y1,x2,y2,c,w){cx.strokeStyle=c;cx.lineWidth=w;cx.lineCap='round';cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.stroke();}
+ function line(x1,y1,x2,y2,color,width=1.2){
+  cx.beginPath();cx.moveTo(x1,y1);cx.lineTo(x2,y2);cx.strokeStyle=color;cx.lineWidth=width;cx.lineCap='round';cx.stroke();
+ }
+ function rod(a,b,w,color,edge='#17252b',edgeWidth=1.5){
+  const vx=b[0]-a[0],vy=b[1]-a[1],size=Math.hypot(vx,vy)||1;
+  const nx=-vy/size*w/2,ny=vx/size*w/2;
+  poly([[a[0]+nx,a[1]+ny],[b[0]+nx,b[1]+ny],[b[0]-nx,b[1]-ny],[a[0]-nx,a[1]-ny]],color,edge,edgeWidth);
+ }
+ function P(base,t,s=0){return [base[0]+fx2*t+sideX*s,base[1]+fy2*t+sideY*s]}
  cx.save();
- // Ombre sur le plan du sol : ne tourne pas avec le Nomade.
- cx.fillStyle='#07151b91';cx.beginPath();cx.ellipse(x,y+12,16.5,6,0,0,Math.PI*2);cx.fill();
- cx.translate(x,y-bounce);cx.rotate(ang);
- // Bottes et jambes, leger mouvement symetrique autour d'une silhouette stable.
- path([[-10,7+swing*.2],[-2,8],[0,17+swing],[-5,22+swing],[-12,19+swing]],'#353338');
- path([[2,8],[10,7-swing*.2],[12,19-swing],[5,22-swing],[0,17-swing]],'#393a3c');
- path([[-12,18+swing],[-5,19+swing],[-4,24+swing],[-14,24+swing]],'#b38d59');
- path([[5,19-swing],[12,18-swing],[14,24-swing],[4,24-swing]],'#c79c60');
- path([[-12,19+swing],[-8,18+swing],[-7,22+swing],[-14,22+swing]],'#e1ae6b',null);
- path([[8,18-swing],[12,19-swing],[14,22-swing],[7,22-swing]],'#e1ad68',null);
- // Sac a dos dorsal, visible autour des epaules et en arriere de la cape.
- path([[-10,-10],[-13,-3],[-14,9],[-8,13],[8,13],[14,9],[13,-3],[10,-10]],'#242b2e');
- path([[-12,-3],[-14,7],[-9,10],[-8,-4]],'#4e4841',null);
- path([[9,-3],[13,-2],[12,8],[8,11]],'#333c3d',null);
- line(-9,5,9,5,'#707069',1.2);
- // Tunique : forme triangulee compacte, base assez large pour conserver le volume.
- path([[-11,-9],[-15,-2],[-11,12],[11,12],[15,-2],[11,-9]],'#b98243');
- path([[-11,-9],[0,-12],[3,9],[-11,12],[-15,-2]],'#e3a960',null);
- path([[0,-12],[11,-9],[15,-2],[11,12],[3,9]],'#bf8749',null);
- path([[-10,-8],[-3,-10],[1,2],[-6,3]],'#f1bd75',null);
- path([[3,-8],[12,-7],[10,5],[2,9]],'#a8753f',null);
- path([[-10,8],[10,8],[11,12],[-11,12]],'#3d342f',null);
- path([[5,1],[8,5],[5,9],[2,5]],'#244251','#1b3036',.7);
- // Bras droit tenant l'arme ; avant-bras et gants restent joints au torse.
- path([[9,-9],[16,-9],[18,-16],[12,-20],[6,-15]],'#cc9051');
- path([[12,-20],[18,-16],[17,-12],[10,-13]],'#e6a965',null);
- // Bras de soutien du fusil, sous le canon. Pistolet : bras gauche replie.
- if(rifle){
-  path([[-10,-9],[-16,-10],[-12,-19],[-3,-17],[2,-15]],'#c98d4d');
-  path([[-12,-18],[-3,-17],[1,-15],[-6,-13]],'#edb36b',null);
-  path([[-4,-19],[2,-20],[4,-16],[0,-13],[-4,-14]],'#3a3533');
- }else{
-  path([[-11,-9],[-16,-7],[-13,1],[-7,2],[-5,-5]],'#c68a49');
-  path([[-15,-5],[-12,-7],[-9,-2],[-12,1]],'#edb575',null);
+ cx.fillStyle='rgba(5,15,20,.42)';cx.beginPath();cx.ellipse(x,y+19,15,5.1,0,0,Math.PI*2);cx.fill();
+ cx.translate(x,y-hop);
+ // BASSIN/JAMBES — animees selon les 8 directions de mouvement, sans
+ // rotation complete de l'image. La marche conserve un axe vertical.
+ const footX=dx*4.8,footY=dy*3.7;
+ const left=[-6+footX*step,17+footY*step],right=[6-footX*step,17-footY*step];
+ const leftKnee=[-5+footX*step*.45,9+footY*step*.5],rightKnee=[5-footX*step*.45,9-footY*step*.5];
+ rod([-5,3],leftKnee,8,'#3f3d3c');rod(leftKnee,left,7,'#32393d');
+ rod([5,3],rightKnee,8,'#40413e');rod(rightKnee,right,7,'#353a3d');
+ // Bottes avec avant distinct : il ne s'agit pas de simples pieds de sprite.
+ for(const [xx,yy] of [left,right]){
+  // Le nez de chaque botte est oriente sur l'une des huit directions.
+  const tx=dx*2.5,ty=dy*1.7;
+  poly([[xx-5,yy-2],[xx+4.8,yy-2],[xx+5.5+tx,yy+4.5+ty],[xx-5.3+tx,yy+4.5+ty]],'#b38751');
+  poly([[xx-5,yy-2],[xx+4.7,yy-2],[xx+3.2+tx*.35,yy+.7+ty*.35],[xx-4.7+tx*.35,yy+.7+ty*.35]],'#e5b577',null);
+  line(xx-4.6+tx*.65,yy+3.2+ty*.65,xx+5+tx*.65,yy+3.2+ty*.65,'#65503b',1.3);
  }
- // Capuche iconique : facettes sable et visage integralement sombre.
- path([[-13,-15],[-9,-25],[0,-29],[10,-25],[13,-16],[10,-8],[0,-5],[-10,-8]],'#a5703b');
- path([[-13,-15],[-9,-25],[0,-29],[0,-8],[-10,-8]],'#f3bb73',null);
- path([[0,-29],[10,-25],[13,-16],[10,-8],[0,-8]],'#d0934b',null);
- path([[-8,-17],[-5,-22],[6,-22],[9,-17],[7,-10],[0,-8],[-7,-11]],'#11171c','#252528',1);
- path([[-7,-17],[-4,-22],[1,-22],[-1,-17],[-6,-14]],'#21272b',null);
- path([[4,-10],[8,-14],[6,-11],[1,-9]],'#2e3130',null);
- line(-11,-10,-7,-7,'#473523',1.4);line(8,-7,11,-10,'#493421',1.4);
- // Main tenant l'arme devant l'epaule droite.
- path([[11,-17],[16,-18],[18,-13],[15,-10],[10,-12]],'#343334');
- path([[12,-18],[16,-17],[17,-15],[12,-15]],'#615246',null);
- // Armes low-poly reconnaissables : pistol, SMG, rifle ou technologie.
- if(!rifle){
-  path([[11,-14],[20,-14],[21,-28],[16,-31],[12,-29]],'#292e36');
-  path([[14,-26],[20,-27],[20,-30],[14,-30]],'#59616b',null);
-  path([[12,-14],[18,-14],[17,-7],[13,-8]],'#47413e');
-  line(13,-21,18,-21,'#92999b',1.1);
-  path([[15,-31],[20,-31],[20,-33],[15,-33]],'#27303a');
- }else{
-  path([[11,-11],[17,-11],[17,-35],[13,-35],[11,-24]],'#262e35');
-  path([[12,-16],[19,-16],[18,-26],[13,-26]],'#4b5259');
-  path([[14,-33],[17,-33],[18,-41],[13,-41]],'#343c45');
-  line(14,-38,17,-38,accent,1.2);
-  path([[10,-19],[16,-19],[17,-14],[12,-12]],'#272d32');
-  path([[10,-20],[13,-20],[11,-29],[9,-27]],'#424444');
-  path([[15,-27],[19,-27],[18,-24],[16,-24]],'#7a8589',null);
-  if(mode==='energy'){
-   cx.fillStyle='#70d7ed';cx.fillRect(15,-39,2,10);
-   cx.strokeStyle='#59badb';cx.lineWidth=1;cx.strokeRect(13,-41,5,8);
+ // Ceinture + cotte en 3 facettes, avec hauteur de personnage realiste.
+ poly([[-10,-3],[10,-3],[11,6],[6,9],[-6,9],[-11,6]],'#5b4939');
+ poly([[-10,-5],[-13,-13],[-9,-19],[9,-19],[13,-13],[10,-5],[8,4],[-8,4]],coat);
+ poly([[-10,-17],[-3,-19],[-2,3],[-9,2],[-13,-12]],'#e7b16c',null);
+ poly([[3,-19],[9,-18],[13,-12],[10,-5],[8,4],[2,3]],'#a66e38',null);
+ // Sac : plus visible quand le personnage s'oriente vers le haut.
+ const backVis=uy<-.18?1:.62;
+ const packBase=[-fx2*5,-10-fy2*5];
+ cx.globalAlpha=backVis;
+ poly([[packBase[0]-9,packBase[1]-9],[packBase[0]+9,packBase[1]-9],[packBase[0]+10,packBase[1]+9],[packBase[0]-10,packBase[1]+9]],'#2c363a');
+ poly([[packBase[0]-7,packBase[1]-7],[packBase[0]+7,packBase[1]-7],[packBase[0]+6,packBase[1]-4],[packBase[0]-7,packBase[1]-4]],'#667071',null);
+ line(packBase[0]-7,packBase[1]+6,packBase[0]+7,packBase[1]+6,'#596467',1.5);
+ cx.globalAlpha=1;
+ // Le torse suit l'orientation CONTINUE de la visée. Epaule droite/gauche
+ // en projection et relief textile donne par la direction du regard.
+ const chest=[0,-11];
+ const lShould=P(chest,0,-10),rShould=P(chest,0,10);
+ poly([[lShould[0],lShould[1]-5],[rShould[0],rShould[1]-5],[rShould[0]+fx2*2,rShould[1]+6],[5,0],[-5,0],[lShould[0]+fx2*2,lShould[1]+6]],'#c88d4c');
+ poly([[lShould[0],lShould[1]-5],[-fx2*2,-19-fy2*2],[0,-6],[lShould[0]+fx2*2,lShould[1]+6]],'#eeb873',null);
+ poly([[rShould[0],rShould[1]-5],[fx2*1,-19+fy2],[1,-6],[rShould[0]+fx2*2,rShould[1]+6]],'#af753e',null);
+ const chestStripe=P(chest,5,-2);const chestStripe2=P(chest,5,3);
+ line(chestStripe[0],chestStripe[1],chestStripe2[0],chestStripe2[1],'#536f75',2.2);
+ // La tete et les bras ne sont JAMAIS entraînes par la rotation des jambes.
+ const neck=[0,-19];
+ const faceX=ux*4.7,faceY=uy*1.7;
+ // Si on tire vers le haut, mains et arme passent derriere la capuche.
+ function limbsAndWeapon(){
+  const rightElbow=P(rShould,6,3),leftElbow=P(lShould,7,-1);
+  const grip=P([0,-16],12,3.5),support=P([0,-16],16,-2.8);
+  rod(rShould,rightElbow,7.8,skin);rod(rightElbow,grip,6.8,'#be844b');
+  rod(lShould,leftElbow,7.8,'#d7a060');rod(leftElbow,longGun?support:P(chest,7,-7),6.6,'#bf874d');
+  // Arme composee d'elements joints en vraie orientation 360 deg.
+  // Le rail, le chargeur et les mains sont des segments independants.
+  const muzzle=P(grip,longGun?27:17);
+  const stock=P(grip,longGun?-12:-6);
+  if(longGun){
+   rod(stock,P(grip,2),8,'#353d44');
+   rod(P(grip,0),muzzle,6.7,'#414c56');
+   rod(P(grip,11),muzzle,3.1,mode==='energy'?'#477e8e':'#77848a',null);
+   rod(P(grip,22),muzzle,3,'#282f36');
+   rod(P(grip,-6),P(grip,10),2.3,accent,null);
+   rod(P(grip,4,-2),P(grip,-1,-7),4,'#33383c');
+   if(mode==='energy')rod(P(grip,12,0),P(grip,21,0),2.6,'#7ce4f1',null);
+   if(mode==='smg')rod(P(grip,13),muzzle,5,'#434a50');
+  }else{
+   rod(P(grip,-6),P(grip,4),7,'#394049');
+   rod(P(grip,1),muzzle,4.5,'#535e67');
+   rod(P(grip,-1,2.4),P(grip,-8,4),5,'#2b343d');
+   line(P(grip,8)[0],P(grip,8)[1],P(grip,14)[0],P(grip,14)[1],'#a1a7a7',1.4);
   }
+  const glove=P(grip,0,4);const hold=P(grip,longGun?12:1,-2.5);
+  cx.fillStyle='#343332';cx.beginPath();cx.arc(glove[0],glove[1],3.2,0,Math.PI*2);cx.fill();
+  if(longGun){cx.beginPath();cx.arc(hold[0],hold[1],2.8,0,Math.PI*2);cx.fill();}
+ }
+ if(uy<-.3)limbsAndWeapon();
+ // Capuche/tete EN VOLUME : position sur les epaules, jamais une capuche
+ // couchee au sol. L'ouverture bouge selon l'angle de la cible.
+ poly([[-11,-26],[-8,-34],[0,-38],[9,-34],[12,-25],[11,-17],[4,-14],[-5,-15],[-12,-19]],'#a66c34');
+ poly([[-11,-26],[-8,-34],[0,-38],[0,-16],[-6,-16],[-12,-19]],'#f5c07a',null);
+ poly([[0,-38],[9,-34],[12,-25],[11,-17],[5,-15],[0,-17]],'#c58b4c',null);
+ // Arriere de capuche pour les tirs vers le nord : pas de visage a l'arriere.
+ if(uy<-.68){
+  poly([[-7,-30],[0,-33],[8,-30],[7,-19],[-7,-19]],'#bf8748','#774e2d',.8);
+  line(-6,-28,4,-31,'#ecc08b',1.2);
+ }else{
+  cx.save();cx.beginPath();cx.moveTo(-10,-30);cx.lineTo(10,-30);cx.lineTo(10,-17);cx.lineTo(-10,-17);cx.closePath();cx.clip();
+  const openness=Math.max(.36,Math.min(1,(uy+1.1)/1.4));
+  const shift=faceX;
+  poly([[-7+shift,-28+faceY],[-4+shift,-31+faceY],[6+shift,-29+faceY],[9+shift,-23+faceY],[6+shift,-18+faceY],[-5+shift,-19+faceY]],'#0d1720','#3c3933',.8);
+  poly([[-5+shift,-29+faceY],[0+shift,-31+faceY],[-3+shift,-23+faceY],[-6+shift,-23+faceY]],'#283039',null);
+  if(openness>.5){
+   line(-4+shift,-21+faceY,4+shift,-21+faceY,'#27343b',1.2);
+  }
+  cx.restore();
+ }
+ line(-8,-17,-3,-15,'#6d492d',1.3);line(4,-15,9,-17,'#6d492d',1.3);
+ if(uy>=-.3)limbsAndWeapon();
+ // Petits details de tissu selon la marche uniquement.
+ if(moving){
+  line(-8,3+bob,-6,6+bob,'#98663d',1);
+  line(8,3-bob,6,6-bob,'#d3a16a',1);
  }
  cx.restore();
 }
