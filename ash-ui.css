@@ -1,0 +1,100 @@
+/* ASHFALL / SYSTEME VISUEL 1A / prefixe ash-ui. A charger APRES le CSS historique.
+   Aucun selecteur actuel du moteur n'est surcharge dans cette fondation. */
+:root {
+  color-scheme:dark;
+  --ash-void:#0a141f;
+  --ash-bg:#0f2230;
+  --ash-surface:#152f3e;
+  --ash-surface-raised:#1b394a;
+  --ash-surface-hover:#264657;
+  --ash-border:#36566b;
+  --ash-border-strong:#66899a;
+  --ash-text:#eef5f7;
+  --ash-text-muted:#adc5d1;
+  --ash-text-subtle:#8daaba;
+  --ash-amber:#e5b772;
+  --ash-amber-hover:#f2cc8c;
+  --ash-cyan:#65cfcd;
+  --ash-health:#ef727c;
+  --ash-xp:#64bfe9;
+  --ash-success:#6bd5ad;
+  --ash-warning:#efac6d;
+  --ash-danger:#de8088;
+  --ash-common:#afc4d0;
+  --ash-rare:#68b8f6;
+  --ash-epic:#bc85f2;
+  --ash-legendary:#f5c36b;
+  --ash-radius-xs:6px;
+  --ash-radius-sm:10px;
+  --ash-radius-md:14px;
+  --ash-radius-lg:20px;
+  --ash-space-1:4px;
+  --ash-space-2:8px;
+  --ash-space-3:12px;
+  --ash-space-4:16px;
+  --ash-space-5:20px;
+  --ash-space-6:24px;
+  --ash-shadow:0 10px 35px rgba(0,0,0,.25);
+  --ash-glow-cyan:0 0 16px rgba(101,207,205,.20);
+  --ash-glow-amber:0 0 15px rgba(229,183,114,.20);
+  --ash-font:system-ui,-apple-system,"Segoe UI",sans-serif;
+  --ash-tap-target:44px;
+  --ash-ease:cubic-bezier(.22,1,.36,1);
+  --ash-fast:140ms;
+  --ash-normal:220ms;
+  --ash-reveal:420ms;
+}
+/* Foundation styles, non-invasive: activate component by adding an ash-ui class. */
+.ash-ui-root {font-family:var(--ash-font);color:var(--ash-text);background:var(--ash-bg);font-size:14px;line-height:1.45}
+.ash-ui-root *, .ash-ui-root *::before, .ash-ui-root *::after {box-sizing:border-box}
+.ash-ui-icon {display:inline-block;width:20px;height:20px;flex:0 0 auto;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.23em}
+.ash-ui-icon--sm {width:16px;height:16px}
+.ash-ui-icon--lg {width:28px;height:28px}
+.ash-ui-icon--xl {width:36px;height:36px}
+.ash-ui-title{margin:0;color:var(--ash-text);font-weight:850;font-size:clamp(21px,5.5vw,27px);line-height:1.15;letter-spacing:.035em}
+.ash-ui-kicker{margin:0;color:var(--ash-amber);font-size:10px;font-weight:850;line-height:1.5;letter-spacing:.16em;text-transform:uppercase}
+.ash-ui-body{color:var(--ash-text-muted);line-height:1.55}
+.ash-ui-caption{color:var(--ash-text-subtle);font-size:11px}
+.ash-ui-card{min-width:0;padding:var(--ash-space-4);border:1px solid var(--ash-border);border-radius:var(--ash-radius-md);background:linear-gradient(145deg,var(--ash-surface),var(--ash-bg));box-shadow:0 2px 11px rgba(0,0,0,.12)}
+.ash-ui-card--raised{border-color:var(--ash-border-strong);background:linear-gradient(145deg,var(--ash-surface-raised),var(--ash-surface));box-shadow:var(--ash-shadow)}
+.ash-ui-card--compact{padding:var(--ash-space-3)}
+.ash-ui-btn{min-height:var(--ash-tap-target);display:inline-flex;justify-content:center;align-items:center;gap:8px;border-radius:var(--ash-radius-sm);border:1px solid var(--ash-border-strong);background:var(--ash-surface-raised);color:var(--ash-text);font-family:var(--ash-font);font-size:13px;font-weight:800;text-align:center;padding:10px 14px;cursor:pointer;transition:background var(--ash-normal) var(--ash-ease),transform var(--ash-fast) var(--ash-ease),box-shadow var(--ash-normal) var(--ash-ease);touch-action:manipulation}
+.ash-ui-btn:active:not(:disabled){transform:scale(.98)}
+.ash-ui-btn:focus-visible,.ash-ui-tab:focus-visible {outline:2px solid var(--ash-cyan);outline-offset:3px}
+.ash-ui-btn:disabled{opacity:.44;cursor:not-allowed}
+.ash-ui-btn--primary{background:linear-gradient(#f0c98b,#d9a15d);border-color:#f1cd93;color:var(--ash-void)}
+.ash-ui-btn--secondary{border-color:var(--ash-border-strong);background:var(--ash-surface-raised)}
+.ash-ui-btn--quiet{background:transparent;border-color:var(--ash-border)}
+.ash-ui-btn--danger{background:#322833;border-color:#b36a76;color:#ffbcc0}
+.ash-ui-btn--block{width:100%}
+.ash-ui-tab{min-width:0;min-height:var(--ash-tap-target);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;padding:7px 5px;border:1px solid var(--ash-border);border-radius:var(--ash-radius-sm);background:var(--ash-bg);color:var(--ash-text-muted);font-weight:700;font-size:10px;cursor:pointer}
+.ash-ui-tab[aria-current="page"],.ash-ui-tab[aria-selected="true"]{color:var(--ash-void);background:var(--ash-amber);border-color:var(--ash-amber-hover)}
+.ash-ui-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
+.ash-ui-stat{display:grid;gap:4px;padding:10px 12px;border:1px solid var(--ash-border);border-radius:var(--ash-radius-sm);background:rgba(10,20,31,.55)}
+.ash-ui-stat small{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--ash-text-subtle);text-transform:uppercase}
+.ash-ui-stat strong{font-size:20px;line-height:1.15;color:var(--ash-text)}
+.ash-ui-meter{height:9px;overflow:hidden;border-radius:999px;border:1px solid var(--ash-border);background:#0a1723}
+.ash-ui-meter>span{display:block;height:100%;background:var(--ash-cyan);border-radius:999px}
+.ash-ui-meter--hp>span{background:linear-gradient(90deg,#f49b9f,var(--ash-health))}
+.ash-ui-meter--xp>span{background:linear-gradient(90deg,#a6e6fc,var(--ash-xp))}
+.ash-ui-rarity{--ash-rarity:var(--ash-common);display:inline-flex;align-items:center;gap:6px;color:var(--ash-rarity);font-size:10px;font-weight:850;letter-spacing:.07em;text-transform:uppercase}
+.ash-ui-rarity::before{content:"";display:inline-block;width:8px;height:8px;border:1.6px solid currentColor;transform:rotate(45deg)}
+.ash-ui-rarity[data-rarity="common"]{--ash-rarity:var(--ash-common)}
+.ash-ui-rarity[data-rarity="rare"]{--ash-rarity:var(--ash-rare)}
+.ash-ui-rarity[data-rarity="epic"]{--ash-rarity:var(--ash-epic)}
+.ash-ui-rarity[data-rarity="legendary"]{--ash-rarity:var(--ash-legendary)}
+.ash-ui-item{--ash-item-color:var(--ash-common);display:grid;grid-template-columns:76px minmax(0,1fr);gap:12px;align-items:center;padding:10px;border:1px solid var(--ash-border);border-left:3px solid var(--ash-item-color);border-radius:var(--ash-radius-md);background:var(--ash-bg)}
+.ash-ui-item[data-rarity="rare"]{--ash-item-color:var(--ash-rare)}
+.ash-ui-item[data-rarity="epic"]{--ash-item-color:var(--ash-epic)}
+.ash-ui-item[data-rarity="legendary"]{--ash-item-color:var(--ash-legendary)}
+.ash-ui-item-image{width:76px;height:64px;display:grid;place-items:center;overflow:hidden;border-radius:8px;border:1px solid var(--ash-border);background:radial-gradient(circle at 50% 44%,#294554,var(--ash-void))}
+.ash-ui-item-image img{display:block;width:100%;height:100%;object-fit:contain;object-position:50% 50%;transform:none!important;max-width:100%;max-height:100%;}
+.ash-ui-item-title{display:block;font-size:14px;font-weight:850;color:var(--ash-text);line-height:1.2}
+.ash-ui-item-meta{margin-top:4px;font-size:11px;color:var(--ash-text-muted)}
+.ash-ui-modal-scrim{position:fixed;inset:0;z-index:8000;display:flex;justify-content:center;align-items:center;padding:max(20px,env(safe-area-inset-top)) 12px max(20px,env(safe-area-inset-bottom));background:rgba(3,12,20,.88);backdrop-filter:blur(7px)}
+.ash-ui-modal{width:min(100%,430px);max-height:calc(100dvh - 40px);overflow-y:auto;overscroll-behavior:contain;padding:20px 16px;border:1px solid var(--ash-border-strong);border-radius:var(--ash-radius-lg);background:linear-gradient(155deg,var(--ash-surface-raised),var(--ash-bg));box-shadow:0 20px 65px rgba(0,0,0,.55)}
+.ash-ui-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px;border-radius:var(--ash-radius-xs);border:1px solid var(--ash-border);background:rgba(15,34,48,.8);color:var(--ash-text-muted);font-size:11px;font-weight:750}
+.ash-ui-chest-image{display:grid;place-items:center;width:100%;height:134px;padding:2px;overflow:hidden;border-radius:var(--ash-radius-sm);background:radial-gradient(circle,#24475a,#102130 75%)}
+.ash-ui-chest-image img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+@media(prefers-reduced-motion:reduce){.ash-ui-root *, .ash-ui-root *::before,.ash-ui-root *::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(max-width:355px){.ash-ui-tabs{gap:3px}.ash-ui-tab{padding:5px 2px;font-size:9px}.ash-ui-card{padding:12px}}

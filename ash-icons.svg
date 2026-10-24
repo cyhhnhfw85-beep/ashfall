@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+<defs>
+<!-- ASHFALL / Iconographie tactique. 24 x 24, tracé 1,8 px, arrondis discrets. Aucun emoji. -->
+<symbol id="ash-i-home" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7v9.3H3.5zM9 19.8v-6.2h6v6.2"/></symbol>
+<symbol id="ash-i-survivor" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.2"/><path d="M5 20v-2.4a7 7 0 0 1 14 0V20M8.3 14.2l3.7 2.5 3.7-2.5"/></symbol>
+<symbol id="ash-i-merchant" viewBox="0 0 24 24"><path d="M3 9V5h18v4l-1.5 3H4.5zM5 12v8h14v-8M9 20v-5h6v5M6.5 9v2.3m5.5-2.3v2.3M17.5 9v2.3"/></symbol>
+<symbol id="ash-i-sectors" viewBox="0 0 24 24"><path d="M3 3h8v8H3zM13 3h8v8h-8zM3 13h8v8H3zM13 13h8v8h-8z"/><path d="M16 17h2"/></symbol>
+<symbol id="ash-i-chest" viewBox="0 0 24 24"><path d="M3 10h18v10H3zM4 5h16v5H4zM9 5v15M15 5v15M10 11h4v3h-4z"/></symbol>
+<symbol id="ash-i-bag" viewBox="0 0 24 24"><path d="M7 7V5a5 5 0 0 1 10 0v2M5 8.5h14l1 12H4zM8 13.5h8M8 17h8"/></symbol>
+<symbol id="ash-i-heart" viewBox="0 0 24 24"><path d="M12 20.5 4.5 13A5.3 5.3 0 0 1 12 5.7 5.3 5.3 0 0 1 19.5 13z"/></symbol>
+<symbol id="ash-i-xp" viewBox="0 0 24 24"><path d="m12 2 2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></symbol>
+<symbol id="ash-i-pause" viewBox="0 0 24 24"><path d="M7 4h3v16H7zM14 4h3v16h-3z"/></symbol>
+<symbol id="ash-i-play" viewBox="0 0 24 24"><path d="m7 4 13 8-13 8z"/></symbol>
+<symbol id="ash-i-close" viewBox="0 0 24 24"><path d="M5 5 19 19M19 5 5 19"/></symbol>
+<symbol id="ash-i-back" viewBox="0 0 24 24"><path d="m11 4-8 8 8 8M4 12h16"/></symbol>
+<symbol id="ash-i-arrow-right" viewBox="0 0 24 24"><path d="M4 12h16m-7-7 7 7-7 7"/></symbol>
+<symbol id="ash-i-weapon" viewBox="0 0 24 24"><path d="M3 10h12V6h5v4h1v5h-9l-3 6H5l2-6H3zM10 10V7m9 3v5"/></symbol>
+<symbol id="ash-i-shield" viewBox="0 0 24 24"><path d="m12 2 8 3v6c0 5.4-3 8.6-8 11-5-2.4-8-5.6-8-11V5z"/></symbol>
+<symbol id="ash-i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3m-5 5v3"/></symbol>
+<symbol id="ash-i-research" viewBox="0 0 24 24"><path d="M9 2h6M10 2v7L4 19a2 2 0 0 0 1.7 3h12.6A2 2 0 0 0 20 19l-6-10V2M8 16h8"/><path d="m11 18 1 1 1-1"/></symbol>
+<symbol id="ash-i-credits" viewBox="0 0 24 24"><path d="m12 2 9 5v10l-9 5-9-5V7zM12 6v12m4-9H9.6c-2.8 0-2.8 3 0 3h4.8c2.8 0 2.8 3 0 3H8"/></symbol>
+<symbol id="ash-i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/><path d="M12 1v4m0 14v4M1 12h4m14 0h4"/></symbol>
+<symbol id="ash-i-damage" viewBox="0 0 24 24"><path d="m14 2-9 12h6l-1 8 9-13h-6z"/></symbol>
+<symbol id="ash-i-rate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 5v7l5 3M8 3l-2-2"/></symbol>
+<symbol id="ash-i-extraction" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-dasharray="4 3"/><path d="m8 13 4-4 4 4M12 9v10"/></symbol>
+<symbol id="ash-i-warning" viewBox="0 0 24 24"><path d="m12 2 10 18H2zM12 8v6m0 3v1"/></symbol>
+<symbol id="ash-i-check" viewBox="0 0 24 24"><path d="m3 12 6 6L21 5"/></symbol>
+<symbol id="ash-i-failure" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m8 8 8 8m0-8-8 8"/></symbol>
+<symbol id="ash-i-scan" viewBox="0 0 24 24"><path d="M9 3H4v5m11-5h5v5M4 16v5h5m11-5v5h-5M3 12h18M9 8h6v8H9z"/></symbol>
+<symbol id="ash-i-terminal" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="15" rx="2"/><path d="M9 21h6M12 18v3M7 8h10M7 12h6"/></symbol>
+<symbol id="ash-i-options" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="9" cy="6" r="2" fill="var(--ash-bg,#0f2230)"/><circle cx="16" cy="12" r="2" fill="var(--ash-bg,#0f2230)"/><circle cx="10" cy="18" r="2" fill="var(--ash-bg,#0f2230)"/></symbol>
+<symbol id="ash-i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10v1"/></symbol>
+<symbol id="ash-i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 6v6l4 2"/></symbol>
+<symbol id="ash-i-skull" viewBox="0 0 24 24"><path d="M5 15a8 8 0 1 1 14 0l-2 2v4H7v-4zM9 21v-3m6 3v-3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><path d="m12 14-1 2h2z"/></symbol>
+<symbol id="ash-i-spark" viewBox="0 0 24 24"><path d="m12 2 2.4 7.6L22 12l-7.6 2.4L12 22l-2.4-7.6L2 12l7.6-2.4z"/></symbol>
+<symbol id="ash-i-upgrade" viewBox="0 0 24 24"><path d="M12 21V3m-6 7 6-7 6 7M4 21h16"/></symbol>
+<symbol id="ash-i-sort" viewBox="0 0 24 24"><path d="M5 5h14M7 10h10M9 15h6M11 20h2"/></symbol>
+<symbol id="ash-i-eye" viewBox="0 0 24 24"><path d="M2 12q10-14 20 0-10 14-20 0z"/><circle cx="12" cy="12" r="3"/></symbol>
+<symbol id="ash-i-rarity" viewBox="0 0 24 24"><path d="m12 2 9 10-9 10L3 12zM3 12h18m-9-10-4 10 4 10 4-10z"/></symbol>
+<symbol id="ash-i-map" viewBox="0 0 24 24"><path d="m3 5 6-3 6 3 6-3v17l-6 3-6-3-6 3zM9 2v17m6-14v17"/></symbol>
+<symbol id="ash-i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M3 19v3h18v-3"/></symbol>
+<symbol id="ash-i-heal" viewBox="0 0 24 24"><path d="M9 3h6v6h6v6h-6v6H9v-6H3V9h6z"/></symbol>
+<symbol id="ash-i-ammo" viewBox="0 0 24 24"><path d="m8 3 4-2 4 2v18H8zM8 7h8M10 17h4"/></symbol>
+</defs></svg>
