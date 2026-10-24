@@ -364,28 +364,62 @@ function ensureMerchant(){
  }
  return m;
 }
-let merchantTab='buy';
+let merchantTab='buy', merchantFilter='all', merchantSort='recommended';
 function merchantOpen(tab='buy'){
  if(data.run){msg('Retourne au refuge pour commercer.');return}
  merchantTab=tab;ensureMerchant();merchantRender();
 }
+function merchantScore(w){return (Number(w.dmg)||0)*(Number(w.rate)||0)}
 function merchantRender(){
- const m=ensureMerchant(), tabs=['buy','sell','info'];
- let html=`<div class="merchant-shop"><div class="merchant-callout"><p class="ui-help">¤ ${data.credits} crédits · stock renouvelé après 2 expéditions ou un nouveau secteur débloqué. Les achats vont dans la réserve.</p><div class="merchant-meta-row"><span>Arrivage ${m.cycle}</span><span>${m.stock.filter(x=>!x.sold).length}/7 offres restantes</span></div></div><div class="merchant-tabs">${tabs.map((t,i)=>`<button data-merchant-tab="${t}" class="${merchantTab===t?'active':''}">${['Acheter','Vendre','Arrivages'][i]}</button>`).join('')}</div>`;
+ const m=ensureMerchant(),stock=m.stock||[],remaining=stock.filter(w=>!w.sold).length;
+ const until=Math.max(0,2-(data.runs-m.lastRefreshRun));
+ const hint=until===0?'Un nouvel arrivage sera disponible à la prochaine visite du comptoir.':`Prochain arrivage : ${until} expédition${until>1?'s':''} terminée${until>1?'s':''}, ou nouvelle avancée dans K-17.`;
+ const mirror=$('merchantRefreshHint');if(mirror)mirror.textContent=hint;
+ if($('merchantCreditsMirror'))$('merchantCreditsMirror').textContent=data.credits;
+ if($('merchantReserveCount'))$('merchantReserveCount').textContent=data.stash.length;
+ if($('merchantOffersCount'))$('merchantOffersCount').textContent=remaining;
+ let html=`<div class="merchant-shop ash-commerce"><div class="merchant-tabs ash-commerce-tabs" role="group" aria-label="Opérations du marchand"><button type="button" data-merchant-tab="buy" aria-pressed="${merchantTab==='buy'}" class="${merchantTab==='buy'?'active':''}">◈ Acheter</button><button type="button" data-merchant-tab="sell" aria-pressed="${merchantTab==='sell'}" class="${merchantTab==='sell'?'active':''}">↗ Vendre</button></div>`;
  if(merchantTab==='buy'){
-  html+=m.stock.map((w,i)=>{
-   const delta=w.dmg-(data.equipped?.dmg||0),speed=w.rate-(data.equipped?.rate||0);
-   return `<article class="ui-weapon merchant-offer" style="--item-rarity:${tint(w)}"><div class="ui-weapon-head"><span class="ui-weapon-icon">${weaponArt(w)}</span><div><small class="rarity">${uiSafe(w.rar)}</small><b>${uiSafe(w.name)}</b></div></div><div class="ui-weapon-stats"><span>⚔ ${w.dmg} dégâts</span><span>◉ ${w.rate} tirs/s</span></div><div class="ui-compare">Face à l'arme équipée : <strong class="${delta>=0?'ui-up':'ui-down'}">${delta>=0?'+':''}${delta} dégâts</strong> · <strong class="${speed>=0?'ui-up':'ui-down'}">${speed>=0?'+':''}${speed.toFixed(1)} tirs/s</strong></div><button data-merchant-buy="${i}" ${w.sold||data.credits<w.price?'disabled':''}>${w.sold?'VENDU':data.credits<w.price?'CRÉDITS INSUFFISANTS · ':'ACHETER · '}${w.sold?'':w.price+' ¤'}</button></article>`;
+  const current=data.equipped,base=merchantScore(current||{});
+  const filters=[['all','Toutes'],['available','Achetables'],['upgrade','Plus puissantes']];
+  html+=`<div class="ash-commerce-toolbar"><div class="ash-commerce-filters" role="group" aria-label="Filtrer les armes">${filters.map(([id,label])=>`<button type="button" class="${merchantFilter===id?'selected':''}" data-merchant-filter="${id}" aria-pressed="${merchantFilter===id}">${label}</button>`).join('')}</div><label class="ash-merchant-sort">TRIER <select id="merchantSort" aria-label="Trier les offres"><option value="recommended" ${merchantSort==='recommended'?'selected':''}>Disponibilité</option><option value="price" ${merchantSort==='price'?'selected':''}>Prix croissant</option><option value="power" ${merchantSort==='power'?'selected':''}>Puissance théorique</option></select></label></div>`;
+  // Group identical lots for readability without changing stock quantities or economy.
+  const grouped=new Map();
+  stock.forEach((w,i)=>{
+   const k=[w.name,w.rar,w.dmg,w.rate,w.price].join('|');
+   if(!grouped.has(k))grouped.set(k,{w,i,total:0,remaining:0});
+   const g=grouped.get(k);g.total++;
+   if(!w.sold){if(g.remaining===0){g.w=w;g.i=i;}g.remaining++;}
+  });
+  let offers=[...grouped.values()];
+  if(merchantFilter==='available')offers=offers.filter(g=>g.remaining>0&&data.credits>=g.w.price);
+  else if(merchantFilter==='upgrade')offers=offers.filter(g=>g.remaining>0&&merchantScore(g.w)>base);
+  offers.sort((a,b)=>{
+   if(merchantSort==='price')return a.w.price-b.w.price||a.i-b.i;
+   if(merchantSort==='power')return merchantScore(b.w)-merchantScore(a.w)||a.i-b.i;
+   return Number(a.remaining===0)-Number(b.remaining===0)||Number(data.credits<b.w.price)-Number(data.credits<a.w.price)||a.i-b.i;
+  });
+  html+=`<p class="ash-merchant-explainer">${remaining} offre${remaining!==1?'s':''} disponible${remaining!==1?'s':''} · Les crédits sont dépensés seulement après confirmation. <span>Puissance = dégâts × cadence (estimation hors bonus).</span></p>`;
+  html+='<div class="ash-offer-list">';
+  html+=offers.map(({w,i,remaining:copies,total})=>{
+   const sold=copies===0,power=merchantScore(w),delta=Math.round((power-base)*10)/10,ok=power>base,affordable=data.credits>=w.price;
+   return `<article class="ui-weapon merchant-offer ash-merchant-offer ${sold?'ash-offer-sold':''}" style="--item-rarity:${tint(w)}"><div class="ash-merchant-offer-head"><span class="ash-offer-picture">${weaponArt(w)}</span><div class="ash-offer-copy"><span class="rarity">${uiSafe(w.rar)}</span><b>${uiSafe(w.name)}</b><span class="ash-offer-traits">⚔ ${Number(w.dmg)} DGT <span aria-hidden="true">·</span> ◉ ${Number(w.rate)} tirs/s</span><span class="ash-offer-stock">${copies?copies+" en stock": "Épuisé"}${total>1?" · lot de "+total:""}</span></div><span class="ash-price-chip">${w.price} ¤</span></div><div class="ash-offer-comparison"><span>Puissance théorique : <strong>${power.toFixed(1)}</strong></span><span class="${ok?'ui-up':delta<0?'ui-down':''}">${base?((delta>0?'+':'')+delta.toFixed(1)+' vs équipée'):'Sans comparaison'}</span></div><button type="button" data-merchant-buy="${i}" ${sold||!affordable?'disabled':''}>${sold?'DÉJÀ VENDUE':!affordable?'IL MANQUE '+(w.price-data.credits)+' ¤':'ACHETER · '+w.price+' ¤'}</button></article>`;
   }).join('');
- }else if(merchantTab==='sell'){
-  html+='<p class="ui-help">Valeur de récupération réduite selon la rareté. Les objets achetés sont repris au maximum à 25 % de leur prix. Vente définitive avec confirmation ; équipement assuré protégé.</p>';
-  html+=data.stash.length?data.stash.map((w,i)=>`<article class="ui-weapon merchant-offer" style="--item-rarity:${tint(w)}"><div class="ui-weapon-head"><span class="ui-weapon-icon">${weaponArt(w)}</span><div><small class="rarity">${uiSafe(w.rar)}</small><b>${uiSafe(w.name)}</b></div></div><div class="ui-weapon-stats"><span>⚔ ${Number(w.dmg)||0} dégâts</span><span>◉ ${Number(w.rate)||0} tirs/s</span></div><button data-merchant-sell="${i}" ${w.id===data.insured?'disabled':''}>${w.id===data.insured?'🛡 ASSURÉE':'VENDRE · '+salvagePrice(w)+' ¤'}</button></article>`).join(''):'<p class="ui-empty">Réserve vide : rapporte des équipements en t’extrayant.</p>';
+  if(!offers.length)html+='<div class="ash-merchant-empty">Aucune arme pour ce filtre. Essaie « Toutes » ou reviens après un nouvel arrivage.</div>';
+  html+='</div>';
  }else{
-  html+=`<div class="merchant-info-card ui-empty"><b>Arrivage ${m.cycle}</b><p>Offres restantes : ${m.stock.filter(x=>!x.sold).length}/7</p><p>Prochain renouvellement après ${Math.max(0,2-(data.runs-m.lastRefreshRun))} expédition(s) terminée(s), ou au déblocage d'un secteur.</p><p>Plus tu explores K-17, plus les équipements rares deviennent accessibles. Les objets légendaires restent exceptionnellement coûteux.</p></div>`;
+  html+='<div class="ash-merchant-explainer">Les ventes sont définitives. Le prix de rachat est inférieur au prix marchand ; une arme achetée est reprise au maximum à 25 % de son coût. Ton arme équipée ne figure pas dans la réserve.</div>';
+  const items=data.stash.map((w,i)=>({w,i})).sort((a,b)=>salvagePrice(b.w)-salvagePrice(a.w)||a.i-b.i);
+  html+='<div class="ash-offer-list">';
+  html+=items.map(({w,i})=>{
+   const locked=w.id===data.insured;
+   return `<article class="ui-weapon merchant-offer ash-merchant-offer" style="--item-rarity:${tint(w)}"><div class="ash-merchant-offer-head"><span class="ash-offer-picture">${weaponArt(w)}</span><div class="ash-offer-copy"><span class="rarity">${uiSafe(w.rar)}</span><b>${uiSafe(w.name)}</b><span class="ash-offer-traits">⚔ ${Number(w.dmg)||0} DGT · ◉ ${Number(w.rate)||0} tirs/s</span></div><span class="ash-price-chip">+${salvagePrice(w)} ¤</span></div><button type="button" data-merchant-sell="${i}" ${locked?'disabled':''}>${locked?'🛡 OBJET ASSURÉ — VENTE BLOQUÉE':'VENDRE · +'+salvagePrice(w)+' ¤'}</button></article>`;
+  }).join('');
+  if(!items.length)html+='<div class="ash-merchant-empty">Réserve vide. Rapporte des armes lors d’une extraction pour pouvoir les revendre.</div>';
+  html+='</div>';
  }
- html+='</div>';
- const host=$('merchantPageContent');
- if(host){host.innerHTML=html; if($('merchantCreditsMirror'))$('merchantCreditsMirror').textContent=data.credits; if($('merchantReserveCount'))$('merchantReserveCount').textContent=data.stash.length; if($('merchantOffersCount'))$('merchantOffersCount').textContent=m.stock.filter(x=>!x.sold).length; if($('merchantRefreshHint'))$('merchantRefreshHint').textContent=`Arrivage ${m.cycle} · prochain renouvellement dans ${Math.max(0,2-(data.runs-m.lastRefreshRun))} expédition(s), ou au déblocage d’un nouveau secteur.`; }
+ html+=`<div class="ash-trader-footnote"><b>COMMENT FONCTIONNE LE COMPTOIR ?</b><p>Le stock change après deux expéditions terminées ou une nouvelle progression de secteur. Les armes plus rares apparaissent au fil de l'exploration. Les achats restent dans la réserve jusqu'à leur équipement.</p></div></div>`;
+ const host=$('merchantPageContent');if(host)host.innerHTML=html;
  else tool('¤ LE COMPTOIR — MARCHAND',html);
 }
 let selectedInventoryId=null;
@@ -451,22 +485,31 @@ function renderRefugeCharacter(){
 
 }
 function renderRefugeProgress(){
- const reg=region();
- if($('progressSectorCount'))$('progressSectorCount').textContent=`${reg.maxSector+1}/4`;
+ const reg=region(), max=Math.min(3,Math.max(0,Number(reg.maxSector)||0));
+ const visitedCount=max+1;
+ if($('progressSectorCount'))$('progressSectorCount').textContent=`${visitedCount}/4`;
  if($('progressOutpostCount'))$('progressOutpostCount').textContent=`${reg.outposts.length}/3`;
- if($('progressBossState'))$('progressBossState').textContent=reg.bossDefeated?'Vaincu':'À découvrir';
- if($('progressObjectiveHint'))$('progressObjectiveHint').textContent=reg.bossDefeated?'Le Gardien est vaincu. Continue à améliorer ton refuge et ton équipement.':(reg.outposts.length<3?'Découvre les balises et explore de nouvelles salles.':'Explore plus profondément pour atteindre le Gardien.');
+ if($('progressBossState'))$('progressBossState').textContent=reg.bossDefeated?'Vaincu':'À affronter';
  const names=['PÉRIPHÉRIE','LABORATOIRES','FONDERIE','CITADELLE'];
+ let goalTitle,goalText,goalBadge;
+ if(reg.bossDefeated){goalTitle='Gardien vaincu · K-17 parcouru';goalText='Continue à améliorer ton arsenal et tes performances. Helix est débloquée pour une version future, non jouable ici.';goalBadge='ACCOMPLI';}
+ else if(max<3){goalTitle=`Atteindre : ${names[max+1]}`;goalText=`Explore de nouvelles salles pour découvrir le secteur ${max+2}. Les secteurs découverts enrichissent progressivement le stock du Marchand.`;goalBadge='EXPLORATION';}
+ else {goalTitle='Trouver le Gardien de K-17';goalText='La Citadelle est découverte. Poursuis l’exploration et prépare une arme adaptée pour affronter le Gardien.';goalBadge='OBJECTIF FINAL';}
+ if($('sectorGoalTitle'))$('sectorGoalTitle').textContent=goalTitle;
+ if($('sectorGoalText'))$('sectorGoalText').textContent=goalText;
+ if($('sectorGoalState'))$('sectorGoalState').textContent=goalBadge;
+ if($('sectorMeterFill'))$('sectorMeterFill').style.width=(visitedCount/4*100)+'%';
+ if($('sectorMeter'))$('sectorMeter').setAttribute('aria-valuenow',String(visitedCount));
+ if($('sectorMeterCaption'))$('sectorMeterCaption').textContent=`${visitedCount} secteur${visitedCount>1?'s':''} découvert${visitedCount>1?'s':''} sur 4`;
+ if($('progressObjectiveHint'))$('progressObjectiveHint').textContent=goalText;
  document.querySelectorAll('[data-sector-card]').forEach(card=>{
-   const i=Number(card.dataset.sectorCard);
-   const unlocked=i<=reg.maxSector;
-   const outpost=reg.outposts.includes(i);
-   card.classList.toggle('unlocked',unlocked);
-   card.classList.toggle('locked',!unlocked);
-   card.classList.toggle('outpost',outpost);
-   card.classList.toggle('current',i===reg.maxSector);
-   const state=card.querySelector('[data-sector-state]');
-   if(state)state.textContent=!unlocked?'Zone verrouillée':outpost?`Balise découverte · ${names[i]}`:(i===reg.maxSector?(reg.bossDefeated&&i===3?'Secteur nettoyé':'Secteur accessible'):'Secteur sécurisé');
+  const i=Number(card.dataset.sectorCard),seen=i<=max,beacon=reg.outposts.includes(i);
+  card.classList.toggle('unlocked',seen);
+  card.classList.toggle('locked',!seen);
+  card.classList.toggle('outpost',beacon);
+  card.classList.toggle('current',i===max);
+  const state=card.querySelector('[data-sector-state]');
+  if(state)state.textContent=beacon?'✓ Découvert · balise activée':seen?'✓ Secteur découvert':'◇ Pas encore découvert';
  });
 }
 function merchantBuy(i){
@@ -507,8 +550,10 @@ $('upHp').onclick=()=>upgrade('hp');$('upDmg').onclick=()=>upgrade('dmg');$('ins
 $('bagBtn').onclick=()=>openOverlay('bag');$('mapBtn').onclick=()=>openOverlay('map');$('pauseBtn').onclick=()=>openOverlay('pause');
 // Le clic synthetique iOS peut etre annule quand un autre doigt tient le joystick.
 $('overlay').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let op=b.dataset.op,idx=Number(b.dataset.idx);if(op==='choosePerk')choosePerk(b.dataset.perk);else if(op==='close'||op==='resume')closeOverlay();else if(op==='equipBag')equipBag(idx);else if(op==='drop')drop(idx);else if(op==='retreat'){if(confirm('Abandonner ? Tout le matériel non assuré sera perdu.'))finish(false)}});
-function merchantClickHandler(e){let b=e.target.closest('[data-merchant-tab],[data-merchant-buy],[data-merchant-sell]');if(!b)return;if(b.hasAttribute('data-merchant-tab')){merchantTab=b.dataset.merchantTab;merchantRender()}else if(b.hasAttribute('data-merchant-buy'))merchantBuy(Number(b.dataset.merchantBuy));else if(b.hasAttribute('data-merchant-sell'))merchantSell(Number(b.dataset.merchantSell));}
+function merchantClickHandler(e){let b=e.target.closest('[data-merchant-tab],[data-merchant-filter],[data-merchant-buy],[data-merchant-sell]');if(!b)return;if(b.hasAttribute('data-merchant-tab')){merchantTab=b.dataset.merchantTab;merchantRender()}else if(b.hasAttribute('data-merchant-filter')){merchantFilter=b.dataset.merchantFilter;merchantRender()}else if(b.hasAttribute('data-merchant-buy'))merchantBuy(Number(b.dataset.merchantBuy));else if(b.hasAttribute('data-merchant-sell'))merchantSell(Number(b.dataset.merchantSell));}
 $('toolsBody').addEventListener('click',merchantClickHandler);if($('merchantPageContent'))$('merchantPageContent').addEventListener('click',merchantClickHandler);
+if($('merchantPageContent'))$('merchantPageContent').addEventListener('change',e=>{if(e.target.id==='merchantSort'){merchantSort=e.target.value;merchantRender();}});
+if($('progressTrack'))$('progressTrack').addEventListener('click',e=>{const button=e.target.closest('[data-sector-detail]');if(!button)return;const panel=button.nextElementSibling;if(!panel)return;const opening=panel.hidden;panel.hidden=!opening;button.setAttribute('aria-expanded',String(opening));});
 $('characterReservePreview').addEventListener('click',e=>{
  const cell=e.target.closest('[data-inventory-index]');if(!cell)return;
  const i=Number(cell.dataset.inventoryIndex),w=data.stash[i],host=$('inventorySelection');if(!w||!host)return;

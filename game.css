@@ -586,3 +586,87 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 #refuge-page-progress .ash-technical-status{display:none!important}
 
 #refuge-page-progress .progress-sector.outpost::after{content:"BALISE"}
+
+/* ASHFALL 0.8.9.40 — Comptoir & secteurs : meilleure hiérarchie mobile */
+#refuge-page-merchant,#refuge-page-progress{gap:12px}
+#refuge-page-merchant .ash-page-heading p,#refuge-page-progress .ash-page-heading p{max-width:42rem}
+#refuge-page-merchant .ash-merchant-hero{min-height:130px!important;padding:18px!important;border-radius:16px!important;align-items:center!important;margin:0!important;background:radial-gradient(circle at 80% 25%,#bd87402e,transparent 30%),linear-gradient(116deg,#173344,#202a30 68%,#15232f)!important}
+#refuge-page-merchant .ash-merchant-hero .merchant-banner-copy{max-width:74%;width:74%}
+#refuge-page-merchant .ash-merchant-hero .merchant-banner-copy b{font-size:clamp(18px,4.6vw,24px);line-height:1.1;color:#f5d7aa}
+#refuge-page-merchant .ash-merchant-hero .muted{font-size:12px;line-height:1.4;color:#d7c6af!important;margin:5px 0 0}
+#refuge-page-merchant .ash-merchant-hero .merchant-figure{transform:scale(.65);transform-origin:bottom right;right:8px;opacity:.87}
+#refuge-page-merchant .ash-merchant-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+#refuge-page-merchant .ash-merchant-metrics .mini-panel{padding:10px 8px;border-radius:11px;background:#152f41}
+#refuge-page-merchant .ash-merchant-metrics small{font-size:9px;line-height:1.35;letter-spacing:.055em}
+#refuge-page-merchant .ash-merchant-metrics b{font-size:clamp(16px,4.5vw,22px);line-height:1.15}
+.ash-stock-timer{display:flex;align-items:center;gap:8px;background:#102936;border:1px solid #356277;border-radius:11px;color:#b9d2df;font-size:12px;line-height:1.4;padding:11px 12px}
+.ash-status-lamp{width:7px;height:7px;border-radius:50%;background:#6bd3a6;flex:none;box-shadow:0 0 10px #69d6ab66}
+#merchantPageContent .ash-commerce{gap:10px;display:grid}
+#merchantPageContent .ash-commerce-tabs{display:flex;position:static;top:auto;background:transparent;padding:0;margin:0;gap:8px}
+#merchantPageContent .ash-commerce-tabs button{min-height:44px;font-size:14px;border-radius:10px}
+.ash-commerce-toolbar{display:grid;gap:10px;padding:12px;border-radius:12px;background:#132c3c;border:1px solid #3b6276}
+.ash-commerce-filters{display:flex;gap:6px;flex-wrap:wrap}
+#merchantPageContent .ash-commerce-filters button{border:1px solid #456878;color:#c0d4e1;border-radius:999px;background:#1c3948;padding:8px 10px;font-size:11px;min-height:34px;flex:none}
+#merchantPageContent .ash-commerce-filters button.selected{color:#102332;background:#edbd76;border-color:#f7d9a6}
+.ash-merchant-sort{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#a6c1d0;font-size:10px;letter-spacing:.11em;font-weight:700}
+.ash-merchant-sort select{background:#0d2331;border:1px solid #547586;border-radius:8px;color:#ecf2f6;padding:9px 12px;max-width:72%;font-size:12px}
+#merchantPageContent .ash-merchant-explainer{font-size:12px;line-height:1.55;color:#afc7d4;margin:1px 1px 3px;padding:2px 2px 4px;background:transparent;border:0}
+#merchantPageContent .ash-merchant-explainer span{display:block;color:#8fafbe;font-size:11px}
+.ash-offer-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px}
+#merchantPageContent .ash-merchant-offer{padding:12px;border-left:3px solid var(--item-rarity)!important;background:linear-gradient(138deg,#1a3647,#102634)!important;box-shadow:none;display:flex;flex-direction:column;gap:10px;min-width:0}
+.ash-merchant-offer-head{display:grid;grid-template-columns:92px minmax(0,1fr);gap:10px;align-items:start}
+.ash-offer-picture{display:grid;place-items:center;width:92px;height:80px;border-radius:10px;background:radial-gradient(circle at 50% 50%,#33546a,#112332);border:1px solid #45687d}
+.ash-offer-picture .weapon-art{width:83px;height:74px;max-width:100%;max-height:100%;object-fit:contain}
+.ash-offer-picture img{max-width:100%;max-height:100%;object-fit:contain}
+.ash-offer-copy{display:flex;flex-direction:column;align-items:start;gap:4px;min-width:0;padding-top:2px}
+#merchantPageContent .ash-offer-copy b{font-size:15px;line-height:1.23;overflow-wrap:anywhere}
+#merchantPageContent .ash-offer-copy .rarity{font-size:10px}
+.ash-offer-traits{font-size:11px;color:#a9c4d3;white-space:normal;line-height:1.3}
+.ash-price-chip{grid-column:2;font-weight:900;font-size:15px;color:#f3ce92;justify-self:start;line-height:1.2}
+.ash-offer-comparison{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:3px 9px;padding:9px 10px;border-radius:8px;background:#0d2331;border:1px solid #334d60;font-size:11px;color:#bfd1de}
+.ash-offer-comparison strong{color:#f1f5f8}
+#merchantPageContent .ash-merchant-offer button{min-height:43px;margin-top:auto;font-weight:800;border-radius:9px;font-size:12px;letter-spacing:.03em}
+#merchantPageContent .ash-merchant-offer button:disabled{opacity:.7;cursor:default}
+.ash-offer-sold{opacity:.68}
+.ash-merchant-empty{padding:21px 15px;border:1px dashed #58798a;background:#132b3c;color:#c4d5e2;border-radius:12px;text-align:center;line-height:1.5;font-size:13px}
+.ash-trader-footnote{padding:14px;background:#0f2635;border:1px solid #3a5b6d;border-radius:12px}
+.ash-trader-footnote b{font-size:11px;letter-spacing:.08em;color:#f0c68b}
+.ash-trader-footnote p{font-size:12px;color:#afc4d2;line-height:1.5;margin:7px 0 0}
+#refuge-page-progress .ash-next-objective{background:linear-gradient(125deg,#1e3a46,#142b3a);border:1px solid #a67d4f;border-radius:15px;padding:16px;display:grid;gap:8px}
+.ash-objective-top{display:flex;align-items:center;justify-content:space-between;gap:7px}
+.ash-goal-chip{border:1px solid #b08b54;border-radius:999px;padding:5px 7px;font-size:9px;color:#f3ca8a;white-space:nowrap}
+#sectorGoalTitle{font-size:clamp(18px,5vw,24px);color:#f7ecdd;line-height:1.24}
+#sectorGoalText{font-size:12px;line-height:1.55;color:#b7d0da;margin:0}
+.ash-sector-meter{height:9px;border-radius:999px;background:#0b1d2a;border:1px solid #3b5766;overflow:hidden;margin-top:3px}
+.ash-sector-meter span{height:100%;display:block;width:25%;background:linear-gradient(90deg,#82caae,#e4b067);border-radius:999px}
+#sectorMeterCaption{font-size:10px;color:#a7c0ce}
+#refuge-page-progress .ash-sector-metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#refuge-page-progress .ash-sector-metrics .mini-panel{padding:11px;border-radius:11px;background:#152f41}
+#refuge-page-progress .ash-sector-metrics .mini-panel small{font-size:10px}
+#refuge-page-progress .ash-sector-metrics .mini-panel b{font-size:21px}
+#refuge-page-progress .ash-sector-map-card{padding:14px 11px;border:1px solid #42667b;background:#102737;border-radius:15px}
+#refuge-page-progress .ash-sector-map-card .progress-map-head{padding:0 4px}
+#refuge-page-progress .ash-sector-map-card .progress-map-head b{color:#f2cc91;font-size:14px}
+#refuge-page-progress .ash-sector-map-card .progress-map-head p{font-size:12px;line-height:1.5;margin:5px 0 12px}
+#refuge-page-progress .ash-sector-track{display:grid;grid-template-columns:1fr;gap:9px}
+#refuge-page-progress .ash-sector-node{padding:13px 13px 13px 17px;opacity:1;transform:none!important}
+#refuge-page-progress .ash-sector-node.locked{filter:none;background:#132534;border-color:#385061}
+#refuge-page-progress .ash-sector-node.locked:before{background:#394d5b}
+#refuge-page-progress .ash-sector-node.unlocked{background:#1b3b48}
+#refuge-page-progress .ash-sector-node.current{border-color:#d8ad70}
+#refuge-page-progress .ash-sector-node b{font-size:17px;letter-spacing:.07em}
+#refuge-page-progress .ash-sector-node .progress-sector-state{font-size:12px;margin:5px 0;color:#b9d1dc}
+#refuge-page-progress .ash-sector-node.locked .progress-sector-state{color:#889daa}
+.ash-sector-threat{font-size:12px;color:#ecc48e;margin:7px 0 8px}
+#refuge-page-progress .ash-sector-more{font-size:11px;border:1px solid #4d6e80;color:#d1dfeb;background:#142d3d;border-radius:8px;width:100%;text-align:left;padding:9px 10px;min-height:38px;display:flex;justify-content:space-between;align-items:center}
+.ash-sector-more[aria-expanded="true"] span{transform:rotate(180deg)}
+.ash-sector-more-body{padding:10px 12px;margin-top:7px;background:#0f2736;border:1px solid #315267;border-radius:9px}
+.ash-sector-more-body p{font-size:12px;line-height:1.55;color:#b7cad6;margin:0 0 6px}
+.ash-sector-more-body p:last-child{margin-bottom:0}
+.ash-sector-explain{padding:14px 15px;background:#112a38;border:1px solid #416679;border-radius:13px}
+.ash-sector-explain strong{color:#f0c98c;font-size:14px}
+.ash-sector-explain p{margin:7px 0 0;font-size:12px;line-height:1.65;color:#b7cfdc}
+#refuge-page-progress .ash-survival-summary{border-radius:12px}
+@media(min-width:660px){#refuge-page-progress .ash-sector-track{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:360px){.ash-merchant-offer-head{grid-template-columns:76px minmax(0,1fr)}.ash-offer-picture{width:76px;height:72px}.ash-offer-picture .weapon-art{max-width:72px}.ash-price-chip{font-size:13px}#refuge-page-merchant .ash-merchant-metrics .mini-panel{padding:9px 6px}}
+.ash-offer-stock{display:inline-block;border:1px solid #3a6980;background:#112e3e;border-radius:6px;padding:3px 6px;font-size:10px;color:#85dcc0;margin-top:2px}

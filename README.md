@@ -67,3 +67,10 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 - Bilan extraction / décès transféré dans Secteurs; Atelier présente les 2 upgrades existants dans un design dédié.
 - Valeurs d'améliorations inchangées (+15 PV ou +3 dégâts, coût 4 + 4*level recherche, niveau max 8); aucune nouvelle amélioration inventée.
 - Sauvegardes et assets existants conservés.
+
+
+## 0.8.9.40 — Marchand & secteurs utiles
+- Refonte du Marchand : filtres achetables/plus puissantes, tri, prix visible, comparaison théorique, quantité regroupée pour les offres identiques, détails de rotation, vente lisible et protégée.
+- Refonte Secteurs : objectif adapté au jalon atteint, jauge des 4 zones, menaces et conseils tactiques, fiches déroulantes, historique et définition explicite des balises (sans checkpoint).
+- Rotation, prix, achats, ventes, assurances, graphismes du Nomade, récompenses, progression et format des sauvegardes conservés.
+- La puissance théorique (dégâts x cadence) est une comparaison simplifiée, pas une mesure de dégâts réels du combat.
