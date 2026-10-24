@@ -1,16 +1,11 @@
-# ASHFALL — Phase 1A / Fondation visuelle
+# ASHFALL 0.8.9.64 — Version complète jouable
 
-Kit **non jouable** de direction artistique, bâti à partir de la version **0.8.9.63**. Il n'écrit rien dans les données utilisateur. Il ne modifie ni le gameplay ni les sauvegardes.
+**Installation** : décompresser tous les fichiers à la racine du dossier public de ton hébergement, sans sous-dossier ajouté autour d'`index.html`. Remplacer *tous* les anciens fichiers, y compris `game.js`, `game.css`, `service-worker.js` et les quatre fichiers `identity-*`. Charger le site, vérifier que l'accueil affiche `ALPHA PWA 0.8.9.64`.
 
-- `CHARTE_VISUELLE.md` : règles définitives (couleurs, typography, rayons, raretés, images, animation).
-- `assets/ash-ui.css` : tokens et composants préfixés `ash-ui-*`, sans surcharge du jeu existant.
-- `assets/ash-icons.svg` : bibliothèque vectorielle de pictogrammes industriels.
-- `tokens.json` : mêmes tokens en données structurées.
-- `INVENTAIRE_EXISTANT.md` : état réel des pictogrammes et des surfaces à migrer.
-- `PLAN_INTEGRATION.md` : ordre de migration groupée + critères de tests.
-- `preview/ASHFALL_1A_Apercu.html` : maquette autoportante consultable dans un navigateur ; **ce n'est pas le jeu**.
-- `preview/ASHFALL_1A_Mobile.png` et `preview/ASHFALL_1A_Desktop.png` : captures de la maquette.
+**Avant la mise à jour** : dans la version actuellement jouable, utiliser le bouton **Sauvegarde** pour exporter le code de progression et le conserver hors du téléphone. L'extension PWA utilise toujours la clé `ashfall_pwa_v1` et ne requiert aucune remise à zéro.
 
-## Utilisation au prochain chantier
+**Nouveautés** : intégration des phases 1B et 1C du design system tactique validé (refuge + expédition). Icônes SVG homogènes, palette bleu nuit et ambre/cyan, panneaux et cartes, HUD, inventaire, pause, tutoriel, bilans. Prix des coffres inchangés : 900 / 2 800 / 7 500 crédits.
 
-Charger la feuille `ash-ui.css` après `game.css`, copier les symboles inline en haut de `index.html`, puis activer les classes et l'icône de chaque emplacement. Ne pas renommer directement les anciennes classes, car leurs spécificités CSS sont encore utilisées par le moteur. La maquette est un contrat d'identité et non une preuve de fonctionnement de l'expédition.
+**Médias existants** : illustrations d'armes et de coffres identiques à la version 0.8.9.63 ; pas d'ajout de nouvelles images d'armes.
+
+**Note de validation** : contrôles automatisés effectués en Chromium sur 320, 390 et 430 px et sur la reprise d'achat de coffre. Les tests Safari sur iPhone réel ne peuvent pas être considérés comme effectués.

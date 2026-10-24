@@ -1,0 +1,97 @@
+/* ASHFALL 0.8.9.64 — identité tactique unifiée. Présentation exclusivement. */
+html{background:var(--af-bg);color-scheme:dark}
+body{background:var(--af-bg);color:var(--af-text);font-family:var(--af-font)}
+#app{background:linear-gradient(170deg,#0D1B29 0%,var(--af-bg) 66%,#08141E 100%)!important;color:var(--af-text)}
+header{background:linear-gradient(120deg,#172D3C,#0D1D2A 70%)!important;border-bottom:1px solid var(--af-border-soft)!important}
+header h1{color:var(--af-text)}header h1 span{color:var(--af-amber)!important}
+header small,small.muted,.muted{color:var(--af-text-muted)}
+:where(.panel,.mini-panel,.ash-upgrade-card,.refuge-progress-card,.ash-survival-summary,.merchant-banner,.ash-chest-option,.ash-pause-card,.ash-chest-dialog,.ash-end-card){border-color:var(--af-border-soft)}
+#home.panel{background:var(--af-bg)!important;border:1px solid var(--af-border-soft)!important;box-shadow:0 14px 30px #0005}
+.refuge-page{gap:12px}
+.refuge-section-head h2,.ash-chest-header h2,.ash-page-heading h2{color:var(--af-text)!important;letter-spacing:.075em}
+.ui-eyebrow,.refuge-section-head .ui-eyebrow,.ash-chest-header .ui-eyebrow{color:var(--af-amber)!important;font-weight:850;letter-spacing:.16em}
+.refuge-section-head p,.ash-chest-header p{color:var(--af-text-muted)!important}
+.refuge-nav{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:5px!important;position:sticky;top:0;z-index:15;padding:8px 0 10px;background:var(--af-bg)!important;border-bottom:1px solid #45657944!important;overflow:visible!important}
+#home .refuge-tab{display:flex;flex-flow:column nowrap;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:54px;padding:7px 2px;border-radius:10px!important;border:1px solid var(--af-border-soft)!important;background:#112637!important;color:var(--af-text-muted)!important;font-size:9px!important;font-weight:780!important;line-height:1.1;letter-spacing:0!important;white-space:nowrap!important;box-shadow:none!important}
+#home .refuge-tab.active{border-color:var(--af-amber)!important;background:linear-gradient(150deg,#F3CD91,var(--af-amber))!important;color:var(--af-amber-text)!important;box-shadow:var(--af-glow-amber)!important}
+.refuge-tab .af-icon{width:19px;height:19px;flex:0 0 auto}
+button .af-icon, .af-stat .af-icon, .ui-weapon-stats .af-icon, .ash-offer-traits .af-icon{width:17px;height:17px;display:inline-block;vertical-align:middle;flex:0 0 auto;stroke:currentColor}
+button:focus-visible,.refuge-tab:focus-visible{outline:2px solid var(--af-cyan)!important;outline-offset:2px}
+button{touch-action:manipulation}
+button:where(.primary,.ui-launch,.ash-pause-primary,.ash-chest-buy,.home-tutorial-link),#start{border-radius:12px!important}
+.primary,#start,.ui-launch,.ash-pause-primary{background:linear-gradient(155deg,#F2C98C,var(--af-amber))!important;color:var(--af-amber-text)!important;border:1px solid #FFDFA9!important;font-weight:900!important;box-shadow:0 5px 16px #DCA55725!important}
+#start{min-height:52px;display:flex;justify-content:center;align-items:center;gap:9px}
+#start span{display:inline-flex;align-items:center;justify-content:center;gap:8px}#start .af-icon{width:20px;height:20px}
+:where(.mini-panel,.refuge-quick,.ash-upgrade-card,.refuge-progress-card,.ash-stock-timer,.ash-objective-top,.ash-chest-balance,.ash-resource-card,.ash-merchant-hero){border-color:var(--af-border-soft)!important;border-radius:var(--af-radius-md)!important}
+.mini-panel{background:var(--af-surface)!important}.mini-panel small{display:flex;gap:5px;align-items:center;color:var(--af-text-muted)!important}
+.mini-panel small .af-icon{width:14px;height:14px;color:var(--af-cyan)}
+.refuge-quick,.refuge-progress-card,.merchant-banner{background:linear-gradient(145deg,var(--af-surface-raised),var(--af-surface-deep))!important}
+.ash-upgrade-card{background:linear-gradient(135deg,#1A3445,#102433)!important}
+.ash-upgrade-glyph{display:grid!important;place-items:center!important;color:var(--af-cyan)!important;font-size:0!important}.ash-upgrade-glyph .af-icon{width:26px;height:26px}
+.stats>div{background:linear-gradient(150deg,#203748,var(--af-surface))!important;border-color:var(--af-border-soft)!important}
+.ash-resource-info small{color:var(--af-text-muted)}
+#refuge-page-progress .ash-sector-node,#refuge-page-progress .ash-sector-guide>div{border-color:var(--af-border-soft)}
+/* Chaque ressource partage la même famille, sans altérer les valeurs. */
+.ash-credit-card{--af-accent:var(--af-amber)}.ash-research-card{--af-accent:var(--af-cyan)}
+.ash-resources b,.ash-chest-balance b{font-variant-numeric:tabular-nums}
+/* Coffres: dessins PNG originaux et cinématique existante conservés. */
+.ash-chest-option,.ash-chest-offer,.ash-chest-tile{border-radius:16px!important;border-color:var(--af-border-soft)!important;background:linear-gradient(135deg,#173343,#0E2331)!important}
+.ash-chest-illustration{background:radial-gradient(ellipse at 50% 60%,#2A4B5D88,#0B202D 80%)!important}
+.ash-chest-art,.ash-chest-animation-stage img,.ash-chest-reveal-visual img{object-fit:contain!important;object-position:center center!important}
+.ash-chest-reveal-visual .weapon-art-img{object-fit:contain!important;object-position:center!important}
+/* Armes: conteneurs recadrés 0.8.9.63 inchangés en pixels source. */
+:where(.ui-weapon-icon,.ash-end-item-art,.ash-offer-picture,.inventory-selected-art,.inventory-cell-visual,.ash-chest-reveal-visual) img.weapon-art-img{object-fit:contain!important;object-position:50% 50%!important;max-width:100%;max-height:100%;transform:none!important}
+.ui-weapon,.ash-end-item,.ash-offer,.inventory-cell{border-color:var(--af-border-soft)}
+.ui-weapon-stats span,.ash-offer-traits{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.ui-weapon-stats .af-icon,.ash-offer-traits .af-icon{width:14px;height:14px;color:var(--af-cyan)}
+.ui-weapon-stats span:last-child .af-icon{color:var(--af-amber)}
+.merchant-tabs button{display:flex;align-items:center;justify-content:center;gap:7px;min-height:44px}
+.merchant-tabs button .af-icon{width:17px;height:17px}
+/* Combat HUD: simple, clair, boutons accessibles, pas de joystick modifié. */
+body.ashfall-expedition .gamebar{background:linear-gradient(160deg,#132B3A,#0B1D2A)!important;border-color:var(--af-border-soft)!important}
+body.ashfall-expedition .hud-main{min-width:0}
+.ash-vital-name,.ash-xp-name{display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.ash-vital-name .af-icon,.ash-xp-name .af-icon{height:14px;width:14px}
+.ash-vital-name .af-icon{color:#EF9592}.ash-xp-name .af-icon{color:var(--af-cyan)}
+.ash-minimap-topline{display:flex;align-items:center;gap:5px;min-width:0;letter-spacing:.035em!important}
+.ash-minimap-topline .af-icon{width:14px;height:14px;color:var(--af-cyan)}
+.ash-minimap-topline .af-icon:last-child{margin-left:auto}
+#bagBtn,#pauseBtn{min-height:44px!important;border-radius:10px!important;display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid var(--af-border-soft)!important;background:#183344!important;color:var(--af-text)!important}
+#bagBtn .af-icon,#pauseBtn .af-icon{width:17px;height:17px;color:var(--af-cyan)}
+#pauseBtn{min-width:44px!important}
+#uiMission,.ui-mission{background:#102938!important;border-color:var(--af-border-soft)!important;color:var(--af-text)!important}
+/* Overlay and dialog components. */
+#overlay:not([hidden]){background:rgba(4,12,20,.87)!important;backdrop-filter:blur(5px)}
+#overlay>h3,.ash-pause-card h2,.ash-chest-dialog h2{color:var(--af-text)!important}
+#overlay .close{display:flex;align-items:center;gap:7px;margin-left:auto;min-height:44px;border-radius:10px}
+#overlay .close .af-icon{width:18px;height:18px}
+#overlay h3 .af-icon,#overlay .ui-help .af-icon{color:var(--af-cyan);width:18px;height:18px;vertical-align:middle}
+.ash-pause-card{background:linear-gradient(155deg,#1A3849,#0E2230)!important;border:1px solid #607D8C!important;border-radius:20px!important;box-shadow:0 24px 65px #000b!important}
+.ash-pause-emblem{font-size:0!important;display:grid;place-items:center;color:var(--af-cyan)}.ash-pause-emblem.danger{color:var(--af-danger)}.ash-pause-emblem .af-icon{width:32px;height:32px}
+.ash-pause-stats span{display:inline-flex;align-items:center;gap:5px}.ash-pause-stats .af-icon{width:16px;height:16px;color:var(--af-cyan)}
+.ash-pause-actions button{display:flex;justify-content:center;align-items:center;gap:7px;min-height:44px}.ash-pause-actions .af-icon{width:17px;height:17px}
+.ash-pause-footer .af-icon{height:14px;width:14px;vertical-align:middle;color:var(--af-success)}
+#runDebrief:not([hidden]){background:var(--af-bg)!important}
+.ash-end-item{background:var(--af-surface)!important;border-color:var(--af-border-soft)!important}
+/* Tutoriel: vrais pictogrammes en lieu et place des emoji. */
+#tutorialScene{display:flex!important;gap:18px;align-items:center;justify-content:center;min-height:88px;font-size:0!important}
+#tutorialScene .af-icon{width:40px;height:40px;filter:drop-shadow(0 0 12px #8CE2D728);color:var(--af-cyan)}
+#tutorialScene .af-icon:nth-child(2){color:var(--af-amber)}
+#tutorialScene .af-icon:nth-child(3){color:var(--af-rarity-epic)}
+#log{display:flex;align-items:center;gap:7px;color:var(--af-text-muted)}#log .af-icon{height:17px;width:17px;color:var(--af-cyan);flex:0 0 auto}
+.foot button{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:44px}.foot button .af-icon{width:16px;height:16px}
+#ashCheckUpdate{display:flex;align-items:center;gap:6px;justify-content:center}#ashCheckUpdate .af-icon{width:15px;height:15px}
+button:disabled{cursor:not-allowed}
+@media(max-width:359px){#home .refuge-tab{font-size:8px!important;min-height:52px}.refuge-tab .af-icon{height:17px;width:17px}.ash-minimap-topline{font-size:9px!important}}
+@media(prefers-reduced-motion:reduce){.refuge-tab,.ash-pause-card,.ash-upgrade-card{transition:none!important}}
+/* 0.8.9.64: inventaire expédition — préserver lisibilité des noms longs. */
+#overlay .ui-weapon-head{display:flex!important;align-items:center!important;flex-wrap:wrap!important;gap:9px!important;min-width:0!important}
+#overlay .ui-weapon-head>.ui-weapon-icon{display:grid!important;place-items:center!important;flex:0 0 104px!important;width:104px!important;min-width:104px!important;height:77px!important;overflow:hidden!important;border-radius:10px!important}
+#overlay .ui-weapon-head>.ui-weapon-icon .weapon-art-img{width:100%!important;height:100%!important;object-fit:contain!important;max-width:100%!important;max-height:100%!important}
+#overlay .ui-weapon-head>div{flex:1 1 125px!important;width:auto!important;min-width:120px!important;max-width:100%!important}
+#overlay .ui-weapon-head>div>b{display:block!important;overflow-wrap:normal!important;word-break:normal!important;white-space:normal!important;line-height:1.35!important;font-size:14px!important}
+#overlay .ui-weapon-head>div>small{display:block!important;white-space:normal!important}
+#overlay .ui-weapon-head>.ui-tag{flex:0 0 auto!important;align-self:center!important}
+#overlay .ui-weapon-stats{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
+#overlay .ui-weapon-stats span{white-space:nowrap}
+@media(max-width:359px){#overlay .ui-weapon-head>.ui-weapon-icon{flex-basis:89px!important;width:89px!important;min-width:89px!important}#overlay .ui-weapon-head>div{min-width:95px!important}}

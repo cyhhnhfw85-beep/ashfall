@@ -1,0 +1,6 @@
+ASHFALL 0.8.9.63 — Uniformisation des cadrages d’armes
+- Les 16 PNG originaux restent intacts dans assets/weapons/.
+- Les 16 versions cadrées dans assets/weapons_framed/ contiennent les mêmes illustrations, recadrées/recentrées.
+- Le moteur embarque directement les nouvelles versions cadrées, sans dépendance au chargement d’images externes.
+- Les menus, le marchand, la réserve, le sac, les rapports et les coffres appliquent des dimensions cohérentes.
+- Aucun changement à l’économie, au butin, aux dégâts, aux sauvegardes ou au gameplay.

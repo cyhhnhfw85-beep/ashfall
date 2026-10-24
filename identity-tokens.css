@@ -1,0 +1,51 @@
+/* ASHFALL Design System 1A — 2026-10-24 — import après base, avant composants. */
+:root {
+  color-scheme: dark;
+  --af-bg: #0B1622;
+  --af-surface: #142837;
+  --af-surface-raised: #1B3546;
+  --af-surface-deep: #0D202D;
+  --af-border: #456579;
+  --af-border-soft: #314D60;
+  --af-text: #EDF5F8;
+  --af-text-muted: #AEC5D0;
+  --af-amber: #EAB976;
+  --af-amber-text: #192531;
+  --af-cyan: #8CE2D7;
+  --af-danger: #EF9592;
+  --af-success: #87DFBE;
+  --af-rarity-common: #B9C9D3;
+  --af-rarity-rare: #6BAFFF;
+  --af-rarity-epic: #BB92F4;
+  --af-rarity-legendary: #F3C674;
+  --af-radius-sm: 8px;
+  --af-radius-md: 12px;
+  --af-radius-lg: 16px;
+  --af-radius-overlay: 20px;
+  --af-space-1: 4px;
+  --af-space-2: 8px;
+  --af-space-3: 12px;
+  --af-space-4: 16px;
+  --af-space-5: 20px;
+  --af-space-6: 24px;
+  --af-border-size: 1px;
+  --af-touch-target: 44px;
+  --af-font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --af-text-sm: 12px;
+  --af-text-body: 14px;
+  --af-text-title: 22px;
+  --af-shadow-card: 0 8px 22px #0005;
+  --af-shadow-overlay: 0 20px 60px #000b;
+  --af-glow-amber: 0 0 18px #EAB97635;
+  --af-glow-cyan: 0 0 18px #8CE2D730;
+  --af-motion-short: 140ms;
+  --af-motion-normal: 220ms;
+  --af-motion-reveal: 420ms;
+  --af-ease-out: cubic-bezier(.2,.75,.24,1);
+  --af-weapon-fit: contain;
+}
+/* Contrats des états ; le texte de rareté reste obligatoire. */
+[data-af-rarity="common"] {--af-rarity:var(--af-rarity-common)}
+[data-af-rarity="rare"] {--af-rarity:var(--af-rarity-rare)}
+[data-af-rarity="epic"] {--af-rarity:var(--af-rarity-epic)}
+[data-af-rarity="legendary"] {--af-rarity:var(--af-rarity-legendary)}
