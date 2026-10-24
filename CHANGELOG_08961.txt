@@ -1,0 +1,6 @@
+ASHFALL 0.8.9.61 — ECONOMIE COFFRES
+- Coffre commun : 900 crédits.
+- Coffre rare : 2 800 crédits.
+- Coffre épique : 7 500 crédits.
+- Aucun autre paramètre de jeu modifié.
+- Cache PWA 08961.

@@ -841,9 +841,9 @@ if(isBoss(id,r)&&!room.cleared){room.activated=true;msg('⚠ BOSS K-17 : portes 
 player.inv=.65;bullets=[];closeOverlay();persist();render();if(room.hazardNeutralizedByTerminal){room.hazardNeutralizedByTerminal=false;msg('⚡ Blindage de zone actif : danger environnemental neutralisé.')}else if(!isArena(id,r)&&!isBoss(id,r))msg(isExit(id,r)?'Terminal d’extraction détecté.':`K-17 · salle ${id+1}/50 · secteur ${room.sector+1}`)}
 // 0.8.9.59 — Coffres : tirage et débit dans la même sauvegarde vérifiée.
 const ASH_CHEST_TIERS=[
- {id:'common',name:'COMMUN',price:150,accent:'#9bb7bd',odds:[780,200,19,1]},
- {id:'rare',name:'RARE',price:400,accent:'#72b8ed',odds:[350,550,90,10]},
- {id:'epic',name:'ÉPIQUE',price:900,accent:'#c693f1',odds:[60,340,520,80]}
+ {id:'common',name:'COMMUN',price:900,accent:'#9bb7bd',odds:[780,200,19,1]},
+ {id:'rare',name:'RARE',price:2800,accent:'#72b8ed',odds:[350,550,90,10]},
+ {id:'epic',name:'ÉPIQUE',price:7500,accent:'#c693f1',odds:[60,340,520,80]}
 ];
 const ASH_CHEST_RARITIES=['Commun','Rare','Épique','Légendaire'];
 function ashChestWeapon(rarity,price,tier){
