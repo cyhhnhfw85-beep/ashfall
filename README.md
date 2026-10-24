@@ -74,3 +74,17 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 - Refonte Secteurs : objectif adapté au jalon atteint, jauge des 4 zones, menaces et conseils tactiques, fiches déroulantes, historique et définition explicite des balises (sans checkpoint).
 - Rotation, prix, achats, ventes, assurances, graphismes du Nomade, récompenses, progression et format des sauvegardes conservés.
 - La puissance théorique (dégâts x cadence) est une comparaison simplifiée, pas une mesure de dégâts réels du combat.
+
+
+## 0.8.9.41 — Expéditions : géométrie et caméra (phase 1)
+
+- Les nouvelles expéditions de K-17 génèrent 50 salles **logiques** avec des formes locales 1×1, 2×1, 1×2 et en L. Les salles restent séparées par des portes ; les formes sont des espaces locaux et non des tuiles contiguës de la carte régionale.
+- Les salles de départ, balises et extraction restent 1×1 pour préserver les interactions existantes ; le boss dispose d'une salle 2×1.
+- Murs extérieurs, ouvertures et collisions sont calculés depuis les cellules constitutives ; aucune cloison ne bloque les jonctions internes.
+- Caméra de suivi dans les salles agrandies avec zoom 0,84 et coordonnées du monde séparées du viewport 360×400. Les particules de combat suivent la transformation caméra.
+- Les ennemis disposent d'une navigation simplifiée vers le coude des salles en L ; le tir automatique tient compte des obstacles.
+- Les sauvegardes des anciennes expéditions sans champ `shape` sont interprétées en 1×1, sans réécriture des inventaires ni de la progression. Les nouvelles parties enregistrent les formes dans chaque salle.
+- Le graphisme du Nomade pendant les expéditions, les décors interactifs et les événements supplémentaires restent réservés aux phases suivantes. Aucune refonte du refuge.
+
+### Limites connues
+Les salles étendues conservent pour cette phase les coffres, terminaux, dangers et événements principaux dans leur première cellule. Les extensions servent déjà au déplacement et aux combats mais leur décoration est volontairement légère. Une vérification de jouabilité et de performance sur iPhone réel reste nécessaire avant validation finale.

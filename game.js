@@ -68,6 +68,121 @@ function tint(w){return ({'Commun':'#d9e2e9','Inhabituel':'#60de98','Rare':'#5aa
 function makeWeapon(level=0){let r=Math.random(),rar=r<.075?'Épique':r<.32?'Rare':'Commun';return{id:uid(),name:['Nomade','Vektor','Spectre','Ion','Cendre'][pick(0,4)]+'-'+pick(1,9),rar,dmg:pick(15,23)+level*2+(rar==='Rare'?8:rar==='Épique'?17:0),rate:Math.round((1.3+Math.random()*1.4)*10)/10}}
 const maxHp=()=>100+data.hpLv*15;
 const damage=()=>data.run.equipped.dmg+data.dmgLv*3;
+
+// V41: une salle logique peut occuper plusieurs cellules locales de 360x400.
+// La carte regionale conserve 50 noeuds : aucune modification du graphe ni des sauvegardes existantes.
+const CELL_W=360,CELL_H=400,SHAPES={
+ single:[[0,0]], wide:[[0,0],[1,0]], tall:[[0,0],[0,1]],
+ ell:[[0,0],[1,0],[0,1]]
+};
+function roomGeom(room){
+ const type=room?.shape&&SHAPES[room.shape]?room.shape:'single';
+ const cells=SHAPES[type];
+ return {type,cells,w:(Math.max(...cells.map(c=>c[0]))+1)*CELL_W,h:(Math.max(...cells.map(c=>c[1]))+1)*CELL_H};
+}
+function chooseShapes(rooms){
+ for(const room of rooms){
+  // Les salles de depart, d'extraction et de balise restent compactes pour preserver leurs interactions.
+  if(room.kind==='start'||room.kind==='exit'||room.kind==='outpost')room.shape='single';
+  else if(room.kind==='boss')room.shape='wide';
+  else {const r=Math.random();room.shape=r<.40?'single':r<.65?'wide':r<.85?'tall':'ell'}
+ }
+}
+function wallDoorAnchor(room,side){
+ const g=roomGeom(room);
+ if(side==='left')return {side,x:0,y:195};
+ if(side==='top')return {side,x:180,y:0};
+ if(side==='right')return {side,x:g.w,y:195};
+ return {side,x:180,y:g.h};
+}
+function roomDoor(room,side){
+ const a=wallDoorAnchor(room,side),half=side==='left'||side==='right'?38:35;
+ return {side,...a,half};
+}
+function nearDoor(player,door){
+ if(door.side==='top')return player.y<=25&&Math.abs(player.x-door.x)<door.half-5;
+ if(door.side==='bottom')return player.y>=roomGeom(data.run.rooms[data.run.current]).h-25&&Math.abs(player.x-door.x)<door.half-5;
+ if(door.side==='left')return player.x<=25&&Math.abs(player.y-door.y)<door.half-5;
+ return player.x>=roomGeom(data.run.rooms[data.run.current]).w-25&&Math.abs(player.y-door.y)<door.half-5;
+}
+function rectTouches(x,y,r,[rx,ry,w,h]){
+ const nx=Math.max(rx,Math.min(x,rx+w)),ny=Math.max(ry,Math.min(y,ry+h));
+ return (x-nx)**2+(y-ny)**2<r*r;
+}
+// Walls are generated from exposed tile edges, never across an internal seam.
+// Only real graph doors receive a gap; unconnected edges remain solid.
+const wallCache=new WeakMap();
+function roomWalls(room){
+ if(wallCache.has(room))return wallCache.get(room);
+ const geom=roomGeom(room),set=new Set(geom.cells.map(c=>c.join(','))),doorsHere=data.run?doors(room.id):[];
+ const walls=[];const thick=20;
+ for(const [cx,cy] of geom.cells){
+  for(const [side,dx,dy] of [['top',0,-1],['bottom',0,1],['left',-1,0],['right',1,0]]){
+   if(set.has((cx+dx)+','+(cy+dy)))continue;
+   const x=cx*CELL_W,y=cy*CELL_H;
+   let rect=side==='top'?[x,y,CELL_W,thick]:side==='bottom'?[x,y+CELL_H-thick,CELL_W,thick]:side==='left'?[x,y,thick,CELL_H]:[x+CELL_W-thick,y,thick,CELL_H];
+   const door=doorsHere.some(d=>d.side===side)?roomDoor(room,side):null;
+   const onTile=door&&(side==='top'||side==='bottom'?door.x>=x&&door.x<x+CELL_W:door.y>=y&&door.y<y+CELL_H);
+   if(!onTile){walls.push(rect);continue}
+   if(side==='top'||side==='bottom'){
+    const gap0=door.x-door.half,gap1=door.x+door.half;
+    if(gap0>x)walls.push([x,rect[1],gap0-x,thick]);
+    if(gap1<x+CELL_W)walls.push([gap1,rect[1],x+CELL_W-gap1,thick]);
+   }else{
+    const gap0=door.y-door.half,gap1=door.y+door.half;
+    if(gap0>y)walls.push([rect[0],y,thick,gap0-y]);
+    if(gap1<y+CELL_H)walls.push([rect[0],gap1,thick,y+CELL_H-gap1]);
+   }
+  }
+ }
+ wallCache.set(room,walls);return walls;
+}
+// Camera only affects rendering. World coordinates and collision data stay untransformed.
+let roomCamera={x:0,y:0,zoom:1,id:-1};
+function cameraFor(room){
+ const g=roomGeom(room),zoom=g.type==='single'?1:.84;
+ const sightW=360/zoom,sightH=400/zoom;
+ const targetX=g.w<sightW?(g.w-sightW)/2:clamp((player?.x||180)-sightW/2,0,g.w-sightW);
+ const targetY=g.h<sightH?(g.h-sightH)/2:clamp((player?.y||200)-sightH/2,0,g.h-sightH);
+ if(roomCamera.id!==room.id){roomCamera={x:targetX,y:targetY,zoom,id:room.id}}
+ else{roomCamera.x+=(targetX-roomCamera.x)*.22;roomCamera.y+=(targetY-roomCamera.y)*.22;roomCamera.zoom=zoom}
+ return roomCamera;
+}
+function drawRoomWalls(room,r){
+ const g=roomGeom(room);cx.fillStyle='#495864';
+ for(const [x,y,w,h] of roomWalls(room))cx.fillRect(x,y,w,h);
+ for(const d of doors(room.id)){
+  const anchor=roomDoor(room,d.side),side=d.side;
+  const vertical=side==='left'||side==='right';
+  const x=vertical?anchor.x-(side==='right'?20:0):anchor.x-35;
+  const y=vertical?anchor.y-38:anchor.y-(side==='bottom'?20:0);
+  const w=vertical?20:70,h=vertical?76:20;
+  const arenaEntry=(isArena(d.to,r)||isBoss(d.to,r))&&!r.rooms[d.to].cleared;
+  cx.fillStyle=!canPassDoor(d.to)?'#d76b63':arenaEntry?'#d9933f':'#55b8a3';cx.fillRect(x,y,w,h);
+  cx.fillStyle='#122832';if(vertical)cx.fillRect(x,y+6,w,h-12);else cx.fillRect(x+6,y,w-12,h);
+  if(!canPassDoor(d.to)||arenaEntry){cx.strokeStyle=arenaEntry?'#ffe0a2':'#ffaaa4';cx.lineWidth=2;cx.strokeRect(x+2,y+2,w-4,h-4)}
+ }
+}
+function paintExtraCells(room,theme){
+ const g=roomGeom(room);if(g.type==='single')return;
+ for(const [xx,yy] of g.cells){
+  if(xx===0&&yy===0)continue;
+  const x=xx*CELL_W,y=yy*CELL_H;
+  cx.fillStyle=theme.bg;cx.fillRect(x,y,CELL_W,CELL_H);
+  cx.strokeStyle=theme.grid;cx.lineWidth=1;
+  for(let t=x+20;t<x+CELL_W;t+=40){cx.beginPath();cx.moveTo(t,y+20);cx.lineTo(t,y+CELL_H-20);cx.stroke()}
+  for(let t=y+20;t<y+CELL_H;t+=40){cx.beginPath();cx.moveTo(x+20,t);cx.lineTo(x+CELL_W-20,t);cx.stroke()}
+  cx.globalAlpha=.35;
+  for(let k=0;k<17;k++){
+   const dx=(k*67+room.id*29+xx*41)%300,dy=(k*47+room.id*13+yy*17)%330;
+   cx.fillStyle=k%4===0?theme.accent:'#7f919a';cx.fillRect(x+30+dx,y+30+dy,k%3===0?12:4,k%3===0?3:4);
+  }
+  cx.globalAlpha=1;
+  // Shallow floor accents only, no invisible collision objects.
+  cx.fillStyle='#0c253555';cx.fillRect(x+85,y+100,95,11);cx.fillRect(x+180,y+284,65,7);
+ }
+}
+
 function pos(i){let room=data.run?.rooms?.[i];return room&&Number.isFinite(room.gx)?[room.gx,room.gy]:[i%3,Math.floor(i/3)]}
 function adjacent(i){let [x,y]=pos(i),r=data.run;if(isLarge(r))return r.rooms.filter(z=>Math.abs(z.gx-x)+Math.abs(z.gy-y)===1).map(z=>z.id);let out=[];if(x>0)out.push(i-1);if(x<2)out.push(i+1);if(y>0)out.push(i-3);if(y<2)out.push(i+3);return out}
 function graph(){let seen=new Set([0]),edges=[],front=[0];while(front.length){let i=front[pick(0,front.length-1)],next=adjacent(i).filter(n=>!seen.has(n));if(!next.length){front=front.filter(x=>x!==i);continue}let n=next[pick(0,next.length-1)];edges.push([i,n]);seen.add(n);front.push(n)}return edges}
@@ -95,6 +210,7 @@ function makeLargeMap(){
   if(!eligible.length&&sector===3){eligible=rooms.filter(z=>z.sector===2&&z.kind==='standard').sort((a,b)=>b.depth-a.depth);if(eligible.length)eligible[0].sector=3}
   if(eligible.length){let z=eligible[0];z.kind='outpost';z.chest='none';outpostIds.push(z.id)}
  }
+ chooseShapes(rooms);
  return {rooms,edges,arenaIds,exitIds,bossId,outpostIds};
 }
 const SECTORS=[{name:'PÉRIPHÉRIE',bg:'#202f31',grid:'#354846',accent:'#83d9b0',enemy:'mutant',hazard:'Débris et mutants rapides'},{name:'LABORATOIRES',bg:'#152d3c',grid:'#26516a',accent:'#60cef4',enemy:'drone',hazard:'Rayons de sécurité'},{name:'FONDERIE',bg:'#372921',grid:'#65402b',accent:'#ffae62',enemy:'brute',hazard:'Évents thermiques'},{name:'CITADELLE',bg:'#292334',grid:'#50374e',accent:'#e898de',enemy:'sentinel',hazard:'Défenses renforcées'}];
@@ -103,16 +219,19 @@ function environment(room){if(!room)return;let sec=sectorOf(room);if(room.envPha
 // Les ennemis ne peuvent pas apparaitre dans une hitbox solide.
 // La geometrie utilisee ici est celle du moteur de collisions joueur/projectiles.
 function spawnSafe(room,others=[],preferred=null){
- const allowed=(x,y)=>x>=42&&x<=318&&y>=48&&y<=345&&!collidesSolid(x,y,17,room)&&
+ const allowed=(x,y)=>x>=32&&x<=roomGeom(room).w-32&&y>=32&&y<=roomGeom(room).h-32&&!collidesSolid(x,y,17,room)&&
    !others.some(e=>Math.hypot(e.x-x,e.y-y)<35)&&
    !(player&&data.run&&data.run.rooms[data.run.current]===room&&Math.hypot(player.x-x,player.y-y)<43);
  if(preferred&&allowed(preferred.x,preferred.y))return preferred;
  for(let attempt=0;attempt<100;attempt++){
-  const x=pick(49,311),y=pick(52,310);
+   const cell=roomGeom(room).cells[pick(0,roomGeom(room).cells.length-1)];
+   const x=cell[0]*CELL_W+pick(49,311),y=cell[1]*CELL_H+pick(52,310);
   if(allowed(x,y))return {x,y};
  }
  // Grille de secours deterministe : pas de spawn dans les obstacles si le hasard echoue.
- for(let y=60;y<=310;y+=25)for(let x=55;x<=305;x+=25)if(allowed(x,y))return {x,y};
+  for(const [tx,ty] of roomGeom(room).cells)
+   for(let y=60;y<=310;y+=25)for(let x=55;x<=305;x+=25)
+    if(allowed(x+tx*CELL_W,y+ty*CELL_H))return {x:x+tx*CELL_W,y:y+ty*CELL_H};
  return null;
 }
 function sanitizeEnemyPositions(room){
@@ -251,7 +370,14 @@ function enter(id,from){let r=data.run,room=r.rooms[id];
  r.current=id;room.seen=true;if(!r.visited.includes(id))r.visited.push(id);
 if(isLarge(r)){let reg=region();reg.maxSector=Math.max(reg.maxSector,room.sector);}
 environment(room);if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(id);}
-if(from!==null){let prev=r.rooms[from];let[a,b]=pos(from),[x,y]=pos(id);player.x=x>a?37:x<a?323:180;player.y=y>b?37:y<b?363:205}
+if(from!==null){
+  const [a,b]=pos(from),[x,y]=pos(id),g=roomGeom(room);
+  if(x>a){player.x=47;player.y=195}
+  else if(x<a){player.x=g.w-47;player.y=195}
+  else if(y>b){player.x=180;player.y=47}
+  else{player.x=180;player.y=g.h-47}
+  roomCamera.id=-1;
+}
 sanitizeEnemyPositions(room);if(isArena(id,r)&&!room.cleared){enforceArena()}
 else if(autoSecure(room)){persist()}
 if(isBoss(id,r)&&!room.cleared){room.activated=true;msg('⚠ BOSS K-17 : portes scellées !')}
@@ -540,7 +666,7 @@ function render(){let r=data.run;document.body.classList.toggle('ashfall-expedit
  $('upHp').textContent=data.hpLv>=8?'NIVEAU MAX':`Améliorer +15 PV · ${4+data.hpLv*4} ✦`;
  $('upDmg').textContent=data.dmgLv>=8?'NIVEAU MAX':`Améliorer +3 dégâts · ${4+data.dmgLv*4} ✦`;$('upHp').disabled=data.hpLv>=8||data.research<4+data.hpLv*4;$('upDmg').disabled=data.dmgLv>=8||data.research<4+data.dmgLv*4;$('equipped').textContent=data.equipped?`${data.equipped.name} · ${data.equipped.rar} · ${data.equipped.dmg} dégâts · ${data.equipped.rate} tirs/s`:'Aucune';$('insurance').textContent=data.insured===data.equipped?.id?'🛡 ASSURÉE':'⚠ Non assurée';$('insure').textContent=`Assurer · ${premium()} ¤`;$('insure').disabled=data.insured===data.equipped.id||data.credits<premium();$('stash').innerHTML='<p class="ui-help">Armes stockées au refuge · appuie sur ÉQUIPER pour changer d’arme.</p>'+(data.stash.length?data.stash.map((g,i)=>itemRow(g,i,'stash')).join(''):'<p class="ui-empty">Réserve vide : extrais des armes pour remplir ton stock.</p>');if($('merchantLaunch'))$('merchantLaunch').textContent='¤ OUVRIR LE COMPTOIR · '+data.credits+' crédits';$('log').dataset.region=region().maxSector;
  
- const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();if(refugeActivePage==='merchant')merchantRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission();$('roomTitle').textContent=isBoss(r.current,r)?'⚠ BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'📡 BALISE':`K-17 · ${r.current+1}/50 · ${SECTORS[sectorOf(room)].name}`;$('hpText').textContent=`${Math.ceil(player.hp)}/${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;runProgress();$('bagCount').textContent=`Sac ${r.bag.length}/6 · Nv.${r.runLevel}`;const xp=$('xpDisplay');if(xp){xp.textContent=`✦ Nv.${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)} XP`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
+ const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();if(refugeActivePage==='merchant')merchantRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission();$('roomTitle').textContent=isBoss(r.current,r)?'⚠ BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'📡 BALISE':`K-17 · ${r.current+1}/50 · ${SECTORS[sectorOf(room)].name} · ${({single:'1×1',wide:'2×1',tall:'1×2',ell:'EN L'})[roomGeom(room).type]}`;$('hpText').textContent=`${Math.ceil(player.hp)}/${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;runProgress();$('bagCount').textContent=`Sac ${r.bag.length}/6 · Nv.${r.runLevel}`;const xp=$('xpDisplay');if(xp){xp.textContent=`✦ Nv.${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)} XP`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
 function closeOverlay(){if(overlay==='level'&&data.run?.pendingLevels>0)return;overlay='';$('overlay').hidden=true;$('overlay').innerHTML=''}
 function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html='<button class="close" data-op="close">✕ Fermer</button>';if(mode==='bag'){html+=`<h3>🎒 SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">💡 Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
 }else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx));if(coords.length){let minx=Math.min(...coords.map(z=>z.gx)),miny=Math.min(...coords.map(z=>z.gy)),maxx=Math.max(...coords.map(z=>z.gx)),maxy=Math.max(...coords.map(z=>z.gy));let width=maxx-minx+1,height=maxy-miny+1,cell=Math.max(12,Math.min(26,Math.floor(310/Math.max(width,height))));let tiles=r.rooms.filter(z=>z.seen).map(z=>`<div style="position:absolute;left:${(z.gx-minx)*cell}px;top:${(z.gy-miny)*cell}px;width:${cell-2}px;height:${cell-2}px;background:${z.id===r.current?'#dfac58':isBoss(z.id,r)?'#a45770':isArena(z.id,r)?'#945d36':isExit(z.id,r)?'#3d9b8b':z.kind==='outpost'?'#5092c4':'#35576b'};border:1px solid #97a4b6;border-radius:3px;color:white;font-size:9px;text-align:center;line-height:${cell-3}px">${z.id===r.current?'●':isBoss(z.id,r)?'B':isArena(z.id,r)?'A':isExit(z.id,r)?'E':z.kind==='outpost'?'P':''}</div>`).join('');html+='<h3>🗺 CARTE TACTIQUE — K-17</h3><p class="muted">🟡 Position actuelle · seuls les lieux explorés sont affichés.</p><div style="overflow:auto;max-width:100%"><div style="position:relative;width:'+(width*cell)+'px;height:'+(height*cell)+'px;min-height:150px;background:#101a26">'+tiles+'</div></div><p class="muted">'+r.visited.length+'/50 découvertes · secteurs débloqués : '+(region().maxSector+1)+'/4 · B boss · A arène · E extraction · P avant-poste. Les salles se régénèrent à chaque nouvelle expédition.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else html+='<h3>PAUSE</h3><p>La partie est suspendue. La sauvegarde inclut l’expédition.</p><button data-op="resume">Reprendre</button><button data-op="retreat">Abandonner l’expédition (mort)</button>';$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
@@ -601,18 +727,18 @@ function roomObstacles(room){
  return [[36,72,22,35],[36,273,22,35],[302,72,22,35],[302,273,22,35]];
 }
 function collidesSolid(x,y,radius,room){
- return roomObstacles(room).some(([rx,ry,w,h])=>{
-  let nx=Math.max(rx,Math.min(x,rx+w)),ny=Math.max(ry,Math.min(y,ry+h));
-  return (x-nx)**2+(y-ny)**2<radius**2;
- });
+ const g=roomGeom(room);
+ if(x<radius||y<radius||x>g.w-radius||y>g.h-radius)return true;
+ // Never allow an actor or projectile into the absent fourth tile of an L room.
+ if(!g.cells.some(([tx,ty])=>x>=tx*CELL_W&&x<= (tx+1)*CELL_W&&y>=ty*CELL_H&&y<= (ty+1)*CELL_H))return true;
+ return roomWalls(room).some(rect=>rectTouches(x,y,radius,rect))||roomObstacles(room).some(rect=>rectTouches(x,y,radius,rect));
 }
 function advanceSolid(entity,dx,dy,radius,room){
- // Pas de déplacement par axe : collision fiable y compris pendant le DASH.
- let steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
+ const g=roomGeom(room),steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
  for(let i=0;i<steps;i++){
-  let nx=clamp(entity.x+dx/steps,radius,360-radius);
+  let nx=clamp(entity.x+dx/steps,radius,g.w-radius);
   if(!collidesSolid(nx,entity.y,radius,room))entity.x=nx;
-  let ny=clamp(entity.y+dy/steps,radius,400-radius);
+  let ny=clamp(entity.y+dy/steps,radius,g.h-radius);
   if(!collidesSolid(entity.x,ny,radius,room))entity.y=ny;
  }
 }
@@ -667,7 +793,12 @@ function drawPixelFloor(room,sec,theme){
  if(sec===3){for(let i=0;i<5;i++){let x=47+(i*61+room.id*7)%245;px(x,46,15,3,'#70446e');px(x+4,49,4,5,'#8b5c9b')}}
 }
 
-function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=sectorOf(room),theme=SECTORS[sec];cx.fillStyle=isArena(r.current,r)||isBoss(r.current,r)?'#282631':isExit(r.current,r)?'#1a3436':theme.bg;cx.fillRect(0,0,360,400);cx.lineWidth=1;cx.strokeStyle=theme.grid;for(let x=20;x<360;x+=40){cx.beginPath();cx.moveTo(x,20);cx.lineTo(x,380);cx.stroke()}for(let y=20;y<400;y+=40){cx.beginPath();cx.moveTo(20,y);cx.lineTo(340,y);cx.stroke()}
+function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=sectorOf(room),theme=SECTORS[sec];
+ cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,360,400);cx.save();
+ const camera=cameraFor(room);window.__ashfallCamera={x:camera.x,y:camera.y,zoom:camera.zoom};cx.setTransform(camera.zoom,0,0,camera.zoom,-camera.x*camera.zoom,-camera.y*camera.zoom);
+ cx.fillStyle='#091b25';cx.fillRect(camera.x,camera.y,360/camera.zoom,400/camera.zoom);
+ paintExtraCells(room,theme);
+ cx.fillStyle=isArena(r.current,r)||isBoss(r.current,r)?'#282631':isExit(r.current,r)?'#1a3436':theme.bg;cx.fillRect(0,0,360,400);cx.lineWidth=1;cx.strokeStyle=theme.grid;for(let x=20;x<360;x+=40){cx.beginPath();cx.moveTo(x,20);cx.lineTo(x,380);cx.stroke()}for(let y=20;y<400;y+=40){cx.beginPath();cx.moveTo(20,y);cx.lineTo(340,y);cx.stroke()}
 // Micro-textures déterministes : ambiance pixel-art sans assets externes, ne changent jamais les hitbox.
 cx.save();for(let j=0;j<23;j++){let x=27+(j*83+(r.current*19))%302,y=45+(j*137+r.current*11)%302;cx.fillStyle=j%3===0?theme.accent:'#83939a';cx.globalAlpha=j%3===0?.14:.08;cx.fillRect(x,y,j%4===0?11:4,j%4===0?3:4)}cx.restore();drawPixelFloor(room,sec,theme);
 // Identité visuelle des secteurs et dangers annoncés.
@@ -677,19 +808,31 @@ if(sec===1){cx.fillStyle='#254f6c';for(let x of [55,290]){cx.fillRect(x,44,16,43
 if(sec===2){for(let x of [65,290]){cx.fillStyle='#624432';cx.fillRect(x-20,62,35,37);cx.fillRect(x-20,276,35,37)}if(!room.cleared){cx.beginPath();cx.arc(room.hazardX||240,205,42,0,Math.PI*2);cx.fillStyle=room.hazardOn?'#ff773977':'#b16d2f33';cx.fill();cx.strokeStyle=room.hazardOn?'#ffc178':'#a7784c';cx.lineWidth=3;cx.stroke();cx.fillStyle='#ffd6a8';cx.font='10px sans-serif';cx.fillText(room.hazardOn?'⚠ CHALEUR':'ÉVENT EN CHARGE',180,53)}}
 if(sec===3){cx.strokeStyle='#b478a9';cx.lineWidth=3;for(let x of [47,313]){cx.strokeRect(x-11,72,22,35);cx.strokeRect(x-11,273,22,35)}}
 cx.restore();cx.font='bold 10px sans-serif';cx.fillStyle=theme.accent;cx.textAlign='left';cx.fillText('SECTEUR '+(sec+1)+' · '+theme.name,27,32);
-cx.fillStyle='#495864';cx.fillRect(0,0,360,20);cx.fillRect(0,380,360,20);cx.fillRect(0,0,20,400);cx.fillRect(340,0,20,400);for(let d of doors(r.current)){let[x,y,w,h]=doorRect(d.side);const arenaEntry=(isArena(d.to,r)||isBoss(d.to,r))&&!r.rooms[d.to].cleared;cx.fillStyle=!canPassDoor(d.to)?'#d76b63':arenaEntry?'#d9933f':'#55b8a3';cx.fillRect(x,y,w,h);if(!canPassDoor(d.to)){cx.strokeStyle='#ffaaa4';cx.lineWidth=2;cx.strokeRect(x+2,y+2,w-4,h-4)}if(arenaEntry){cx.strokeStyle='#ffe0a2';cx.lineWidth=3;cx.strokeRect(x+2,y+2,w-4,h-4)}cx.fillStyle='#122832';if(d.side==='top'||d.side==='bottom')cx.fillRect(x+6,y,w-12,h);else cx.fillRect(x,y+6,w,h-12);if(arenaEntry){cx.font='bold 10px sans-serif';cx.textAlign='center';cx.fillStyle='#fff2d0';let tx=d.side==='left'?39:d.side==='right'?319:180,ty=d.side==='top'?42:d.side==='bottom'?365:204;cx.fillText(isBoss(d.to,r)?'☠ BOSS':'⚠ ARÈNE',tx,ty)}}
+drawRoomWalls(room,r);
 if((room.chestFx||0)>0){cx.save();cx.globalAlpha=Math.min(1,room.chestFx);cx.strokeStyle='#f7d58b';cx.lineWidth=5;cx.beginPath();cx.arc(180,110,25+(1.15-room.chestFx)*38,0,Math.PI*2);cx.stroke();cx.restore()}if(room.chest==='closed'){cx.fillStyle='#b98b4d';cx.fillRect(159,91,42,35);cx.fillStyle='#f0c878';cx.fillRect(177,91,7,35);px(162,94,36,3,'#674e39');px(163,121,34,3,'#674e39');px(169,103,4,14,'#d4a36a');cx.font='10px sans-serif';cx.textAlign='center';cx.fillText(isGuarded(r.current,r)?room.enemies.length?'🔒 GARDÉ':'DÉVERROUILLÉ':'COFFRE',180,79)}if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost'){cx.strokeStyle='#81cafd';cx.lineWidth=3;cx.strokeRect(145,159,70,70);cx.fillStyle='#b8e9ff';cx.textAlign='center';cx.font='bold 11px sans-serif';cx.fillText('📡 BALISE',180,192);cx.font='9px sans-serif';cx.fillText(region().outposts.includes(room.sector)?'ACTIVÉ':'APPROCHE POUR ACTIVER',180,208)}if(isExit(r.current,r)){cx.strokeStyle='#6ddfc3';cx.lineWidth=4;cx.beginPath();cx.arc(180,195,39,0,7);cx.stroke();cx.fillStyle='#c1f9e8';cx.font='bold 11px sans-serif';cx.textAlign='center';cx.fillText(r.exitStarted?'RESTE DANS LE CERCLE':'RESTE DANS LE CERCLE',180,199);if(!r.exitStarted){cx.strokeStyle='#ffca72';cx.lineWidth=7;cx.beginPath();cx.arc(180,195,44,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,(r.exitCharge||0)/3));cx.stroke();cx.fillText(Math.round(Math.min(100,(r.exitCharge||0)/3*100))+' %',180,214)}}
-lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}pixelActor(e.x,e.y,e.type,performance.now()/1000+(e.x*.04));cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-22,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-22,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){pixelActor(player.x,player.y,'player',performance.now()/1000,player.facingX||1,player.facingY||0)}}
+lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}pixelActor(e.x,e.y,e.type,performance.now()/1000+(e.x*.04));cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-22,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-22,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){pixelActor(player.x,player.y,'player',performance.now()/1000,player.facingX||1,player.facingY||0)}cx.restore();}
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
-function transition(){if(locked())return false;let r=data.run,id=r.current;for(let d of doors(id)){let s=d.side,hit=s==='top'?player.y<=23&&Math.abs(player.x-180)<30:s==='bottom'?player.y>=377&&Math.abs(player.x-180)<30:s==='left'?player.x<=23&&Math.abs(player.y-203)<32:player.x>=337&&Math.abs(player.y-203)<32;if(hit){if(!canPassDoor(d.to)){if(!locked()){msg('🔒 Nouvelle salle bloquée : termine le combat pour avancer. Retour libre.');}return false}enter(d.to,id);return true}}return false}
+function transition(){
+ if(locked())return false;
+ const r=data.run,id=r.current,room=r.rooms[id];
+ for(const d of doors(id)){
+  if(!nearDoor(player,roomDoor(room,d.side)))continue;
+  if(!canPassDoor(d.to)){msg('🔒 Termine le combat pour franchir cette porte.');return false}
+  enter(d.to,id);return true;
+ }
+ return false;
+}
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
 function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; if(!room.cleared&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
 let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed'))*dt,vy*150*(1+perkBonus('speed'))*dt,12,room);if(transition())return;
 if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};const arenaReward=pick(150,250);r.earnedCredits+=arenaReward;r.economy.arena+=arenaReward;objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre épique en cours d’ouverture !')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=450;r.economy.boss+=450;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=20;r.economy.room+=20;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
-if(room.enemies.length&&player.fire<=0){let target=room.enemies.reduce((a,b)=>length(player,a)<length(player,b)?a:b);let spread=mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09,ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,dmg:damage()*(1+perkBonus('power')),ttl:1.5});player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')))}
+if(room.enemies.length&&player.fire<=0){let candidates=room.enemies.filter(e=>hasLineOfSight(player.x,player.y,e.x,e.y,room));if(candidates.length){let target=candidates.reduce((a,b)=>length(player,a)<length(player,b)?a:b);let spread=mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09,ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,dmg:damage()*(1+perkBonus('power')),ttl:1.5});player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')))}}
 for(let e of room.enemies){let d=length(e,player),angle=Math.atan2(player.y-e.y,player.x-e.x);e.wind=e.wind||0;
+ const oppositeWing=roomGeom(room).type==='ell'&&((e.x>355&&player.y>395)||(e.y>395&&player.x>355));
+ const navTarget=oppositeWing?{x:180,y:195}:player;
+ const moveAngle=Math.atan2(navTarget.y-e.y,navTarget.x-e.x);
 if(e.wind>0){e.wind-=dt;if(e.wind<=0){if(e.type==='chaser'||e.type==='brute'){let reach=length(e,player);if(reach<(e.type==='brute'?125:115)&&Math.abs(Math.atan2(Math.sin(angle-e.aim),Math.cos(angle-e.aim)))<.48)hurt(e.type==='brute'?25:18)}else{let count=e.type==='sentinel'?3:1;for(let j=0;j<count;j++){let a=e.aim+(j-(count-1)/2)*.18;bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),vy:Math.sin(a)*(e.type==='sentinel'?190:e.type==='drone'?215:175),enemy:true,dmg:e.type==='sentinel'?22:e.type==='drone'?16:14,ttl:3})}}e.cd=e.type==='sentinel'?2.5:e.type==='drone'?1.45:e.type==='brute'?2.1:e.type==='ranged'?1.8:1.5}}
-else{if(d>(e.type==='ranged'?140:e.type==='drone'?160:e.type==='sentinel'?155:e.type==='brute'?36:36)){advanceSolid(e,Math.cos(angle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),Math.sin(angle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),14,room)}e.cd-=dt;if(e.cd<=0&&d<(e.type==='chaser'?135:300)){e.aim=angle;e.wind=e.type==='chaser'?.8:e.type==='brute'?1.15:e.type==='sentinel'?1.2:e.type==='drone'?.6:.7}}
+else{if((oppositeWing?Math.hypot(navTarget.x-e.x,navTarget.y-e.y):d)>(e.type==='ranged'?140:e.type==='drone'?160:e.type==='sentinel'?155:e.type==='brute'?36:36)){advanceSolid(e,Math.cos(moveAngle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),Math.sin(moveAngle)*dt*(e.type==='sentinel'?32:e.type==='brute'?37:e.type==='drone'?67:e.type==='ranged'?47:80),14,room)}e.cd-=dt;if(e.cd<=0&&d<(e.type==='chaser'?135:300)){e.aim=angle;e.wind=e.type==='chaser'?.8:e.type==='brute'?1.15:e.type==='sentinel'?1.2:e.type==='drone'?.6:.7}}
 }
 
 for(let b of bullets){
@@ -727,7 +870,7 @@ if(isExit(r.current,r)&&!r.exitStarted){
  r.exitCharge=inside?Math.min(3,(r.exitCharge||0)+dt):0;
  if(r.exitCharge>=3){r.exitStarted=true;r.exitTime=12;r.exitWave=1;spawnReinforcement(room,2);msg('📡 Extraction lancée : reste dans le cercle 12 secondes !');persist();}
 }
-lootUpdate(room,dt);bullets=bullets.filter(b=>b.ttl>0&&b.x>-10&&b.x<370&&b.y>-10&&b.y<410);
+lootUpdate(room,dt);bullets=bullets.filter(b=>b.ttl>0&&b.x>-10&&b.x<roomGeom(room).w+10&&b.y>-10&&b.y<roomGeom(room).h+10);
 if(r.exitStarted&&inExtractionCircle){let contested=room.enemies.some(e=>length(e,{x:180,y:195})<105);if(!contested)r.exitTime-=dt;if(r.exitWave===1&&r.exitTime<=6){r.exitWave=2;spawnReinforcement(room,2);msg('⚠ DEUXIÈME VAGUE : défends le terminal !')}if(r.exitTime<=0){finish(true);return}}
 drawTime+=dt;if(drawTime>.12){drawTime=0;render()}tickSave+=dt;if(tickSave>4){tickSave=0;persist()}}
 // Joystick semi-mobile, limité à 36 px autour du centre inférieur.
