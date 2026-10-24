@@ -881,3 +881,29 @@ body.ashfall-expedition #overlay:has(.ash-pause-card){
 #refuge-page-character .inventory-selected-art{overflow:hidden}
 
 .ash-chest-reveal-visual .weapon-art-img{width:100%;height:142px;aspect-ratio:auto;object-fit:contain;}
+
+
+/* 0.8.9.68 — Bonus de niveau : pictogrammes SVG, typographie compacte, lisibilité iPhone. */
+#overlay:has(.perk-screen){overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#overlay .perk-screen{min-width:0;width:min(100%,410px);max-height:none;box-sizing:border-box;padding:4px 0 8px;}
+#overlay .perk-top{flex-wrap:wrap;row-gap:7px;}
+#overlay .perk-chip{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;font-size:10px;}
+#overlay .perk-chip .perk-art{width:15px;height:15px;flex:none;}
+#overlay .perk-screen h2{font-size:clamp(20px,5.4vw,24px);line-height:1.12;letter-spacing:.035em;}
+#overlay .perk-intro{font-size:12px;line-height:1.45;margin:7px 0 14px;}
+#overlay .perk-list{gap:9px;}
+#overlay .perk-screen .perk-card{display:grid;grid-template-columns:54px minmax(0,1fr) 13px;align-items:center;column-gap:11px;min-width:0;min-height:94px;padding:11px 10px;margin:0!important;position:relative;overflow:hidden;touch-action:manipulation;}
+#overlay .perk-screen .perk-card:focus-visible{outline:2px solid #d5f5ff;outline-offset:2px;}
+#overlay .perk-screen .perk-symbol{display:grid;place-items:center;width:52px;height:55px;min-width:0;max-width:100%;box-sizing:border-box;border-radius:12px;background:radial-gradient(circle at 45% 38%,color-mix(in srgb,var(--perk-accent),transparent 85%),transparent 75%),#0c2231;border:1px solid color-mix(in srgb,var(--perk-accent),transparent 55%);font-size:initial;box-shadow:inset 0 0 16px #071c2980;}
+#overlay .perk-screen .perk-art{display:block;width:34px;height:34px;max-width:100%;max-height:100%;stroke:currentColor;color:var(--perk-accent);filter:drop-shadow(0 0 5px color-mix(in srgb,var(--perk-accent),transparent 72%));}
+#overlay .perk-copy{min-width:0;gap:4px;overflow-wrap:normal;word-break:normal;}
+#overlay .perk-copy strong{font-size:clamp(13px,3.9vw,15px);line-height:1.24;letter-spacing:0;overflow-wrap:normal;word-break:normal;hyphens:auto;}
+#overlay .perk-effect{font-size:11px;line-height:1.32;}
+#overlay .perk-category{font-size:9px;line-height:1.2;}
+#overlay .perk-level{font-size:10px;line-height:1.25;}
+#overlay .perk-chevron{font-size:16px;opacity:.75;align-self:center;justify-self:center;}
+#overlay .perk-pips{font-size:11px;letter-spacing:1px;}
+#overlay .perk-footer{margin-top:12px;font-size:10px;line-height:1.4;}
+@media(max-width:350px){#overlay:has(.perk-screen){padding-left:10px;padding-right:10px;}#overlay .perk-screen .perk-card{grid-template-columns:46px minmax(0,1fr) 11px;column-gap:8px;padding:9px 8px;min-height:88px;}#overlay .perk-screen .perk-symbol{width:46px;height:51px;}#overlay .perk-screen .perk-art{width:29px;height:29px;}#overlay .perk-effect{font-size:10px;}#overlay .perk-category{font-size:8px;}}
+@media(max-height:700px){#overlay .perk-screen .perk-card{min-height:76px;padding-top:7px;padding-bottom:7px;}#overlay .perk-screen .perk-symbol{height:46px;}#overlay .perk-list{gap:6px;}#overlay .perk-intro{margin-bottom:8px;}#overlay .perk-footer{margin-top:7px;}}
+@media(prefers-reduced-motion:reduce){#overlay .perk-screen .perk-card,#overlay .perk-screen .perk-art{animation:none!important;transition:none!important;}}

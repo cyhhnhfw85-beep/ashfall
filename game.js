@@ -469,6 +469,21 @@ function levelOptions(){let r=runProgress();const available=PERKS.filter(p=>perk
  else r.levelChoices=previous;
  return r.levelChoices.map(id=>PERKS.find(p=>p.id===id)).filter(Boolean)}
 const PERK_STYLE={rapid:['OFFENSIF','perk-attack'],power:['DÉGÂTS','perk-damage'],speed:['MOBILITÉ','perk-mobility'],magnet:['COLLECTE','perk-utility'],vital:['SURVIE','perk-defense']};
+// 0.8.9.68 : le code de présentation des bonus ne doit JAMAIS afficher l'identifiant
+// technique d'une icône (rate, xp, speed...) comme une chaîne visible.
+// Ces cinq pictogrammes SVG sont autonomes : ni réseau, ni police emoji, ni sprite externe.
+const PERK_ICON_PATHS=Object.freeze({
+ rapid:'<path d="M14 2 5.5 13h6L10 22l8.5-11H13L14 2Z"/><path d="M4 5h4M3 9h3"/>',
+ power:'<path d="M12 2c-3.2 3.5-5 6.7-5 10.5V21h10v-8.5C17 8.7 15.2 5.5 12 2Z"/><path d="M7 17h10M9 12h6M12 5v3"/>',
+ speed:'<path d="M2.5 7h8M1.5 12h7M2.5 17h8"/><path d="m12 4 9 8-9 8v-5H8v-6h4V4Z"/>',
+ magnet:'<path d="M5 3h5v9a2 2 0 0 0 4 0V3h5v9a7 7 0 0 1-14 0V3Z"/><path d="M5 7h5M14 7h5"/>',
+ vital:'<path d="M9 2.5h6v6h6v6h-6v7H9v-7H3v-6h6v-6Z"/><path d="M10.5 12h3"/>'
+});
+function perkIcon(id){
+ const paths=PERK_ICON_PATHS[id];
+ return paths?'<svg class="perk-art" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+paths+'</svg>':'';
+}
+
 function perkDescription(id,next){
  if(id==='rapid')return '+'+[0,8,14,18][next]+' % cadence totale';
  if(id==='power')return '+'+[0,8,14,18][next]+' % dégâts totaux';
@@ -479,12 +494,12 @@ function perkDescription(id,next){
 }
 function openLevelChoice(){let r=runProgress();if(!r||r.pendingLevels<=0)return;
  overlay='level';let opts=levelOptions();if(!opts.length){overlay='';$('overlay').hidden=true;persist();return}
- $('overlay').innerHTML='<div class="perk-screen"><div class="perk-top"><span class="perk-chip">✦ NIVEAU '+r.runLevel+'</span><span class="perk-duration">BONUS D’EXPÉDITION</span></div><h2>CHOISIS TON ÉVOLUTION</h2><p class="perk-intro">Une amélioration pour renforcer ton survivant. Combat en pause.</p><div class="perk-list">'+opts.map(o=>{let n=perkCount(o.id),cap=PERK_CAPS[o.id],sty=PERK_STYLE[o.id]||['ÉVOLUTION','perk-utility'];return '<button type="button" class="perk-card '+sty[1]+'" data-op="choosePerk" data-perk="'+o.id+'"><span class="perk-symbol">'+o.icon+'</span><span class="perk-copy"><span class="perk-category">'+sty[0]+'</span><strong>'+o.name+'</strong><span class="perk-effect">'+perkDescription(o.id,n+1)+'</span><span class="perk-level">NIVEAU '+(n+1)+' / '+cap+' <span class="perk-pips">'+Array.from({length:cap},(_,i)=>i<n+1?'◆':'◇').join(' ')+'</span></span></span><span class="perk-chevron">›</span></button>'}).join('')+'</div><p class="perk-footer">Ce choix reste actif jusqu’à la fin de l’expédition.</p></div>';
+ $('overlay').innerHTML='<div class="perk-screen"><div class="perk-top"><span class="perk-chip">'+perkIcon('rapid')+' NIVEAU '+r.runLevel+'</span><span class="perk-duration">BONUS D’EXPÉDITION</span></div><h2>CHOISIS TON ÉVOLUTION</h2><p class="perk-intro">Une amélioration pour renforcer ton survivant. Combat en pause.</p><div class="perk-list">'+opts.map(o=>{let n=perkCount(o.id),cap=PERK_CAPS[o.id],sty=PERK_STYLE[o.id]||['ÉVOLUTION','perk-utility'];return '<button type="button" class="perk-card '+sty[1]+'" data-op="choosePerk" data-perk="'+o.id+'"><span class="perk-symbol" aria-hidden="true">'+perkIcon(o.id)+'</span><span class="perk-copy"><span class="perk-category">'+sty[0]+'</span><strong>'+o.name+'</strong><span class="perk-effect">'+perkDescription(o.id,n+1)+'</span><span class="perk-level">NIVEAU '+(n+1)+' / '+cap+' <span class="perk-pips">'+Array.from({length:cap},(_,i)=>i<n+1?'◆':'◇').join(' ')+'</span></span></span><span class="perk-chevron">›</span></button>'}).join('')+'</div><p class="perk-footer">Ce choix reste actif jusqu’à la fin de l’expédition.</p></div>';
  $('overlay').hidden=false;persist();}
 function choosePerk(id){let r=runProgress();if(!r||r.pendingLevels<=0||!r.levelChoices?.includes(id)||perkCount(id)>=PERK_CAPS[id])return;
  r.runPerks[id]=(r.runPerks[id]||0)+1;
  if(id==='vital'){player.max+=15;player.hp=Math.min(player.max,player.hp+15)}
- r.pendingLevels--;r.levelChoices=null;persist();closeOverlay();msg('✦ Amélioration temporaire obtenue : '+PERKS.find(p=>p.id===id).name);
+ r.pendingLevels--;r.levelChoices=null;persist();closeOverlay();msg('Amélioration temporaire obtenue : '+PERKS.find(p=>p.id===id).name);
  if(r.pendingLevels>0)openLevelChoice();else render();}
 function hasLineOfSight(ax,ay,bx,by,room){let dist=Math.hypot(bx-ax,by-ay),steps=Math.ceil(dist/7);for(let i=1;i<steps;i++){let t=i/steps;if(collidesSolid(ax+(bx-ax)*t,ay+(by-ay)*t,4,room))return false}return true}
 function lootIntegrity(){let r=data.run;if(!r)return true;let ids=new Set();for(let w of [r.equipped,...r.bag,...r.rooms.flatMap(z=>ground(z).filter(d=>d.kind==='weapon').map(d=>d.item))]){
@@ -959,14 +974,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.67';
+const ASHFALL_RUNTIME_VERSION='0.8.9.68';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.67, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.68, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
