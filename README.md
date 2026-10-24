@@ -1,12 +1,18 @@
-# ASHFALL 0.8.9.48 — Interactifs refondus
+# ASHFALL 0.8.9.49 — Polish final des interactifs
 
-Cette version améliore visuellement les éléments interactifs d’expédition sans changer l’économie, les dégâts, les collisions ni la progression.
+Base : 0.8.9.48. Sauvegarde `ashfall_pwa_v1` inchangée.
 
-Nouveautés principales :
-- coffres plus lisibles avec rendu de caisse de butin ;
-- plateforme d’extraction retravaillée ;
-- remplissage avant lancement inchangé (3 secondes) ;
-- compte à rebours désormais affiché au centre du cercle une fois l’extraction validée ;
-- états visuels plus clairs : inactif, validation, extraction en cours, contestée.
+## Nouveautés
+- Coffres : volumes différenciés, ouverture automatique plus visible, coffre ouvert persistant et coffre d’arène mis en valeur.
+- Balises : nouvelle silhouette avec socle, antenne et témoin de statut disponible ou activé.
+- Extraction : plateforme et balisage améliorés. Activation 3 secondes inchangée. Après validation, le compte à rebours de 12 secondes est dessiné au PREMIER PLAN, au centre de la zone même lorsque le Nomade y reste.
+- Extraction contestée : compteur mis en pause et signal visuel rouge/orange. Quitter la zone annule toujours la procédure.
+- Tutoriel : retrait d'une mention obsolète de bouton ACTION.
 
-Tests visés : ouverture automatique des coffres, lancement d’extraction, annulation en quittant le cercle, extraction contestée, extraction réussie, reprise de sauvegarde.
+## Ce qui ne change pas
+- Récompenses, économie, progression, gameplay, vitesse, dégâts, collisions et sauvegardes.
+- Coffres ouverts automatiquement après sécurisation de la salle.
+- Avant-postes activés par proximité, sans checkpoint ni départ alternatif.
+
+## Publication et iPhone
+Remplacer tous les fichiers hébergés, y compris `index.html` et `service-worker.js`. Vérifier « 0.8.9.49 · POLISH INTERACTIFS » en haut de l’accueil. Sauvegarder sa progression avant toute manipulation du stockage du navigateur.
