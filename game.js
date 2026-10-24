@@ -65,13 +65,15 @@ function ashContractStatus(r){
 function ashRenderContractSelection(){
  const host=$('ashContractPicker');if(!host||data.run)return;
  const selected=ashChosenContract();
- host.innerHTML=`<div class="ash-contract-heading"><span>CONTRAT D’EXPÉDITION</span><small>1 par départ · prime à l’extraction</small></div><div class="ash-contract-options" role="group" aria-label="Sélection du contrat">${ASH_CONTRACTS.map(c=>`<button class="ash-contract-option ${selected.id===c.id?'active':''}" type="button" data-contract-choice="${c.id}" aria-pressed="${selected.id===c.id}"><span class="ash-contract-label">${uiSafe(c.short)}</span><span class="ash-contract-mini">+${c.credits} CR · +${c.research} RECH.</span></button>`).join('')}</div><div class="ash-contract-description"><strong>${uiSafe(selected.name)} · ${uiSafe(selected.subtitle)}</strong><p>${uiSafe(selected.detail)}</p><small>Prime uniquement après extraction réussie. Échec ou abandon : 0 prime.</small></div>`;
+ host.innerHTML=`<div class="ash-contract-heading"><span>CHOISIS TON CONTRAT</span><small>Prime à l’extraction</small></div><div class="ash-contract-options" role="group" aria-label="Sélection du contrat">${ASH_CONTRACTS.map(c=>`<button class="ash-contract-option ${selected.id===c.id?'active':''}" type="button" data-contract-choice="${c.id}" aria-pressed="${selected.id===c.id}"><span class="ash-contract-label">${uiSafe(c.short)}</span><span class="ash-contract-mini">+${c.credits} CR · +${c.research} RECH.</span></button>`).join('')}</div><details class="home-contract-details"><summary><span>${uiSafe(selected.name)} : objectif</span><span aria-hidden="true">⌄</span></summary><div class="ash-contract-description"><strong>${uiSafe(selected.subtitle)}</strong><p>${uiSafe(selected.detail)}</p><small>Prime uniquement après extraction réussie. Échec ou abandon : 0 prime.</small></div></details>`;
 }
 function ashSelectContract(id){
  if(data.run||data.pendingDebrief||data.chestPending||!ashFindContract(id))return;
+ const detailsOpen=!!$('ashContractPicker')?.querySelector('.home-contract-details')?.open;
  const before=data.contractChoice;data.contractChoice=id;
  if(!persist()){data.contractChoice=before;ashRenderContractSelection();return}
  ashRenderContractSelection();
+ if(detailsOpen){const details=$('ashContractPicker')?.querySelector('.home-contract-details');if(details)details.open=true;}
 }
 function ashRefreshContractHud(r){
  const hud=$('ashContractHud');if(!hud)return;
@@ -498,7 +500,7 @@ function makeLargeMap(){
 }
 const SECTORS=[{name:'PÉRIPHÉRIE',bg:'#202f31',grid:'#354846',accent:'#83d9b0',enemy:'mutant',hazard:'Débris et mutants rapides'},{name:'LABORATOIRES',bg:'#152d3c',grid:'#26516a',accent:'#60cef4',enemy:'drone',hazard:'Rayons de sécurité'},{name:'FONDERIE',bg:'#372921',grid:'#65402b',accent:'#ffae62',enemy:'brute',hazard:'Évents thermiques'},{name:'CITADELLE',bg:'#292334',grid:'#50374e',accent:'#e898de',enemy:'sentinel',hazard:'Défenses renforcées'}];
 function sectorOf(room){return clamp(room?.sector||0,0,3)}
-// 0.8.9.78: nouvelle règle uniquement pour les expéditions créées par cette version.
+// 0.8.9.78a: nouvelle règle uniquement pour les expéditions créées par cette version.
 // Les anciens runs n'ont pas freeChestLootRule et conservent leurs tirages historiques.
 function freeChestWeaponLevel(run,room){
  if(run?.freeChestLootRule==='sector-v1'&&isLarge(run))return sectorOf(room);
@@ -1389,14 +1391,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.78';
+const ASHFALL_RUNTIME_VERSION='0.8.9.78a';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.78, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.78a, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -1778,6 +1780,8 @@ function renderRefugeCharacter(){
   const img=$('characterHeldWeaponImage');
   const source=isPistol?img.dataset.pistolSrc:$('nomadeRifleData')?.src;
   if(source && img.src!==source) img.src=source;
+  const hero=$('homeHeroSurvivor');
+  if(hero && source && hero.src!==source)hero.src=source;
 }
  // Accueil : résumé dynamique de l'équipement, lecture seule.
  if($('homeWeaponArt'))$('homeWeaponArt').innerHTML=weaponArt(data.equipped);

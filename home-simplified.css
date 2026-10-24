@@ -1,0 +1,57 @@
+/* ASHFALL 0.8.9.78a — accueil épuré. Aucun changement hors accueil. */
+#refuge-page-home.refuge-home-minimal{display:grid;gap:10px;min-height:0}
+#refuge-page-home .home-visual-hero{
+ position:relative;isolation:isolate;overflow:hidden;min-height:286px;
+ border:1px solid #4a7386;border-radius:17px;
+ background:linear-gradient(130deg,#193747 0%,#142937 51%,#0b1827 100%);
+ box-shadow:inset 0 1px 0 #ffffff16,0 10px 22px #0003
+}
+#refuge-page-home .home-visual-hero::before{content:"";position:absolute;inset:0;z-index:-1;opacity:.3;background:repeating-linear-gradient(90deg,transparent 0,transparent 47px,#48637822 48px,#48637822 49px),radial-gradient(circle at 69% 40%,#3b7a8f33,transparent 50%)}
+#refuge-page-home .home-hero-glow{position:absolute;z-index:-1;right:-11%;top:8%;width:80%;height:95%;background:radial-gradient(ellipse,#547e915e 0%,transparent 66%)}
+#refuge-page-home .home-visual-meta{position:relative;z-index:2;display:flex;align-items:center;justify-content:space-between;padding:15px 15px 0;color:#edbf79;font-size:10px;font-weight:900;letter-spacing:.15em}
+#refuge-page-home .home-meta-sep{color:#7190a0;padding:0 4px}
+#refuge-page-home .home-ready{display:flex;align-items:center;gap:6px;color:#99debd;font-size:9px}
+#refuge-page-home .home-ready i{width:6px;height:6px;display:block;border-radius:50%;background:#8ae8b3;box-shadow:0 0 12px #71ebb7}
+#refuge-page-home .home-visual-copy{position:relative;z-index:2;padding:41px 0 0 17px;width:65%;pointer-events:none}
+#refuge-page-home .home-visual-kicker{color:#adcad6;font-size:9px;font-weight:850;letter-spacing:.13em}
+#refuge-page-home .home-visual-copy h2{color:#f7f7f2;font-size:clamp(27px,8vw,39px);line-height:1.04;letter-spacing:-.035em;margin:8px 0 24px;text-shadow:0 2px 14px #0008}
+#refuge-page-home .home-visual-copy h2 em{font-style:normal;color:#efbc73}
+#refuge-page-home .home-weapon-label{display:grid;gap:3px;max-width:175px}
+#refuge-page-home .home-weapon-label span{font-size:9px;font-weight:800;letter-spacing:.13em;color:#a5bfcc}
+#refuge-page-home .home-weapon-label strong{color:#f4f1e9;font-size:12px;line-height:1.25;overflow-wrap:anywhere;text-shadow:0 2px 8px #0009}
+#refuge-page-home .home-visual-survivor{position:absolute;z-index:1;right:-8px;bottom:23px;width:58%;height:239px;object-fit:contain;object-position:center bottom;filter:drop-shadow(-7px 13px 9px #0009)}
+#refuge-page-home .home-visual-bottom{position:absolute;bottom:0;left:0;right:0;z-index:3;display:flex;gap:6px;align-items:center;justify-content:space-between;padding:7px 13px 8px;background:linear-gradient(0deg,#091723f2,#132a3666);border-top:1px solid #7596a222}
+#refuge-page-home .ash-long-home-badge{margin:0;padding:0;display:flex;gap:6px;align-items:center;min-width:0;background:transparent;border:0;border-radius:0;box-shadow:none;font-size:10px;letter-spacing:.04em}
+#refuge-page-home .ash-long-home-badge .af-icon{width:15px;height:15px;flex:0 0 auto}
+#refuge-page-home .ash-long-home-badge span{font-size:10px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#refuge-page-home .ash-long-home-badge small{margin:0;font-size:9px;white-space:nowrap}
+#refuge-page-home .home-region-chip{color:#a2c7d3;font-size:9px;letter-spacing:.11em;white-space:nowrap}
+#refuge-page-home .home-play-panel{border:1px solid #3d6074;border-radius:15px;padding:11px;background:linear-gradient(165deg,#142c3c,#102330)}
+#refuge-page-home .ash-contract-picker{margin:0;padding:0;background:transparent;border:0;border-radius:0}
+#refuge-page-home .ash-contract-heading{gap:8px;flex-wrap:nowrap;font-size:10px;letter-spacing:.08em}
+#refuge-page-home .ash-contract-heading small{font-size:9px;white-space:nowrap;color:#91b4c5}
+#refuge-page-home .ash-contract-options{margin:9px 0 6px;gap:6px}
+#refuge-page-home .ash-contract-option{min-height:51px!important;padding:8px 3px!important;gap:4px;border-radius:9px!important}
+#refuge-page-home .ash-contract-label{font-size:10px}
+#refuge-page-home .ash-contract-mini{font-size:9px;letter-spacing:0}
+#refuge-page-home .home-contract-details{border:0;color:#b9cdd9;font-size:11px;margin:0 0 4px}
+#refuge-page-home .home-contract-details summary{list-style:none;cursor:pointer;padding:7px 2px 2px;display:flex;justify-content:space-between;gap:8px;align-items:center;touch-action:manipulation}
+#refuge-page-home .home-contract-details summary::-webkit-details-marker{display:none}
+#refuge-page-home .home-contract-details summary span:last-child{font-size:16px;font-weight:800;line-height:1;transition:transform .18s}
+#refuge-page-home .home-contract-details[open] summary span:last-child{transform:rotate(180deg)}
+#refuge-page-home .home-contract-details .ash-contract-description{margin-top:8px;padding-top:8px;gap:4px}
+#refuge-page-home .home-contract-details .ash-contract-description strong{font-size:11px}
+#refuge-page-home .home-contract-details .ash-contract-description p{font-size:11px;line-height:1.4}
+#refuge-page-home .home-contract-details .ash-contract-description small{font-size:10px}
+#refuge-page-home #start.ui-launch{min-height:57px;display:flex;justify-content:space-between;align-items:center;margin:8px 0 0;padding:13px 16px;font-size:14px;letter-spacing:.03em}
+#refuge-page-home #start.ui-launch .af-icon{width:20px;height:20px}
+#refuge-page-home .home-utility-row{display:flex;gap:6px;align-items:center;justify-content:space-between;padding:1px 2px 0}
+#refuge-page-home .home-tutorial-link{min-height:29px;width:auto;display:inline-flex;align-items:center;gap:5px;margin:0;padding:5px 7px!important;border:0!important;background:transparent!important;color:#a9c8d8!important;font-size:11px}
+#refuge-page-home .home-tutorial-link .af-icon{width:14px;height:14px}
+#refuge-page-home .home-safety-caption{color:#748e9e;font-size:10px;text-align:right}
+#refuge-page-home .home-screen-reader{display:none!important}
+@media(max-width:360px){#refuge-page-home .home-visual-hero{min-height:267px}#refuge-page-home .home-visual-copy{padding-top:36px}#refuge-page-home .home-visual-copy h2{font-size:27px}#refuge-page-home .home-visual-survivor{height:215px;width:57%}#refuge-page-home .home-region-chip{display:none}#refuge-page-home .ash-contract-heading small{font-size:8px}#refuge-page-home .ash-contract-mini{font-size:8px}}
+@media(min-width:460px){#refuge-page-home .home-visual-hero{min-height:315px}#refuge-page-home .home-visual-copy{padding-top:55px}#refuge-page-home .home-visual-survivor{height:266px;width:54%}}
+@media(prefers-reduced-motion:reduce){#refuge-page-home *{transition:none!important}}
+/* A single rank is sufficient on the landing screen; the career page keeps its details. */
+#refuge-page-home .ash-long-home-badge small{display:none}
