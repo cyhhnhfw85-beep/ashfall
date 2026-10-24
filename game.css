@@ -859,3 +859,6 @@ body.ashfall-expedition #overlay:has(.ash-pause-card){
 .ash-chest-reveal-visual .weapon-art,.ash-chest-reveal-visual .weapon-art-img{height:118px}
 .ash-chest-reveal-window button:disabled{background:#233e4b;border-color:#537080;color:#91abba;opacity:1}
 @media(prefers-reduced-motion:reduce){.ash-chest-stage-closed,.ash-chest-stage-charging,.ash-chest-stage-open,.ash-chest-reward{animation:none}}
+
+/* 0.8.9.62: diagnostics when a deployment mixes old and new game sources. */
+.ash-version-mismatch{position:sticky;top:0;z-index:100000;padding:12px 18px;color:#ffdfc9;background:#602e36;border:2px solid #ec8b80;text-align:center;font:800 13px system-ui,-apple-system,sans-serif;}

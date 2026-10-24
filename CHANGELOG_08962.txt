@@ -1,0 +1,1 @@
+ASHFALL 0.8.9.62 — Correctif critique affichage des neuf images des coffres, cache PWA et contrôle de version. Aucune modification économique.
