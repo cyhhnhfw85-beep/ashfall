@@ -1,0 +1,222 @@
+/* ASHFALL 0.8.9.78b — Refuge UI Clean.
+   Pure presentation layer, scoped to the four refuge pages.
+   Controls, logical IDs, economy and save formats remain untouched. */
+
+#refuge-page-character,
+#refuge-page-merchant,
+#refuge-page-chests,
+#refuge-page-progress {--ui-divider:rgba(117,173,196,.23);--ui-surface:#102432;--ui-amber:#efc17d;color:#e7f0f4;min-width:0;}
+
+/* A simple heading language; main nav already tells you where you are. */
+#refuge-page-character .refuge-section-head,
+#refuge-page-merchant .refuge-section-head,
+#refuge-page-progress .refuge-section-head,
+#refuge-page-chests .ash-chest-header {padding:7px 3px 10px!important;margin:0!important;min-height:0!important;background:none!important;border:0!important;box-shadow:none!important;}
+#refuge-page-character .refuge-section-head .ui-eyebrow,
+#refuge-page-merchant .refuge-section-head .ui-eyebrow,
+#refuge-page-progress .refuge-section-head .ui-eyebrow,
+#refuge-page-chests .ash-chest-header .ui-eyebrow {font-size:10px;letter-spacing:.15em;color:#efc17d;}
+#refuge-page-character .refuge-section-head h2,
+#refuge-page-merchant .refuge-section-head h2,
+#refuge-page-progress .refuge-section-head h2,
+#refuge-page-chests .ash-chest-header h2 {font-size:23px;line-height:1.1;margin:4px 0!important;letter-spacing:.04em;}
+#refuge-page-character .refuge-section-head p,
+#refuge-page-merchant .refuge-section-head p,
+#refuge-page-progress .refuge-section-head p,
+#refuge-page-chests .ash-chest-header p {display:none!important;}
+
+/* Native disclosure: advanced data remains one touch away, with visible focus rings. */
+#refuge-page-character .ash-refuge-drawer,
+#refuge-page-merchant .ash-refuge-drawer,
+#refuge-page-chests .ash-refuge-drawer,
+#refuge-page-progress .ash-refuge-drawer {min-width:0;margin:10px 0;border:1px solid var(--ui-divider);border-radius:13px;background:linear-gradient(125deg,#152f40,#102333);overflow:hidden;}
+#refuge-page-character .ash-refuge-drawer>summary,
+#refuge-page-merchant .ash-refuge-drawer>summary,
+#refuge-page-chests .ash-refuge-drawer>summary,
+#refuge-page-progress .ash-refuge-drawer>summary {list-style:none;cursor:pointer;padding:14px;display:flex;gap:5px 12px;justify-content:space-between;align-items:center;min-height:48px;font-size:13px;font-weight:800;line-height:1.25;color:#e4eef6;}
+#refuge-page-character .ash-refuge-drawer>summary::-webkit-details-marker,
+#refuge-page-merchant .ash-refuge-drawer>summary::-webkit-details-marker,
+#refuge-page-chests .ash-refuge-drawer>summary::-webkit-details-marker,
+#refuge-page-progress .ash-refuge-drawer>summary::-webkit-details-marker {display:none;}
+#refuge-page-character .ash-refuge-drawer>summary::after,
+#refuge-page-merchant .ash-refuge-drawer>summary::after,
+#refuge-page-chests .ash-refuge-drawer>summary::after,
+#refuge-page-progress .ash-refuge-drawer>summary::after {content:'⌄';color:#8bd8e2;font-size:22px;margin-left:auto;font-weight:400;line-height:1;}
+#refuge-page-character .ash-refuge-drawer[open]>summary::after,
+#refuge-page-merchant .ash-refuge-drawer[open]>summary::after,
+#refuge-page-chests .ash-refuge-drawer[open]>summary::after,
+#refuge-page-progress .ash-refuge-drawer[open]>summary::after {transform:rotate(180deg);}
+#refuge-page-character .ash-refuge-drawer>summary small,
+#refuge-page-progress .ash-refuge-drawer>summary small {font-size:10px;font-weight:500;color:#9bb6c6;text-align:right;}
+#refuge-page-character .ash-refuge-drawer :focus-visible,
+#refuge-page-merchant .ash-refuge-drawer :focus-visible,
+#refuge-page-chests .ash-refuge-drawer :focus-visible,
+#refuge-page-progress .ash-refuge-drawer :focus-visible {outline:2px solid #87dbe8;outline-offset:2px;}
+
+/* SURVIVANT — clear hero, only real equipment highlighted. */
+#refuge-page-character .survivor-subnav {margin:3px 0 10px;}
+#refuge-page-character .tactical-showcase {position:relative;display:grid;grid-template-columns:63px minmax(0,1fr)!important;gap:7px!important;padding:10px 10px 0!important;min-height:316px;border:1px solid rgba(104,169,197,.34);border-radius:17px;overflow:hidden;background:radial-gradient(ellipse at 66% 30%,#26566b 0%,#122f43 37%,#0b1d2b 80%);box-shadow:none;}
+#refuge-page-character .tactical-showcase:before {content:'';position:absolute;inset:auto 10px 9px;height:44px;background:radial-gradient(ellipse at center,#46bad325,transparent 66%);pointer-events:none;}
+#refuge-page-character .tactical-showcase .tactical-left {grid-column:1;display:flex;flex-direction:column;gap:9px;position:relative;z-index:2;align-self:center;}
+#refuge-page-character .tactical-showcase .tactical-right {display:none!important;}
+#refuge-page-character .tactical-showcase .equip-square {width:61px;max-width:61px;min-height:76px!important;max-height:76px!important;padding:5px 2px;box-sizing:border-box;border:1px solid #44697c!important;border-radius:11px;background:#0d2535d9;}
+#refuge-page-character .tactical-showcase .equip-square small{font-size:9px;letter-spacing:.025em;color:#bfd3df;}
+#refuge-page-character .tactical-showcase .equipped-slot-art{display:block;max-width:100%;}
+#refuge-page-character .tactical-showcase .survivor-portrait {grid-column:2;grid-row:1;align-self:end;justify-self:center;width:100%!important;max-width:242px;min-width:0;height:302px!important;min-height:302px!important;padding:0!important;margin:0!important;border:0!important;box-shadow:none!important;background:none!important;overflow:visible!important;}
+#refuge-page-character .tactical-showcase .premium-portrait .nomade-stage{height:302px!important;max-height:none!important;width:100%!important;display:flex;justify-content:center;align-items:end;background:transparent!important;}
+#refuge-page-character .tactical-showcase .nomade-complete{display:block!important;width:auto!important;max-width:100%!important;height:300px!important;max-height:none!important;object-fit:contain;object-position:bottom;}
+#refuge-page-character .tactical-showcase .portrait-label,
+#refuge-page-character .tactical-showcase .survivor-meta {display:none!important;}
+#refuge-page-character .loadout-grid {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:9px 0;}
+#refuge-page-character .loadout-grid .loadout-slot {min-width:0;min-height:75px;padding:10px 11px;border:1px solid var(--ui-divider);border-radius:11px;background:#112a3a;box-shadow:none;}
+#refuge-page-character .loadout-slot small {font-size:9px;color:#a9c1ce;letter-spacing:.09em;}
+#refuge-page-character .loadout-slot b{font-size:15px;line-height:1.25;overflow-wrap:anywhere;color:#f2f0e7;}
+#refuge-page-character .loadout-slot span{font-size:11px;line-height:1.35;color:#afd5e1;}
+#refuge-page-character .loadout-grid .loadout-slot:nth-child(2){display:none;}
+#refuge-page-character .character-equipped-card {display:flex!important;align-items:center;justify-content:flex-start;padding:10px 12px!important;margin:0 0 7px;background:#102634!important;border:1px solid var(--ui-divider);border-radius:10px;min-height:47px;}
+#refuge-page-character .character-equipped-card>div:first-child{display:none;}
+#refuge-page-character .character-equipped-card .line{display:flex!important;flex-wrap:wrap;align-items:center;justify-content:space-between;width:100%;gap:8px;}
+#refuge-page-character .character-equipped-card #insure{min-height:38px;margin:0!important;font-size:12px;padding:7px 12px;}
+#refuge-page-character .ash-gear-drawer #ashGearConfigurator{padding:7px 9px 12px;}
+#refuge-page-character .section-subhead{display:flex;align-items:baseline;justify-content:space-between;margin:19px 2px 9px;border:0;padding:0;}
+#refuge-page-character .section-subhead b{font-size:15px;letter-spacing:.05em;}
+#refuge-page-character .ash-loot-controls{padding:9px!important;margin-bottom:8px;border:0!important;box-shadow:none!important;background:transparent!important;}
+#refuge-page-character .ash-loot-control-top{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:8px;}
+#refuge-page-character .ash-loot-control-top label{font-size:10px;}
+#refuge-page-character .ash-loot-control-top input,
+#refuge-page-character .ash-loot-control-top select {min-width:0;max-width:100%;min-height:43px;font-size:13px;border-radius:9px;}
+#refuge-page-character #ashLootRarityFilters{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto;scrollbar-width:thin;padding:5px 0 8px;gap:6px;}
+#refuge-page-character #ashLootRarityFilters button{flex:0 0 auto;white-space:nowrap;min-height:42px;font-size:11px;}
+#refuge-page-character .tactical-inventory{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px;padding:0!important;background:none!important;border:0!important;border-radius:0!important;}
+#refuge-page-character .tactical-inventory .inventory-cell{aspect-ratio:auto!important;min-height:167px!important;border-width:1px!important;padding:9px 7px;box-shadow:none!important;}
+#refuge-page-character .tactical-inventory .inventory-symbol{height:83px!important;max-height:83px;display:flex;align-items:center;justify-content:center;}
+#refuge-page-character .tactical-inventory .inventory-symbol .weapon-art-img {width:100%;max-width:100%!important;height:80px!important;object-fit:contain;}
+#refuge-page-character .tactical-inventory .inventory-name{font-size:12px!important;line-height:1.25;min-height:30px;}
+#refuge-page-character .inventory-selection{padding:12px;border-radius:12px;}
+#refuge-page-character .inventory-selected-art{min-width:108px;width:40%;max-width:170px;}
+#refuge-page-character .inventory-selected-art .weapon-art-img{width:100%;height:105px;object-fit:contain;}
+#refuge-page-character .ash-workshop-hero{margin:0 0 11px;padding:13px 12px;border:1px solid var(--ui-divider);border-radius:12px;}
+#refuge-page-character .ash-workshop-hero h3{font-size:21px;}
+#refuge-page-character .ash-upgrade-cards{gap:11px;}
+#refuge-page-character .ash-upgrade-card {min-width:0;padding:13px;}
+#refuge-page-character .ash-upgrade-card p {font-size:12px;line-height:1.4;}
+#refuge-page-character .ash-upgrade-card button{min-height:45px;}
+
+/* MARCHAND — one resource bar, illustrated offers, compact filtering. */
+#refuge-page-merchant .merchant-banner {position:relative;min-height:111px!important;margin:0 0 10px!important;padding:0!important;border:1px solid var(--ui-divider)!important;border-radius:15px!important;overflow:hidden;background:radial-gradient(ellipse at 78% 42%,#375569 0%,#193444 40%,#0e2232 100%)!important;}
+#refuge-page-merchant .merchant-banner-copy{position:relative;z-index:1;padding:21px 12px;max-width:62%;}
+#refuge-page-merchant .merchant-banner-copy .ui-eyebrow{font-size:9px;letter-spacing:.09em;}
+#refuge-page-merchant .merchant-banner-copy b{display:block;font-size:17px;line-height:1.2;margin-top:6px;}
+#refuge-page-merchant .merchant-banner-copy p{display:none;}
+#refuge-page-merchant .merchant-figure {opacity:1!important;transform:scale(.83)!important;right:20px!important;bottom:-6px!important;}
+#refuge-page-merchant .ash-merchant-metrics{display:none!important;}
+#refuge-page-merchant .ash-stock-timer{margin:5px 0 10px;padding:6px 2px;font-size:11px;color:#9fb7c6;background:none;border:0;}
+#refuge-page-merchant .ash-commerce-tabs{margin:0 0 12px;}
+#refuge-page-merchant .ash-commerce-tabs button{min-height:48px;font-weight:800;}
+#refuge-page-merchant .ash-commerce-toolbar{padding:0 0 11px;border:0;background:none;gap:8px;}
+#refuge-page-merchant .ash-commerce-filters {display:flex;flex-wrap:nowrap;overflow:auto;gap:5px;}
+#refuge-page-merchant .ash-commerce-filters button{white-space:nowrap;min-height:44px;font-size:11px;}
+#refuge-page-merchant .ash-merchant-sort select{min-height:44px;font-size:12px;}
+#refuge-page-merchant .ash-merchant-explainer {margin:1px 0 12px;padding:0 2px;font-size:11px;line-height:1.4;color:#94b3c2;}
+#refuge-page-merchant .ash-offer-list {display:grid;grid-template-columns:minmax(0,1fr);gap:12px;}
+#refuge-page-merchant .ash-merchant-offer{min-width:0;padding:12px!important;border:1px solid var(--ui-divider)!important;border-left:3px solid var(--item-rarity,#58acbe)!important;border-radius:14px!important;background:linear-gradient(105deg,#1a3847,#102332)!important;box-shadow:none!important;}
+#refuge-page-merchant .ash-merchant-offer-head{display:grid;grid-template-columns:minmax(120px,41%) minmax(0,1fr);gap:10px;align-items:center;}
+#refuge-page-merchant .ash-offer-picture{display:flex;align-items:center;justify-content:center;width:100%!important;min-width:0;height:116px!important;background:radial-gradient(ellipse at center,#335b6b85,#0c203000 76%);border:0!important;overflow:visible;}
+#refuge-page-merchant .ash-offer-picture .weapon-art-img{max-width:100%!important;width:100%!important;height:110px!important;object-fit:contain;}
+#refuge-page-merchant .ash-offer-copy{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+#refuge-page-merchant .ash-offer-copy b{font-size:15px;line-height:1.2;overflow-wrap:anywhere;}
+#refuge-page-merchant .ash-offer-traits{font-size:11px;line-height:1.35;}
+#refuge-page-merchant .ash-offer-stock{font-size:10px;line-height:1.2;margin-top:1px;}
+#refuge-page-merchant .ash-price-chip{display:inline-flex;justify-self:end;grid-column:2;white-space:nowrap;font-size:16px!important;font-weight:800;color:#ffd396;}
+#refuge-page-merchant .ash-offer-comparison{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:7px 0 10px;padding:8px 0 0;border:0;border-top:1px solid var(--ui-divider);font-size:11px;}
+#refuge-page-merchant .ash-offer-comparison span{min-width:0;}
+#refuge-page-merchant .ash-merchant-offer>button{min-height:43px;border-radius:9px;font-weight:800;}
+#refuge-page-merchant .ash-trader-footnote{margin-top:12px;}
+#refuge-page-merchant .ash-trader-footnote p{padding:0 13px 13px;font-size:12px;line-height:1.5;color:#b2c9d5;}
+
+/* COFFRES — artwork first, transparent odds one tap away, safeguards untouched. */
+#refuge-page-chests .ash-chest-balance{display:none!important;}
+#refuge-page-chests .ash-chest-offers {display:grid;gap:13px;}
+#refuge-page-chests .ash-chest-offer{display:grid;grid-template-columns: minmax(0,1fr);gap:6px;padding:13px!important;border:1px solid var(--ui-divider)!important;border-top:3px solid var(--chest-accent)!important;background:radial-gradient(ellipse at 55% 25%,#24475b,#102737 60%,#0c1d2a)!important;border-radius:16px;box-shadow:none;}
+#refuge-page-chests .ash-chest-illustration{min-height:151px!important;height:151px!important;width:100%;border:0!important;background:radial-gradient(ellipse at center,#32637840,transparent 68%)!important;}
+#refuge-page-chests .ash-chest-art {width:100%!important;height:160px!important;max-height:none!important;object-fit:contain;filter:drop-shadow(0 8px 12px #000b);}
+#refuge-page-chests .ash-chest-info{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:0 2px;min-width:0;}
+#refuge-page-chests .ash-chest-info h3{font-size:17px;line-height:1.2;margin:0;}
+#refuge-page-chests .ash-chest-price{font-size:15px;white-space:nowrap;color:#f6ce86;font-weight:800;}
+#refuge-page-chests .ash-chest-chances{border-top:1px solid var(--ui-divider);margin-top:3px;}
+#refuge-page-chests .ash-chest-chances>summary{list-style:none;font-size:11px;line-height:1.4;min-height:42px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#bbd3e0;padding:6px 2px;text-align:center;}
+#refuge-page-chests .ash-chest-chances>summary::-webkit-details-marker{display:none;}
+#refuge-page-chests .ash-chest-chances>summary:after{content:' ⌄';color:#86e2e9;margin-left:7px;font-size:17px;}
+#refuge-page-chests .ash-chest-odds {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;padding:9px 0;}
+#refuge-page-chests .ash-chest-odds>div{margin:0;padding:7px;border:1px solid var(--ui-divider);border-radius:7px;background:#0e2232;display:flex;justify-content:space-between;gap:6px;font-size:11px;}
+#refuge-page-chests .ash-chest-buy{min-height:48px;margin:0!important;}
+#refuge-page-chests .ash-chest-conditions{margin:13px 0 4px;}
+#refuge-page-chests .ash-chest-conditions p{padding:0 14px 14px;margin:0;color:#bad0da;font-size:12px;line-height:1.6;}
+
+/* SECTEURS — the region map leads. The archive is opt-in. */
+#refuge-page-progress:not([hidden]){display:flex!important;flex-direction:column;gap:10px;}
+#refuge-page-progress>.refuge-section-head{order:0;}
+#refuge-page-progress>.ash-sector-map-card{order:1;}
+#refuge-page-progress>.ash-next-objective{order:2;}
+#refuge-page-progress>.ash-sector-metrics{order:3;}
+#refuge-page-progress>.ash-career-drawer{order:4;}
+#refuge-page-progress>.ash-mastery-drawer{order:5;}
+#refuge-page-progress>.ash-sector-explain{order:6;}
+#refuge-page-progress>.ash-survival-summary{order:7;}
+#refuge-page-progress>.ash-technical-status{order:8;}
+#refuge-page-progress>.ash-objective-hint{order:9;}
+#refuge-page-progress .ash-sector-map-card{margin:0!important;padding:13px 11px!important;border:1px solid var(--ui-divider)!important;background:#102636!important;box-shadow:none!important;}
+#refuge-page-progress .progress-map-head{padding:0 2px 10px!important;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+#refuge-page-progress .progress-map-head b{font-size:14px;color:#f0d09b;}
+#refuge-page-progress .progress-map-head small{max-width:50%;font-size:10px;line-height:1.3;text-align:right;color:#9bbccd;}
+#refuge-page-progress .ash-sector-track{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px!important;}
+#refuge-page-progress .ash-sector-node{position:relative;overflow:hidden;min-width:0;min-height:179px;display:flex;flex-direction:column;justify-content:end;gap:5px;padding:58px 10px 9px!important;border:1px solid #3c5c6e!important;border-radius:12px!important;background:linear-gradient(180deg,#29495b,#132b3b)!important;box-shadow:none!important;}
+#refuge-page-progress .ash-sector-node::before{content:'';position:absolute;inset:0 0 auto;height:83px;opacity:.85;pointer-events:none;}
+#refuge-page-progress .ash-sector-node::after{content:'01';position:absolute;right:8px;top:1px;font-size:49px;line-height:1.4;font-weight:900;color:#e0edf01b;pointer-events:none;}
+#refuge-page-progress .ash-sector-node[data-sector-card="0"]::before{background:repeating-linear-gradient(153deg,transparent 0 17px,#77aab019 17px 19px),radial-gradient(ellipse at 35% 45%,#517d79a9,transparent 68%)}
+#refuge-page-progress .ash-sector-node[data-sector-card="1"]::before{background:linear-gradient(90deg,transparent 43%,#6ce1f14c 44% 46%,transparent 47%),repeating-linear-gradient(0deg,transparent 0 17px,#7be1e72a 17px 18px),linear-gradient(115deg,#143b50,#24708b)}
+#refuge-page-progress .ash-sector-node[data-sector-card="1"]::after{content:'02'}
+#refuge-page-progress .ash-sector-node[data-sector-card="2"]::before{background:repeating-linear-gradient(138deg,transparent 0 20px,#f0b05a35 20px 24px),radial-gradient(ellipse at 60% 10%,#b76436b6,transparent 75%)}
+#refuge-page-progress .ash-sector-node[data-sector-card="2"]::after{content:'03'}
+#refuge-page-progress .ash-sector-node[data-sector-card="3"]::before{background:linear-gradient(120deg,transparent 28%,#daa26d3e 30%,transparent 34%),repeating-linear-gradient(90deg,transparent 0 14px,#a0b4cf27 14px 16px),radial-gradient(ellipse at 50% 10%,#686e849b,transparent)}
+#refuge-page-progress .ash-sector-node[data-sector-card="3"]::after{content:'04'}
+#refuge-page-progress .ash-sector-node .progress-sector-kicker{font-size:9px!important;letter-spacing:.075em;color:#a9cada;}
+#refuge-page-progress .ash-sector-node>b{font-size:15px!important;line-height:1.13;overflow-wrap:anywhere;}
+#refuge-page-progress .ash-sector-node .progress-sector-state{margin:0!important;font-size:10px;}
+#refuge-page-progress .ash-sector-threat{display:none!important;}
+#refuge-page-progress .ash-sector-more{font-size:11px!important;min-height:43px!important;padding:6px 8px!important;border-color:#45697b!important;background:#0e24349e!important;margin-top:3px;}
+#refuge-page-progress .ash-sector-more-body{font-size:11px;line-height:1.45;}
+#refuge-page-progress .ash-next-objective{padding:12px 13px!important;gap:4px!important;margin:0!important;border:1px solid rgba(239,193,125,.4)!important;border-radius:12px;box-shadow:none!important;}
+#refuge-page-progress #sectorGoalTitle{font-size:18px!important;}
+#refuge-page-progress #sectorGoalText{font-size:11px;margin:1px 0 5px;}
+#refuge-page-progress .ash-goal-chip{font-size:9px;}
+#refuge-page-progress .ash-sector-metrics{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px;}
+#refuge-page-progress .ash-sector-metrics .mini-panel{margin:0;padding:9px 10px;border:1px solid var(--ui-divider);background:#102738;box-shadow:none;border-radius:10px;}
+#refuge-page-progress .ash-sector-metrics .mini-panel small{font-size:9px;}
+#refuge-page-progress .ash-sector-metrics .mini-panel b{font-size:19px;}
+#refuge-page-progress .ash-sector-extra{margin:0;}
+#refuge-page-progress .ash-sector-extra>section{min-width:0;padding:0 10px 12px;}
+#refuge-page-progress .ash-sector-extra .ash-long-head h3,
+#refuge-page-progress .ash-sector-extra .ash-career-heading h3{font-size:17px;}
+#refuge-page-progress .ash-survival-summary{margin:0;padding:10px 12px;border:1px solid var(--ui-divider);border-radius:11px;background:#0e2432;}
+#refuge-page-progress .ash-survival-summary h3{font-size:12px;margin:0 0 7px;}
+#refuge-page-progress .ash-survival-summary .mini-panel{padding:7px;}
+#refuge-page-progress .ash-sector-explain p{margin:0;padding:0 14px 14px;font-size:12px;line-height:1.55;}
+
+@media(max-width:360px){
+ #refuge-page-character .tactical-showcase{grid-template-columns:57px minmax(0,1fr)!important;min-height:289px;}
+ #refuge-page-character .tactical-showcase .equip-square{width:55px;max-width:55px;}
+ #refuge-page-character .tactical-showcase .survivor-portrait{height:281px!important;min-height:281px!important;}
+ #refuge-page-character .tactical-showcase .premium-portrait .nomade-stage{height:280px!important;}
+ #refuge-page-character .tactical-showcase .nomade-complete{height:280px!important;}
+ #refuge-page-merchant .ash-merchant-offer-head{grid-template-columns:minmax(90px,38%) minmax(0,1fr);gap:7px;}
+ #refuge-page-merchant .ash-offer-picture{height:105px!important;}
+ #refuge-page-merchant .ash-offer-picture .weapon-art-img{height:105px!important;}
+ #refuge-page-progress .ash-sector-node{min-height:171px;padding-left:7px!important;padding-right:7px!important;}
+ #refuge-page-progress .ash-sector-node>b{font-size:13px!important;}
+}
+@media(min-width:460px){
+ #refuge-page-character .tactical-showcase .survivor-portrait{max-width:290px;}
+ #refuge-page-character .tactical-inventory{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+ #refuge-page-progress .ash-sector-track{gap:13px!important;}
+}

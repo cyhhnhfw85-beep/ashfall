@@ -500,7 +500,7 @@ function makeLargeMap(){
 }
 const SECTORS=[{name:'PÉRIPHÉRIE',bg:'#202f31',grid:'#354846',accent:'#83d9b0',enemy:'mutant',hazard:'Débris et mutants rapides'},{name:'LABORATOIRES',bg:'#152d3c',grid:'#26516a',accent:'#60cef4',enemy:'drone',hazard:'Rayons de sécurité'},{name:'FONDERIE',bg:'#372921',grid:'#65402b',accent:'#ffae62',enemy:'brute',hazard:'Évents thermiques'},{name:'CITADELLE',bg:'#292334',grid:'#50374e',accent:'#e898de',enemy:'sentinel',hazard:'Défenses renforcées'}];
 function sectorOf(room){return clamp(room?.sector||0,0,3)}
-// 0.8.9.78a: nouvelle règle uniquement pour les expéditions créées par cette version.
+// 0.8.9.78b: nouvelle règle uniquement pour les expéditions créées par cette version.
 // Les anciens runs n'ont pas freeChestLootRule et conservent leurs tirages historiques.
 function freeChestWeaponLevel(run,room){
  if(run?.freeChestLootRule==='sector-v1'&&isLarge(run))return sectorOf(room);
@@ -1391,14 +1391,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.78a';
+const ASHFALL_RUNTIME_VERSION='0.8.9.78b';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.78a, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.78b, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -1429,7 +1429,7 @@ function ashChestRender(){
  const bal=$('ashChestCredits');if(bal)bal.textContent=data.credits;
  host.innerHTML=ASH_CHEST_TIERS.map(t=>`<article class="ash-chest-offer ash-chest-${t.id}" style="--chest-accent:${t.accent}">
  <div class="ash-chest-illustration">${ashChestIcon(t)}</div><div class="ash-chest-info"><h3>COFFRE ${t.name}</h3><div class="ash-chest-price">${t.price} CRÉDITS</div></div>
- <div class="ash-chest-odds">${ASH_CHEST_RARITIES.map((r,i)=>`<div><span style="color:${tint({rar:r})}">${r}</span><strong>${(t.odds[i]/10).toLocaleString('fr-FR',{maximumFractionDigits:1})} %</strong></div>`).join('')}</div>
+ <details class="ash-chest-chances"><summary>Chances exactes · Épique ${(t.odds[2]/10).toLocaleString('fr-FR',{maximumFractionDigits:1})} % · Légendaire ${(t.odds[3]/10).toLocaleString('fr-FR',{maximumFractionDigits:1})} %</summary><div class="ash-chest-odds">${ASH_CHEST_RARITIES.map((r,i)=>`<div><span style="color:${tint({rar:r})}">${r}</span><strong>${(t.odds[i]/10).toLocaleString('fr-FR',{maximumFractionDigits:1})} %</strong></div>`).join('')}</div></details>
  <button type="button" class="ash-chest-buy" data-chest-buy="${t.id}" ${data.credits<t.price?'disabled':''}>${data.credits<t.price?'CRÉDITS INSUFFISANTS':'OUVRIR · '+t.price+' CRÉDITS'}</button>
  </article>`).join('');
  ashChestRevealPending();
@@ -1729,7 +1729,7 @@ function merchantRender(){
    if(merchantSort==='power')return merchantScore(b.w)-merchantScore(a.w)||a.i-b.i;
    return Number(a.remaining===0)-Number(b.remaining===0)||Number(data.credits<b.w.price)-Number(data.credits<a.w.price)||a.i-b.i;
   });
-  html+=`<p class="ash-merchant-explainer">${remaining} offre${remaining!==1?'s':''} disponible${remaining!==1?'s':''} · Les crédits sont dépensés seulement après confirmation. <span>Puissance = dégâts × cadence (estimation hors bonus).</span></p>`;
+  html+=`<p class="ash-merchant-explainer">${remaining} offre${remaining!==1?'s':''} en stock · Achat avec confirmation · Puissance indicative hors bonus.</p>`;
   html+='<div class="ash-offer-list">';
   html+=offers.map(({w,i,remaining:copies,total})=>{
    const sold=copies===0,power=merchantScore(w),delta=Math.round((power-base)*10)/10,ok=power>base,affordable=data.credits>=w.price;
@@ -1748,7 +1748,7 @@ function merchantRender(){
   if(!items.length)html+='<div class="ash-merchant-empty">Réserve vide. Rapporte des armes lors d’une extraction pour pouvoir les revendre.</div>';
   html+='</div>';
  }
- html+=`<div class="ash-trader-footnote"><b>COMMENT FONCTIONNE LE COMPTOIR ?</b><p>Le stock change après deux expéditions terminées ou une nouvelle progression de secteur. Les armes plus rares apparaissent au fil de l'exploration. Les achats restent dans la réserve jusqu'à leur équipement.</p></div></div>`;
+ html+=`<details class="ash-refuge-drawer ash-trader-footnote"><summary>Fonctionnement du comptoir</summary><p>Le stock change après deux expéditions terminées ou une nouvelle progression de secteur. Les armes plus rares apparaissent au fil de l'exploration. Les achats restent dans la réserve jusqu'à leur équipement.</p></details></div>`;
  const host=$('merchantPageContent');if(host)host.innerHTML=html;
  else tool('¤ LE COMPTOIR — MARCHAND',html);
 }
