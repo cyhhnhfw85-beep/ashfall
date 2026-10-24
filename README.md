@@ -91,9 +91,17 @@ Les salles étendues conservent pour cette phase les coffres, terminaux, dangers
 
 
 ## 0.8.9.42 — Expéditions : salles vivantes (phase 2)
-- Dressing déterministe sur les quatre formes (1×1, 2×1, 1×2, en L), sans changer la clé de sauvegarde : joints et plaques de sol, gaines, câbles, marquages et usure.
+- Dressing déterministe sur les quatre formes (1×1, 2×1, 1×2, en L), sans nouveaux champs de sauvegarde : joints et plaques de sol, gaines, câbles, marquages et usure.
 - Décoration contextuelle de chaque salle (dépôt, relais, analyse, archives, maintenance, etc.) et palettes distinctes par secteur.
-- Les obstacles existants ont un visuel de caisses, consoles ou machines. Deux couvertures physiques supplémentaires, exactement alignées à leurs hitbox, apparaissent dans chaque aile étendue des nouvelles expéditions V42. Les anciennes expéditions V41 conservent leurs extensions libres.
+- Les vrais obstacles de collision existants sont désormais dessinés comme des caisses, consoles, machines ou dispositifs de sécurité. Aucun accessoire visuel supplémentaire ne devient un obstacle invisible.
 - Ambiance légère animée par secteur : poussière, écrans et néons, braises de fonderie et éclats d'énergie. 6-8 motes par cellule, aucune ressource graphique externe.
-- Économie, IA, formes, graphes de portes, règles, joueurs, outils et inventaires conservés ; ajout du champ optionnel room.solidDecorV42 à la génération uniquement.
+- Économie, IA, formes, graphes de portes, règles, joueurs, outils, inventaires et sauvegardes conservés.
 - Effets de combat/dangers et grands événements ne sont pas encore modifiés. Les objets destructibles appartiennent à une phase distincte.
+
+
+## 0.8.9.43 — Correctif critique d’extraction
+
+- Bug reproduit dans 0.8.9.42 : `hudStatus()` utilisait `inExtractionCircle`, variable locale à `update()`, déclenchant une `ReferenceError` après 3 secondes dans le cercle.
+- Correctif ciblé : calcul de la présence dans le cercle directement dans `hudStatus()`, sans modifier les durées, les renforts, les récompenses ou les sauvegardes.
+- Le numéro de cache PWA est modifié pour éviter le chargement d'une ancienne version de JavaScript sur iPhone.
+- Test automatisé du cycle complet activation → deux vagues → succès → sauvegarde → refuge. Test réel sur iPhone toujours nécessaire.
