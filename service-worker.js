@@ -1,5 +1,5 @@
-const CACHE='ashfall-08964-identite-tactique';
-const FILES=['./','./index.html','./game.css?v=08964','./identity-tokens.css?v=08964','./identity-components.css?v=08964','./identity-integrated.css?v=08964','./identity.js?v=08964','./game.js?v=08964','./immersion.js?v=08964','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='ashfall-08965-combat-fx';
+const FILES=['./','./index.html','./game.css?v=08965','./identity-tokens.css?v=08965','./identity-components.css?v=08965','./identity-integrated.css?v=08965','./identity.js?v=08965','./game.js?v=08965','./immersion.js?v=08965','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ashfall-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
