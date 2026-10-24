@@ -88,3 +88,12 @@ Les images du personnage sont directement embarquées dans index.html afin de fo
 
 ### Limites connues
 Les salles étendues conservent pour cette phase les coffres, terminaux, dangers et événements principaux dans leur première cellule. Les extensions servent déjà au déplacement et aux combats mais leur décoration est volontairement légère. Une vérification de jouabilité et de performance sur iPhone réel reste nécessaire avant validation finale.
+
+
+## 0.8.9.42 — Expéditions : salles vivantes (phase 2)
+- Dressing déterministe sur les quatre formes (1×1, 2×1, 1×2, en L), sans changer la clé de sauvegarde : joints et plaques de sol, gaines, câbles, marquages et usure.
+- Décoration contextuelle de chaque salle (dépôt, relais, analyse, archives, maintenance, etc.) et palettes distinctes par secteur.
+- Les obstacles existants ont un visuel de caisses, consoles ou machines. Deux couvertures physiques supplémentaires, exactement alignées à leurs hitbox, apparaissent dans chaque aile étendue des nouvelles expéditions V42. Les anciennes expéditions V41 conservent leurs extensions libres.
+- Ambiance légère animée par secteur : poussière, écrans et néons, braises de fonderie et éclats d'énergie. 6-8 motes par cellule, aucune ressource graphique externe.
+- Économie, IA, formes, graphes de portes, règles, joueurs, outils et inventaires conservés ; ajout du champ optionnel room.solidDecorV42 à la génération uniquement.
+- Effets de combat/dangers et grands événements ne sont pas encore modifiés. Les objets destructibles appartiennent à une phase distincte.
