@@ -498,6 +498,12 @@ function makeLargeMap(){
 }
 const SECTORS=[{name:'PÉRIPHÉRIE',bg:'#202f31',grid:'#354846',accent:'#83d9b0',enemy:'mutant',hazard:'Débris et mutants rapides'},{name:'LABORATOIRES',bg:'#152d3c',grid:'#26516a',accent:'#60cef4',enemy:'drone',hazard:'Rayons de sécurité'},{name:'FONDERIE',bg:'#372921',grid:'#65402b',accent:'#ffae62',enemy:'brute',hazard:'Évents thermiques'},{name:'CITADELLE',bg:'#292334',grid:'#50374e',accent:'#e898de',enemy:'sentinel',hazard:'Défenses renforcées'}];
 function sectorOf(room){return clamp(room?.sector||0,0,3)}
+// 0.8.9.78: nouvelle règle uniquement pour les expéditions créées par cette version.
+// Les anciens runs n'ont pas freeChestLootRule et conservent leurs tirages historiques.
+function freeChestWeaponLevel(run,room){
+ if(run?.freeChestLootRule==='sector-v1'&&isLarge(run))return sectorOf(room);
+ return run.current===6?3:run.current===7?2:run.current===5?1:0;
+}
 function environment(room){if(!room)return;let sec=sectorOf(room);if(room.envPhase===undefined)room.envPhase=0;if(room.hazardCooldown===undefined)room.hazardCooldown=2.5;if(room.hazardOn===undefined)room.hazardOn=false;if(room.hazardX===undefined)room.hazardX=sec===1?180:sec===2?240:180;}
 // Les ennemis ne peuvent pas apparaitre dans une hitbox solide.
 // La geometrie utilisee ici est celle du moteur de collisions joueur/projectiles.
@@ -735,7 +741,7 @@ function createRun(){
   if(!kind)continue; // On prefere moins d'incidents a une surrepresentation artificielle.
   room.incidentRole=kind;typeCounts[kind]++;
  }
- return {...m,interactiveV50:true,interactiveV51:true,interactiveV52:true,interactiveV54:true,interactiveV72:true,loadout:newLoadout,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,contractId:ashChosenContract().id,earnedCredits:0,elapsedSeconds:0,kills:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,exitRoom:null,player:{x:180,y:310,hp:initialHp,max:initialHp,inv:0,fire:0,dash:0,dx:0,dy:0}};
+ return {...m,freeChestLootRule:'sector-v1',interactiveV50:true,interactiveV51:true,interactiveV52:true,interactiveV54:true,interactiveV72:true,loadout:newLoadout,intelRooms:[],current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,contractId:ashChosenContract().id,earnedCredits:0,elapsedSeconds:0,kills:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,exitRoom:null,player:{x:180,y:310,hp:initialHp,max:initialHp,inv:0,fire:0,dash:0,dx:0,dy:0}};
 }
 function setPlayer(){player=data.run?.player||null}
 
@@ -1383,14 +1389,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.77';
+const ASHFALL_RUNTIME_VERSION='0.8.9.78';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.77, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.78, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -3090,7 +3096,7 @@ if(room.enemies.length===0){
 // Après sécurisation, ouverture automatique des coffres (y compris la récompense d'arène).
 if(room.chest==='closed'&&room.cleared&&room.enemies.length===0&&!locked()&&!incidentBlocksClear(room)){
  room.chest='opened';room.chestFx=1.15;
- const g=makeWeapon(r.current===6?3:r.current===7?2:r.current===5?1:0);
+ const g=makeWeapon(freeChestWeaponLevel(r,room));
  if(isArena(r.current,r)){g.rar='Épique';g.dmg=Math.max(43,g.dmg+16)}
  if(isGuarded(r.current,r)&&g.rar==='Commun'){g.rar='Rare';g.dmg+=8}
  lootSpawn(room,'weapon',180,118,g);lootSpawn(room,'credits',177,122,null,pick(12,24));
