@@ -18,6 +18,8 @@ function readSnapshot(k){try{const raw=localStorage.getItem(k);if(!raw)return nu
 function persist(silent=true){
  if(data.run&&player)data.run.player={...player};
  try{
+  if(data.eq2&&!data.run&&!E2.validate(data))throw Error('invalid equipment 2 home state');
+  if(data.run?.eq2&&!E2.validateRun(data.run))throw Error('invalid equipment 2 expedition state');
   const serialized=JSON.stringify(data);
   if(!valid(JSON.parse(serialized)))throw Error('invalid snapshot');
   // Commit the current state first; a completed run is authoritative too.
@@ -39,6 +41,141 @@ try{
 }catch(e){}
 
 function region(){if(!data.regions)data.regions={k17:{maxSector:0,bossDefeated:false,expeditions:0}};if(!data.regions.k17)data.regions.k17={maxSector:0,bossDefeated:false,expeditions:0};if(!Array.isArray(data.regions.k17.outposts))data.regions.k17.outposts=[];return data.regions.k17}
+
+// Équipements 2.0 — pont minimal vers le moteur historique.
+const E2=window.AshEquipment2;
+let e2MigrationError=null;
+function e2MigrateWhenSafe(){
+ if(data.run||data.eq2)return !!data.eq2;
+ if(!E2){e2MigrationError='Module Équipements 2.0 absent';return false;}
+ const key=KEY+'_eq2_original_v1';
+ try{
+  // Imposer la présence d'une copie de sécurité avant toute écriture du schéma 2.
+  const raw=localStorage.getItem(KEY);const previous=raw&&JSON.stringify(JSON.parse(raw))===JSON.stringify(data)?raw:JSON.stringify(data);
+  let hash=2166136261;for(let j=0;j<previous.length;j++)hash=Math.imul(hash^previous.charCodeAt(j),16777619);
+  const specific=key+'_'+(hash>>>0).toString(16);
+  if(!localStorage.getItem(specific)){localStorage.setItem(specific,previous);if(localStorage.getItem(specific)!==previous)throw Error('copie de référence non vérifiable');}
+  if(!localStorage.getItem(key))localStorage.setItem(key,previous);
+  const transformed=E2.migrate(data);
+  if(!E2.validate(transformed))throw Error('migration invalide');
+  const before=data;data=transformed;
+  if(!persist()){data=before;throw Error('impossible de persister la migration');}
+  e2MigrationError=null;return true;
+ }catch(err){e2MigrationError=String(err?.message||err);msg('⚠ Migration interrompue : '+e2MigrationError);return false;}
+}
+function e2PickWeapon(item){return item?.slot==='weapon'||!item?.slot;}
+function e2ItemArt(w){return e2PickWeapon(w)?weaponArt(w):`<span class="eq2-icon" aria-hidden="true">${{armor:'⬡',boots:'↗',module:'✦',bag:'▣',artifact:'◇'}[w.slot]||'✧'}</span>`;}
+function e2SlotName(slot){return ({weapon:'Arme',armor:'Armure',boots:'Bottes',module:'Module',bag:'Sac tactique',artifact:'Artefact'})[slot]||slot;}
+function e2ItemStats(w){
+ if(!w)return '';
+ if(e2PickWeapon(w))return `${lootDisplay(w.dmg)} dégâts · ${lootDisplay(w.rate)} tirs/s`;
+ const m=E2.model(w);return `${m?.desc||'Équipement tactique'}${w.stats?' · Efficacité '+w.stats.efficiency+' % · Résistance '+w.stats.resilience+' · Réactivité '+w.stats.agility:''}`;
+}
+function e2OwnedCard(w,slot,selected){
+ const isOn=selected?.id===w.id,level=w.level||1,n=w.upgrade||0;
+ return `<article class="eq2-owned-card ${isOn?'is-equipped':''}" style="--eq2-rarity:${tint(w)}"><span class="eq2-mini-art">${e2ItemArt(w)}</span><div class="eq2-item-copy"><strong>${uiSafe(w.name)}</strong><small>${uiSafe(w.rar)} · Nv ${level} · +${n}</small><small>${uiSafe(e2ItemStats(w))}</small></div><div class="eq2-item-actions">${isOn?'<span class="eq2-current">PORTÉ</span>':`<button data-e2-home-equip="${uiSafe(w.id)}">Équiper</button>`}<button data-e2-up="${uiSafe(w.id)}" ${n>=5?'disabled':''}>+${Math.min(5,n+1)}</button>${['efficiency','resilience','agility'].map(k=>`<button data-e2-opt="${uiSafe(w.id)}" data-e2-stat="${k}">${{efficiency:'Efficacité',resilience:'Résistance',agility:'Réactivité'}[k]}</button>`).join('')}${!isOn?`<button data-e2-sell="${uiSafe(w.id)}">Vendre</button><button data-e2-recycle="${uiSafe(w.id)}">Recycler</button>`:''}</div></article>`;
+}
+function e2RenderHome(){
+ const host=$('ashGearConfigurator');if(!host||data.run||!data.eq2)return;
+ const s=data.eq2,items=E2.owned(data);
+ const gear=items.filter(w=>w.slot!=='weapon');const weapon=items.find(w=>w.id===s.slots.weapon);
+ document.querySelectorAll('[data-eq2-portrait-slot]').forEach(el=>{const slot=el.dataset.eq2PortraitSlot,w=items.find(x=>x.id===s.slots[slot]&&x.slot===slot);el.title=w?`${e2SlotName(slot)} : ${w.name}`:`${e2SlotName(slot)} : vide`;const art=el.querySelector('span');if(art&&slot!=='weapon')art.innerHTML=w?e2ItemArt(w):'<span class="eq2-icon">○</span>';el.classList.toggle('eq2-filled',!!w);});
+ host.innerHTML=`<section class="eq2-panel"><div class="eq2-head"><strong>ÉQUIPEMENTS 2.0</strong><span>${s.components} Composants</span></div><p class="eq2-tip">Six emplacements autour du personnage. Choisis les pièces acquises ci-dessous.</p>${weapon?`<details class="eq2-collection"><summary>Arme équipée · ${uiSafe(weapon.name)}</summary><div class="eq2-owned-list">${e2OwnedCard(weapon,'weapon',weapon)}</div></details>`:''}<p class="eq2-tip">Les objets acquis restent possédés. Au départ, seuls les six objets portés sont emportés.</p><details class="eq2-collection" open><summary>Réserve tactique · ${gear.length} pièces</summary><div class="eq2-owned-list">${gear.length?gear.map(w=>e2OwnedCard(w,w.slot,items.find(x=>x.id===s.slots[w.slot]))).join(''):'Aucune pièce supplémentaire. Découvre-en pendant une expédition.'}</div></details><details class="eq2-economy"><summary>Atelier et recyclage</summary><p>+1 à +5 : crédits et Composants. Optimisation : une statistique à la fois. Recyclage : rendement de base + 50 % des Composants investis (arrondi inférieur).</p><p>Armes et objets tactiques acquis restent disponibles au refuge.</p></details></section>`;
+ if($('insurance'))$('insurance').textContent='Possession permanente';
+ const insuranceLabel=$('loadoutInsuranceState')?.closest('.loadout-slot');if(insuranceLabel){const small=insuranceLabel.querySelector('small');if(small)small.textContent='PROPRIÉTÉ';}
+ if($('loadoutInsuranceState'))$('loadoutInsuranceState').textContent='ACQUIS';if($('loadoutInsuranceHint'))$('loadoutInsuranceHint').textContent='Conservé après la mort';
+ if($('insure')){$('insure').disabled=true;$('insure').hidden=true;}
+}
+function e2RefreshRunWeapon(){const r=data.run;if(!r?.eq2)return;
+ const w=E2.active(r,'weapon');if(w)r.equipped=w;
+ const prof=E2.profile(r),max=maxHp()+Math.round(prof.maxHp);
+ if(player){const old=player.max||max;player.max=max;player.hp=Math.min(max,player.hp+Math.max(0,max-old));}
+}
+function e2RunBagMarkup(r){const s=r.eq2,bag=E2.active(r,'bag');const canSwap=!!r.rooms[r.current]?.cleared&&!r.rooms[r.current]?.enemies?.length;
+ const stats=E2.SLOTS.map(slot=>{const w=E2.active(r,slot);return `<div class="eq2-active-slot"><span>${e2SlotName(slot)}</span><strong>${uiSafe(w?.name||'Vide')}</strong><small>${w?uiSafe(w.rar):'—'}</small></div>`}).join('');
+ const collected=s.loot.map((w,i)=>`<article class="eq2-run-item" style="--eq2-rarity:${tint(w)}"><span class="eq2-mini-art">${e2ItemArt(w)}</span><div><strong>${uiSafe(w.name)}</strong><small>${e2SlotName(w.slot)} · ${uiSafe(w.rar)} · Nv ${w.level||1}</small><small>${uiSafe(e2ItemStats(w))}</small></div><div class="eq2-run-actions">${s.secure.itemId===w.id?'<small>◈ PROTÉGÉ</small>':''}<button data-e2-run-equip="${uiSafe(w.id)}" ${canSwap?'':'disabled'}>Équiper</button>${bag?.model==='bag-securizer'&&s.secure.activated&&!s.secure.abandoned?(s.secure.itemId? s.secure.itemId!==w.id&&s.secure.transfers===0?`<button data-e2-transfer="${uiSafe(w.id)}">Transférer</button>`:'':`<button data-e2-secure="${uiSafe(w.id)}">Protéger</button>`):''}<button data-e2-run-drop="${uiSafe(w.id)}" ${canSwap?'':'disabled'}>Laisser</button></div></article>`).join('');
+ const startChoices=s.startingOwned.filter(w=>s.slots[w.slot]!==w.id).map(w=>`<button data-e2-run-equip="${uiSafe(w.id)}" ${canSwap?'':'disabled'}>${uiSafe(w.name)} · départ</button>`).join('');
+ const threshold=bag?.model==='bag-securizer'?({Commun:8,Rare:7,'Épique':6,'Légendaire':5}[bag.rar]||8):null;
+ const progress=threshold?`<p class="eq2-secure-line">Sécurisation : ${Math.min(threshold,s.clearedIds.length)}/${threshold} salles · ${s.secure.itemId?'1 objet protégé':s.secure.abandoned?'Protection abandonnée':s.secure.activated?'Protection prête':'En charge'} · transfert ${s.secure.transfers}/1</p>`:'';
+ const currentDrops=ground(r.rooms[r.current]).filter(d=>d.kind==='weapon'&&!d.got);
+ const pending=s.pendingDrop?currentDrops.find(x=>x.id===s.pendingDrop):null;
+ return `<h3>ÉQUIPEMENTS · ${s.loot.length}/8 nouvelles pièces</h3><p class="eq2-tip">Les objets acquis au départ ne comptent pas. Changement uniquement après sécurisation de la salle.</p><div class="eq2-active-slots">${stats}</div>${progress}${currentDrops.length?`<details><summary>Équipements au sol · ${currentDrops.length}</summary>${currentDrops.map(d=>`<button data-e2-inspect="${uiSafe(d.id)}">Comparer ${uiSafe(d.item?.name||'Objet')}</button>`).join('')}</details>`:''}${pending?`<section class="eq2-pending"><strong>SAC PLEIN — ${uiSafe(pending.item.name)}</strong><p>Choisis un objet à laisser au sol, ou conserve ton chargement.</p>${s.loot.map(w=>`<button data-e2-replace="${uiSafe(w.id)}" ${w.id===s.secure.itemId?'disabled':''}>Remplacer ${uiSafe(w.name)}</button>`).join('')}<button data-e2-dismiss="1">Laisser la trouvaille</button></section>`:''}<div class="eq2-run-list">${collected||'<p>Aucun nouvel équipement</p>'}</div>${startChoices?`<details><summary>Rééquiper un objet acquis au départ</summary>${startChoices}</details>`:''}`;
+}
+function e2OpenBag(){if(!data.run?.eq2)return;overlay='bag';$('overlay').innerHTML='<button class="close" data-op="close">✕ Fermer</button>'+e2RunBagMarkup(data.run);$('overlay').hidden=false;persist();}
+function e2RunAction(type,id){const r=data.run;if(!r?.eq2)return;const s=r.eq2;
+ // Aucun retrait ou remplacement d'équipement lors d'une salle encore hostile.
+ if((type==='drop'||type==='replace')&&(!r.rooms[r.current]?.cleared||r.rooms[r.current]?.enemies?.length)){msg('Gestion de l’équipement disponible seulement en salle sécurisée.');return;}
+ if(type==='dismiss'){s.pendingDrop=null;e2OpenBag();return;}
+ if(type==='inspect'){const dropped=ground(r.rooms[r.current]).find(d=>d.id===id&&!d.got);if(!dropped)return;s.pendingDrop=dropped.id;e2OpenBag();return;}
+ if(type==='equip'){
+  const target=E2.runItem(r,id);if(!target)return;
+  if(target.slot==='bag'&&s.secure.itemId&&E2.active(r,'bag')?.id!==target.id){if(!confirm('Renoncer définitivement à la protection de cette expédition pour changer de sac ?'))return;E2.renounce(r);}
+  if(!E2.equip(r,id)){msg('Changement interdit tant que la salle n’est pas sécurisée.');return;}e2RefreshRunWeapon();
+ }else if(type==='secure'){if(!E2.secure(r,id))return;}
+ else if(type==='transfer'){if(!confirm('Déplacer l’unique transfert de protection vers cet équipement ?'))return;if(!E2.transfer(r,id))return;}
+ else if(type==='drop'){
+  if(s.secure.itemId===id){if(!confirm('Cet objet est protégé. Abandonner sa protection définitivement et le laisser au sol ?'))return;E2.renounce(r);}
+  const item=E2.drop(r,id);if(!item)return;r.bag=r.bag.filter(w=>w.id!==id);
+  item._eq2Dropped=true;lootSpawn(r.rooms[r.current],'weapon',player.x,player.y,item);ground(r.rooms[r.current]).at(-1).pickupBlocked=true;e2RefreshRunWeapon();
+ }else if(type==='replace'){
+  const d=ground(r.rooms[r.current]).find(x=>x.id===s.pendingDrop&&!x.got);
+  if(!d||!d.item)return;
+  const item=E2.drop(r,id);if(!item)return;r.bag=r.bag.filter(w=>w.id!==id);
+  item._eq2Dropped=true;lootSpawn(r.rooms[r.current],'weapon',player.x,player.y,item);ground(r.rooms[r.current]).at(-1).pickupBlocked=true;
+  if(!E2.pickup(r,d.item))throw Error('failed replacement');d.got=true;
+  if(d.item.slot==='weapon')r.bag.push(d.item);
+  r.rooms[r.current].drops=ground(r.rooms[r.current]).filter(x=>!x.got);
+  s.pendingDrop=null;e2RefreshRunWeapon();
+ }
+ persist();render();e2OpenBag();
+}
+function e2GearAction(op,id,statOverride=null){if(data.run||!data.eq2)return;const w=E2.owned(data).find(x=>x.id===id);if(!w)return;const before=JSON.stringify(data);
+ if(op==='equip'){
+  if(w.slot==='weapon'){const idx=data.stash.findIndex(x=>x.id===w.id);if(idx>=0)equipHome(idx);return;}
+  data.eq2.slots[w.slot]=id;
+ }else if(op==='upgrade'){
+  const c=E2.upgradeCost(w);if(!c){msg('Niveau +5 atteint.');return;}
+  if(!confirm(`Améliorer ${w.name} pour ${c.credits} crédits et ${c.components} Composants ?`))return;
+  if(!E2.applyUpgrade(data,id)){msg('Crédits ou Composants insuffisants.');return;}
+ }else if(op==='optimize'){
+  const stat=statOverride||(w.slot==='weapon'?'dmg':'efficiency');if(!stat)return;
+  const c=E2.optimizeCost(w);if(!confirm(`Optimiser ${stat} sur ${w.name} (remplace l’optimisation précédente) pour ${c.credits} crédits et ${c.components} Composants ?`))return;
+  if(!E2.applyOptimize(data,id,stat)){msg('Ressources insuffisantes.');return;}
+ }else if(op==='sell'){
+  if(!confirm(`Vendre définitivement ${w.name} ?`))return;
+  if(E2.sell(data,id,salvagePrice)===null)return;
+ }else if(op==='recycle'){
+  if(!confirm(`Recycler définitivement ${w.name} en Composants ?`))return;
+  if(E2.recycle(data,id)===null)return;
+ }
+ if(!E2.validate(data)){data=JSON.parse(before);msg('Intégrité équipement incohérente, modification annulée');return;}
+ if(!persist()){data=JSON.parse(before);msg('Modification annulée : sauvegarde indisponible');}render();renderRefugeCharacter();
+}
+function e2OnKill(){const r=data.run;if(!r?.eq2)return;r.eq2.fx.killWindow=5;}
+function e2Tick(dt,room){const r=data.run;if(!r?.eq2||!player)return;const p=E2.profile(r),fx=r.eq2.fx;
+ fx.killWindow=Math.max(0,(fx.killWindow||0)-dt);fx.healCooldown=Math.max(0,(fx.healCooldown||0)-dt);fx.teslaCooldown=Math.max(0,(fx.teslaCooldown||0)-dt);fx.shieldCooldown=Math.max(0,(fx.shieldCooldown||0)-dt);
+ if(fx.shieldCooldown===0)fx.shieldReady=true;
+ if(room.enemies.length===0&&p.regen>0)player.hp=Math.min(player.max,player.hp+p.regen*dt);
+ if(p.medic>0&&player.hp<player.max*.5&&fx.healCooldown<=0){player.hp=Math.min(player.max,player.hp+Math.round(p.medic*(1+p.healing)));fx.healCooldown=28;}
+ if(p.tesla>0&&room.enemies.length&&fx.teslaCooldown<=0){const near=room.enemies.find(e=>length(e,player)<130);if(near){near.hp-=Math.round(p.tesla*(1+p.resonance));fx.teslaCooldown=12;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'impact',x:near.x,y:near.y}}));if(near.hp<=0&&!near.lootDropped){near.lootDropped=true;runnableKill(r);e2OnKill();lootSpawn(room,'xp',near.x,near.y,null,pick(2,5));lootSpawn(room,'credits',near.x,near.y,null,pick(4,10));}}}
+ if(room.cleared&&room.spawned&&room.kind!=='start'&&room.kind!=='outpost'&&!room.enemies.length)E2.clearRoom(r,r.current);
+}
+function e2Finish(won,cause){const r=data.run;if(!r?.eq2)return false;
+ const result=E2.finalize(data,r,won);const allCredits=Math.max(0,Math.floor(r.earnedCredits||0));
+ const contract=ashContractStatus(r),contractOk=!!(won&&contract?.complete),contractCredits=contractOk?contract.credits:0,contractResearch=contractOk?contract.research:0;
+ const earnedCredits=won?allCredits+60+contractCredits+result.creditsBonus:0;
+ const prevResearch=data.research,firstCredit=data.credits;
+ data=result.state;
+ data.credits+=earnedCredits;data.research+=won?(r.objectives.length+Math.floor(r.visited.length/3)+contractResearch):Math.min(2,Math.floor(r.visited.length/3));
+ data.stats[won?'extractions':'deaths']++;
+ data.lastEconomy=won?{...r.economy,total:earnedCredits,extraction:60,contract:contractCredits,eq2Bonus:result.creditsBonus,run:data.runs+1}:data.lastEconomy;
+ const fmt=w=>({id:w.id,name:w.name,rar:w.rar,dmg:w.dmg||0,rate:w.rate||0,slot:w.slot,level:w.level});
+ const summary={version:2,won:!!won,cause:won?'extraction':cause,credits:earnedCredits,creditsLost:won?0:allCredits,research:data.research-prevResearch,xp:Math.floor(r.xpTotal||r.xp||0),rooms:Math.max(1,new Set(r.visited||[r.current]).size),kills:Number.isFinite(r.kills)?r.kills:null,elapsed:Number.isFinite(r.elapsedSeconds)?r.elapsedSeconds:null,retained:result.acquired.map(fmt),lost:result.lost.map(fmt),savedBag:result.acquired.length,runIndex:data.runs+1,contract:contract?{id:contract.id,name:contract.name,actual:contract.actual,target:contract.target,completed:contractOk,credits:contractCredits,research:contractResearch}:null};
+ data.runs++;data.insured=null;data.run=null;data.pendingDebrief=summary;
+ ashRegisterCareer(summary);ashLongRecord(r,summary);ensureMerchant();bullets=[];closeOverlay();persist();render();showRunDebrief();
+ msg(won?`Extraction : ${result.acquired.length} équipements acquis, +${earnedCredits} crédits.`:`Expédition échouée : ${result.lost.length} objets non sécurisés perdus. Équipements acquis conservés.`);
+ return true;
+}
 
 // ASHFALL 0.8.9.67 — Contrats d'extraction. Aucun multiplicateur de loot ni de combat.
 // Le contrat est fixé dans le snapshot au départ. Récompense UNIQUE au moment de finish(true).
@@ -282,9 +419,10 @@ function ashGearProfile(snapshot){
  }
  return result;
 }
-const ashRunGear=()=>ashGearProfile(data.run?.loadout);
+const ashRunGear=()=>data.run?.eq2?E2.profile(data.run):ashGearProfile(data.run?.loadout);
 const ashGearTint={Commun:'#B9C9D3',Rare:'#6BAFFF','Épique':'#BB92F4','Légendaire':'#F3C674'};
 function ashGearRender(){
+ if(data.eq2){e2RenderHome();return;}
  const host=$('ashGearConfigurator');if(!host||data.run)return;
  const state=ashGearState();
  const renderSlot=(slot,label,icon)=>{
@@ -336,7 +474,7 @@ function ashGearAction(id,remove=false){
 }
 
 const maxHp=()=>100+data.hpLv*15;
-const damage=()=>data.run.equipped.dmg+data.dmgLv*3;
+const damage=()=>data.run.equipped.dmg+data.dmgLv*3+(data.run?.eq2?Math.round((data.run.equipped.dmg||0)*(.06*(data.run.equipped.upgrade||0)+(data.run.equipped.optimized==='dmg'?.05:0))):0);
 
 // V41: une salle logique peut occuper plusieurs cellules locales de 360x400.
 // La carte regionale conserve 50 noeuds : aucune modification du graphe ni des sauvegardes existantes.
@@ -500,7 +638,7 @@ function makeLargeMap(){
 }
 const SECTORS=[{name:'PÉRIPHÉRIE',bg:'#202f31',grid:'#354846',accent:'#83d9b0',enemy:'mutant',hazard:'Débris et mutants rapides'},{name:'LABORATOIRES',bg:'#152d3c',grid:'#26516a',accent:'#60cef4',enemy:'drone',hazard:'Rayons de sécurité'},{name:'FONDERIE',bg:'#372921',grid:'#65402b',accent:'#ffae62',enemy:'brute',hazard:'Évents thermiques'},{name:'CITADELLE',bg:'#292334',grid:'#50374e',accent:'#e898de',enemy:'sentinel',hazard:'Défenses renforcées'}];
 function sectorOf(room){return clamp(room?.sector||0,0,3)}
-// 0.8.9.78b: nouvelle règle uniquement pour les expéditions créées par cette version.
+// 0.9.0-beta.1: nouvelle règle uniquement pour les expéditions créées par cette version.
 // Les anciens runs n'ont pas freeChestLootRule et conservent leurs tirages historiques.
 function freeChestWeaponLevel(run,room){
  if(run?.freeChestLootRule==='sector-v1'&&isLarge(run))return sectorOf(room);
@@ -815,6 +953,11 @@ function hasLineOfSight(ax,ay,bx,by,room){let dist=Math.hypot(bx-ax,by-ay),steps
 // Butin propre à chaque salle : persiste avec l'expédition, jamais téléporté au sac.
 function ground(room){if(!Array.isArray(room.drops))room.drops=[];return room.drops}
 function lootSpawn(room,kind,x,y,item=null,amount=1){
+ if(data.run?.eq2&&kind==='weapon'&&item&&!item._eq2Dropped){
+   const alternative=E2.rollDrop(sectorOf(room));
+   if(alternative){if(item.rar==='Épique')alternative.rar='Épique';if(item.rar==='Rare'&&alternative.rar==='Commun')alternative.rar='Rare';item=alternative;}
+   else item={...E2.normalizeWeapon(item),level:sectorOf(room)+1};
+ }
  const drops=ground(room);let theta=Math.random()*Math.PI*2,rad=10+Math.random()*17;
  let px=clamp(x+Math.cos(theta)*rad,32,328),py=clamp(y+Math.sin(theta)*rad,40,358);
  // Éviter de laisser un objet à l'intérieur d'un décor solide.
@@ -889,13 +1032,23 @@ function ashSweepFxDraw(){
 }
 function lootUpdate(room,dt){
  const drops=ground(room);for(const d of drops){d.age=(d.age||0)+dt;d.bounce=Math.max(0,(d.bounce||0)-dt);
+  if(data.run?.eq2&&d.pickupBlocked){if(Math.hypot(player.x-d.x,player.y-d.y)>52)d.pickupBlocked=false;else continue;}
   const dist=Math.hypot(player.x-d.x,player.y-d.y);const range=d.kind==='xp'?104:68;
   if(dist<range&&d.bounce<=0&&hasLineOfSight(d.x,d.y,player.x,player.y,room)){const speed=d.kind==='xp'?340:250;const t=Math.min(1,speed*dt/Math.max(1,dist));let tx=d.x+(player.x-d.x)*t,ty=d.y+(player.y-d.y)*t;if(!collidesSolid(tx,ty,6,room)){d.x=tx;d.y=ty}}
   if(Math.hypot(player.x-d.x,player.y-d.y)<18&&d.bounce<=0){
    if(d.kind==='xp'){collectXp(d.amount);d.got=true}
    else if(d.kind==='credits'){data.run.earnedCredits+=d.amount;data.run.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};data.run.economy[d.source==='chest'?'chest':'enemy']=(data.run.economy[d.source==='chest'?'chest':'enemy']||0)+d.amount;d.got=true}
    else if(d.kind==='weapon'){
-    if(data.run.bag.length<6){data.run.bag.push(d.item);ashRefreshContractHud(data.run);msg(d.item.rar+' : '+d.item.name+' ramassé !');ashLootPickupToast(d.item);d.got=true}
+     if(data.run.eq2){
+       if(E2.pickup(data.run,d.item)){
+         if(e2PickWeapon(d.item))data.run.bag.push(d.item);
+         ashRefreshContractHud(data.run);ashLootPickupToast(d.item);d.got=true;persist();
+       }else if(!d.warned){
+         d.warned=true;data.run.eq2.pendingDrop=d.id;
+         if(data.run.rooms[data.run.current].cleared&&!data.run.rooms[data.run.current].enemies.length)e2OpenBag();
+         else msg('8/8 équipements : compare les trouvailles dans une salle sécurisée.');
+       }
+     }else if(data.run.bag.length<6){data.run.bag.push(d.item);ashRefreshContractHud(data.run);msg(d.item.rar+' : '+d.item.name+' ramassé !');ashLootPickupToast(d.item);d.got=true}
     else if(!d.warned){d.warned=true;msg('Sac plein : arme au sol conservée. Libère une place dans SAC.')}
    }
   }
@@ -1391,14 +1544,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.8.9.78b';
+const ASHFALL_RUNTIME_VERSION='0.9.0-beta.1';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.8.9.78b, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.9.0-beta.1, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -1486,7 +1639,10 @@ function ashChestCollect(){
 }
 function start(){if(data.pendingDebrief){showRunDebrief();return}if(data.run){setPlayer();runProgress();if(data.run.pendingLevels>0)openLevelChoice();render();return}
  // Toute nouvelle expédition commence à l'entrée : aucun départ par checkpoint.
- data.run=createRun();data.equipped=null;data.insured=null;setPlayer();
+ if(!data.eq2&&!e2MigrateWhenSafe()){msg('Migration nécessaire avant de démarrer une nouvelle expédition : '+e2MigrationError);return;}
+ if(data.eq2&&!E2.validate(data)){msg('Sauvegarde Équipements 2.0 incohérente : départ bloqué pour préserver les données.');return;}
+ data.run=createRun();if(data.eq2){E2.start(data,data.run);const gear=E2.profile(data.run);data.run.player.max=maxHp()+Math.round(gear.maxHp);data.run.player.hp=data.run.player.max;}
+ data.equipped=null;data.insured=null;setPlayer();
  enter(0,null);msg('Expédition lancée. Explore et trouve une extraction.');}
 function activateOutpost(){let r=data.run,room=r.rooms[r.current];if(room.kind!=='outpost'||Math.hypot(player.x-180,player.y-195)>=72)return false;
  const reg=region();if(!reg.outposts.includes(room.sector)){reg.outposts.push(room.sector);reg.outposts.sort((a,b)=>a-b);msg('📡 BALISE DU SECTEUR '+(room.sector+1)+' ACTIVÉE !')}else msg('Balise déjà activée.');
@@ -1509,6 +1665,7 @@ function formatRunDuration(seconds){if(!Number.isFinite(seconds))return '—';co
 function formatLootName(w){return {id:String(w?.id||uid()),name:String(w?.name||'Équipement'),rar:String(w?.rar||'Commun'),dmg:Number(w?.dmg)||0,rate:Number(w?.rate)||0};}
 function finish(won,cause='combat'){
  const r=data.run;if(!r)return;
+  if(r.eq2){e2Finish(won,cause);return;}
  const equipped=r.equipped,objects=[equipped,...r.bag].filter(Boolean);
  const insured=objects.find(w=>w.id===r.insuredId);
  const previousResearch=data.research;
@@ -1544,7 +1701,8 @@ function finish(won,cause='combat'){
  data.runs++;data.insured=null;data.run=null;data.pendingDebrief=summary;
  ashRegisterCareer(summary);
  ashLongRecord(r,summary);
- ensureMerchant();bullets=[];closeOverlay();persist();render();showRunDebrief();
+  if(!data.eq2)e2MigrateWhenSafe();
+  ensureMerchant();bullets=[];closeOverlay();persist();render();showRunDebrief();
  // Conserver l'objet player jusqu'au retour de la fonction update() : une mort
  // provoquée par une attaque ne doit pas rendre le reste de la frame invalide.
 }
@@ -1552,7 +1710,7 @@ function showRunDebrief(){
  const panel=$('runDebrief');if(!panel)return;
  const s=data.pendingDebrief;if(!s){panel.hidden=true;panel.innerHTML='';return;}
  const ok=!!s.won;
- const formatWeapons=list=>list.length?[...list].sort((a,b)=>(LOOT_RARITY_RANK[b.rar]||0)-(LOOT_RARITY_RANK[a.rar]||0)||lootPower(b)-lootPower(a)).map(w=>`<div class="ash-end-item" style="--item-rarity:${tint(w)}"><span class="ash-end-item-art">${weaponArt(w)}</span><span class="ash-end-item-copy"><b>${uiSafe(w.name)}</b><small>${uiSafe(w.rar)} · ${lootDisplay(w.dmg)} DGT · ${lootDisplay(w.rate)} tirs/s</small><strong class="ash-loot-debrief-power">${lootDisplay(lootPower(w))} puissance</strong></span></div>`).join(''):'<div class="ash-end-empty">Aucun équipement</div>';
+ const formatWeapons=list=>list.length?[...list].sort((a,b)=>(LOOT_RARITY_RANK[b.rar]||0)-(LOOT_RARITY_RANK[a.rar]||0)||lootPower(b)-lootPower(a)).map(w=>`<div class="ash-end-item" style="--item-rarity:${tint(w)}"><span class="ash-end-item-art">${s.version===2?e2ItemArt(w):weaponArt(w)}</span><span class="ash-end-item-copy"><b>${uiSafe(w.name)}</b><small>${uiSafe(w.rar)} · ${s.version===2?e2SlotName(w.slot||'weapon')+' · Nv '+(w.level||1):lootDisplay(w.dmg)+' DGT · '+lootDisplay(w.rate)+' tirs/s'}</small>${!w.slot||w.slot==='weapon'?`<strong class="ash-loot-debrief-power">${lootDisplay(lootPower(w))} puissance</strong>`:''}</span></div>`).join(''):'<div class="ash-end-empty">Aucun équipement</div>';
   const raritySummary=list=>list?.length?`<div class="ash-loot-end-rarities">${Object.entries(list.reduce((t,w)=>(t[w.rar]=(t[w.rar]||0)+1,t),{})).sort((a,b)=>(LOOT_RARITY_RANK[b[0]]||0)-(LOOT_RARITY_RANK[a[0]]||0)).map(([rar,count])=>`<span style="--item-rarity:${tint({rar})}">${uiSafe(rar)} ×${count}</span>`).join('')}</div>`:'';
  const labels={'extraction':'Extraction réussie','abandon':'Expédition abandonnée','explosion':'Éliminé par une explosion','environnement':'Danger environnemental','combat':'Éliminé au combat'};
  const title=ok?'EXTRACTION RÉUSSIE':s.cause==='abandon'?'EXPÉDITION ABANDONNÉE':'EXPÉDITION ÉCHOUÉE';
@@ -1659,10 +1817,10 @@ function weaponArt(w){
 
 function itemRow(w,i,source){return uiWeaponCard(w,i,source,false)}
 function uniqueCheck(){let seen=new Set(),items=[data.equipped,...data.stash];if(data.run)items=[data.run.equipped,...data.run.bag];for(let w of items){if(!w)continue;if(seen.has(w.id))return false;seen.add(w.id)}return true}
-function equipHome(i){let w=data.stash[i];if(!w)return;let old=data.equipped;data.stash.splice(i,1);data.equipped=w;if(old)data.stash.push(old);data.insured=null;persist();render();msg(`${w.name} équipé. Assurance à renouveler.`)}
-function equipBag(i){let r=data.run,w=r.bag[i];if(!w)return;let old=r.equipped;r.bag.splice(i,1);r.equipped=w;if(old){r.bag.push(old)}if(!uniqueCheck())msg('Erreur d’inventaire détectée.');else msg(`${w.name} équipé. Assurance non transférée.`);persist();render();openOverlay('bag')}
-function drop(i){let r=data.run,w=r.bag[i];if(!w)return;if(w.id===r.insuredId&&!confirm('Abandonner cet objet annulera son assurance. Confirmer ?'))return;if(w.id===r.insuredId)r.insuredId=null;r.bag.splice(i,1);persist();render();openOverlay('bag');msg(`${w.name} abandonné.`)}
-function sell(i){if(data.run)return;let w=data.stash[i];if(!w)return;if(w.id===data.insured){msg("Objet assuré : vente refusée.");return}let gain=salvagePrice(w);if(!confirm(`Vendre définitivement ${w.name} pour ${gain} crédits ?`))return;data.stash.splice(i,1);data.credits+=gain;persist();render();msg(`${w.name} vendu : +${gain} crédits.`)}
+function equipHome(i){let w=data.stash[i];if(!w)return;let old=data.equipped;data.stash.splice(i,1);data.equipped=w;if(old)data.stash.push(old);data.insured=null;if(data.eq2)data.eq2.slots.weapon=w.id;persist();render();msg(`${w.name} équipé.`)}
+function equipBag(i){let r=data.run,w=r.bag[i];if(!w)return;if(r.eq2){e2RunAction('equip',w.id);return;}let old=r.equipped;r.bag.splice(i,1);r.equipped=w;if(old){r.bag.push(old)}if(!uniqueCheck())msg('Erreur d’inventaire détectée.');else msg(`${w.name} équipé. Assurance non transférée.`);persist();render();openOverlay('bag')}
+function drop(i){let r=data.run,w=r.bag[i];if(!w)return;if(r.eq2){e2RunAction('drop',w.id);return;}if(w.id===r.insuredId&&!confirm('Abandonner cet objet annulera son assurance. Confirmer ?'))return;if(w.id===r.insuredId)r.insuredId=null;r.bag.splice(i,1);persist();render();openOverlay('bag');msg(`${w.name} abandonné.`)}
+function sell(i){if(data.run)return;let w=data.stash[i];if(!w)return;if(data.eq2){e2GearAction('sell',w.id);return;}if(w.id===data.insured){msg("Objet assuré : vente refusée.");return}let gain=salvagePrice(w);if(!confirm(`Vendre définitivement ${w.name} pour ${gain} crédits ?`))return;data.stash.splice(i,1);data.credits+=gain;persist();render();msg(`${w.name} vendu : +${gain} crédits.`)}
 // Marchand évolutif — stock sauvegardé, jamais régénéré sur simple ouverture.
 const MERCHANT_CATALOG=[
  {name:'Pistolet de secours',rar:'Commun',dmg:17,rate:2.1},
@@ -1767,7 +1925,7 @@ function renderInventorySelection(){
  <div class="inventory-selected-head"><span class="inventory-selected-art">${weaponArt(w)}</span><div class="ash-loot-selected-copy"><b>${uiSafe(w.name)}</b><small>${lootDisplay(w.dmg)} dégâts · ${lootDisplay(w.rate)} tirs/s</small><strong>${lootDisplay(lootPower(w))} puissance indicative</strong></div></div>
  ${lootCompare(w,data.equipped)}
  <div class="ash-loot-resale">Valeur de revente : <strong>${salvagePrice(w)} crédits</strong></div>
- <div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE · ${salvagePrice(w)} CRÉDITS</button></div>`;
+ <div class="inventory-selected-actions"><button type="button" data-grid-equip="${i}">ÉQUIPER</button><button type="button" data-grid-sell="${i}" class="ui-secondary">VENDRE · ${salvagePrice(w)} CRÉDITS</button>${data.eq2?`<button data-e2-up="${uiSafe(w.id)}">AMÉLIORER +${Math.min(5,(w.upgrade||0)+1)}</button><button data-e2-opt="${uiSafe(w.id)}" data-e2-stat="dmg">OPTIMISER DÉGÂTS</button><button data-e2-opt="${uiSafe(w.id)}" data-e2-stat="rate">OPTIMISER CADENCE</button><button data-e2-recycle="${uiSafe(w.id)}">RECYCLER</button>`:''}</div>`;
 }
 function renderRefugeCharacter(){
  const stats=data.stats||{};
@@ -1787,11 +1945,11 @@ function renderRefugeCharacter(){
  if($('homeWeaponArt'))$('homeWeaponArt').innerHTML=weaponArt(data.equipped);
  if($('homeWeaponName'))$('homeWeaponName').textContent=data.equipped?.name||'Aucune arme';
  if($('homeWeaponMeta'))$('homeWeaponMeta').textContent=data.equipped?`${data.equipped.rar} · ${data.equipped.dmg+data.dmgLv*3} DGT · ${data.equipped.rate} tirs/s`:'Équipement à préparer';
- if($('homeInsuranceState'))$('homeInsuranceState').textContent=data.equipped&&data.insured===data.equipped.id?'◆ Arme assurée':'Sans assurance';
+ if($('homeInsuranceState'))$('homeInsuranceState').textContent=data.eq2?'Équipement acquis':data.equipped&&data.insured===data.equipped.id?'◆ Arme assurée':'Sans assurance';
  if($('homeStashState'))$('homeStashState').textContent=`Réserve : ${data.stash.length}`;
  if($('characterWeaponBadge'))$('characterWeaponBadge').textContent=data.equipped?`${data.equipped.rar} · ${data.equipped.name}`:'Aucune arme';
  if($('characterPowerBadge'))$('characterPowerBadge').textContent=data.equipped?`${data.equipped.dmg+data.dmgLv*3} DGT · ${data.equipped.rate} tirs/s`:'Puissance nulle';
- if($('characterInsuranceBadge'))$('characterInsuranceBadge').textContent=data.insured===data.equipped?.id?'Objet assuré':'Sans assurance';
+ if($('characterInsuranceBadge'))$('characterInsuranceBadge').textContent=data.eq2?'Propriété permanente':data.insured===data.equipped?.id?'Objet assuré':'Sans assurance';
  if($('charExtractions'))$('charExtractions').textContent=stats.extractions||0;
  if($('charDeaths'))$('charDeaths').textContent=stats.deaths||0;
  if($('charStashCount'))$('charStashCount').textContent=data.stash.length;
@@ -1825,6 +1983,7 @@ function renderRefugeCharacter(){
   preview.innerHTML=ranked.length?cards+Array.from({length:Math.max(0,Math.min(8-items.length,8))},()=>'<span class="inventory-cell inventory-empty" aria-hidden="true"></span>').join(''):'<div class="ash-loot-no-results">Aucune arme ne correspond aux filtres. <button type="button" data-loot-reset>Réinitialiser</button></div>';
   const controls=$('inventoryPages');if(controls){controls.hidden=pages<=1;controls.innerHTML=pages>1?`<button type="button" data-inventory-page="prev" ${inventoryPage===0?'disabled':''}>← Précédent</button><span>${inventoryPage+1} / ${pages} · ${ranked.length} armes</span><button type="button" data-inventory-page="next" ${inventoryPage===pages-1?'disabled':''}>Suivant →</button>`:'';}
   renderInventorySelection();
+  if(data.eq2){const insurance=$('loadoutInsuranceState');if(insurance)insurance.textContent='ACQUIS';const hint=$('loadoutInsuranceHint');if(hint)hint.textContent='Conservé après la mort';}
  }
 
 }
@@ -1866,7 +2025,7 @@ function merchantBuy(i){
  persist();render();merchantRender();msg(`${item.name} acheté et placé dans la réserve.`);
 }
 function merchantSell(i){
- if(data.run)return;const w=data.stash[i];if(!w)return;
+  if(data.run)return;const w=data.stash[i];if(!w)return;if(data.eq2){e2GearAction('sell',w.id);merchantRender();return;}
  if(w.id===data.insured){msg('Cet objet est assuré. Annule d’abord son assurance.');return}
  const price=salvagePrice(w);
  if(!confirm(`Vendre définitivement ${w.name} pour ${price} crédits ?`))return;
@@ -1874,7 +2033,7 @@ function merchantSell(i){
 }
 
 function upgrade(t){let lv=t==='hp'?data.hpLv:data.dmgLv,cost=4+lv*4;if(lv>=8||data.research<cost)return;data.research-=cost;if(t==='hp')data.hpLv++;else data.dmgLv++;persist();render()}
-function insure(){if(!data.equipped||data.insured===data.equipped.id||data.credits<premium())return;data.credits-=premium();data.insured=data.equipped.id;persist();render();msg('Objet assuré pour la prochaine expédition.')}
+function insure(){if(data.eq2){msg('Les équipements acquis sont désormais conservés définitivement.');return;}if(!data.equipped||data.insured===data.equipped.id||data.credits<premium())return;data.credits-=premium();data.insured=data.equipped.id;persist();render();msg('Objet assuré pour la prochaine expédition.')}
 // V56 : empreintes exactes des salles sur la mini-carte et la carte complete.
 // La grille de navigation contient une salle logique par noeud ; chaque noeud
 // represente ici ses 1, 2 ou 3 cellules, sans les confondre avec des salles voisines.
@@ -1937,18 +2096,22 @@ function render(){let r=data.run;if(!r&&$('ashLootToast'))$('ashLootToast').hidd
  $('upHp').textContent=data.hpLv>=8?'NIVEAU MAX':`Améliorer +15 PV · ${4+data.hpLv*4} recherche`;
  $('upDmg').textContent=data.dmgLv>=8?'NIVEAU MAX':`Améliorer +3 dégâts · ${4+data.dmgLv*4} recherche`;$('upHp').disabled=data.hpLv>=8||data.research<4+data.hpLv*4;$('upDmg').disabled=data.dmgLv>=8||data.research<4+data.dmgLv*4;$('equipped').textContent=data.equipped?`${data.equipped.name} · ${data.equipped.rar} · ${data.equipped.dmg} dégâts · ${data.equipped.rate} tirs/s`:'Aucune';$('insurance').textContent=data.insured===data.equipped?.id?'ASSURÉE':'Non assurée';$('insure').textContent=`Assurer · ${premium()} ¤`;$('insure').disabled=data.insured===data.equipped.id||data.credits<premium();$('stash').innerHTML='<p class="ui-help">Armes stockées au refuge · appuie sur ÉQUIPER pour changer d’arme.</p>'+(data.stash.length?data.stash.map((g,i)=>itemRow(g,i,'stash')).join(''):'<p class="ui-empty">Réserve vide : extrais des armes pour remplir ton stock.</p>');if($('merchantLaunch'))$('merchantLaunch').innerHTML=afIcon('merchant')+' OUVRIR LE COMPTOIR · '+data.credits+' crédits';$('log').dataset.region=region().maxSector;
  
- const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();ashRenderContractSelection();ashRenderCareer();ashRenderLongProgress();ashRefreshContractHud(null);if(refugeActivePage==='merchant')merchantRender();if(refugeActivePage==='chests')ashChestRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission().replace(/^[⚠⚡✦✓⚔📡◈]\s*/u,'');$('roomTitle').textContent=isBoss(r.current,r)?'BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'BALISE':`K-17 · ${r.current+1}/50`;$('hpText').textContent=`${Math.ceil(player.hp)} / ${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;if($('hpFill'))$('hpFill').classList.toggle('ash-critical',player.hp/player.max<.28);runProgress();$('bagCount').textContent=`${r.bag.length}/6`;ashRenderMiniMap(r);const xp=$('xpDisplay');if(xp){xp.textContent=`NIV. ${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)}`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}ashRefreshContractHud(r);const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
+ if(data.eq2){$('insurance').textContent='Acquis définitivement';$('insure').hidden=true;$('insure').disabled=true;}
+ const status=$('regionStatus');if(status)status.textContent='K-17 · secteurs '+(region().maxSector+1)+'/4 · avant-postes '+region().outposts.length+'/3 · Gardien '+(region().bossDefeated?'vaincu':'à découvrir')+' · Helix '+(data.unlockHelix?'débloquée (non jouable)':'verrouillée');if($('homeSectorCount'))$('homeSectorCount').textContent=(region().maxSector+1)+' / 4 secteurs';if($('homeSectorFill'))$('homeSectorFill').style.width=(25*(region().maxSector+1))+'%';if($('homeSectorProgress'))$('homeSectorProgress').setAttribute('aria-valuenow',String(region().maxSector+1));if($('statusChipSector'))$('statusChipSector').textContent='Secteurs '+(region().maxSector+1)+'/4';if($('statusChipOutpost'))$('statusChipOutpost').textContent='Avant-postes '+region().outposts.length+'/3';if($('statusChipBoss'))$('statusChipBoss').textContent='Gardien '+(region().bossDefeated?'vaincu':'à découvrir');renderRefugeCharacter();renderRefugeProgress();ashRenderContractSelection();ashRenderCareer();ashRenderLongProgress();ashRefreshContractHud(null);if(refugeActivePage==='merchant')merchantRender();if(refugeActivePage==='chests')ashChestRender();return}let room=r.rooms[r.current];if($('uiMission'))$('uiMission').textContent=uiMission().replace(/^[⚠⚡✦✓⚔📡◈]\s*/u,'');$('roomTitle').textContent=isBoss(r.current,r)?'BOSS K-17':isArena(r.current,r)?'ARÈNE':isExit(r.current,r)?'EXTRACTION':room.kind==='secret'?'SALLE SECRÈTE':room.kind==='outpost'?'BALISE':`K-17 · ${r.current+1}/50`;$('hpText').textContent=`${Math.ceil(player.hp)} / ${player.max}`;$('hpFill').style.width=`${clamp(player.hp/player.max*100,0,100)}%`;if($('hpFill'))$('hpFill').classList.toggle('ash-critical',player.hp/player.max<.28);runProgress();$('bagCount').textContent=r.eq2?`${r.eq2.loot.length}/8`:`${r.bag.length}/6`;ashRenderMiniMap(r);const xp=$('xpDisplay');if(xp){xp.textContent=`NIV. ${r.runLevel} · ${Math.floor(r.xp)}/${xpThreshold(r.runLevel)}`;xp.style.display='block';$('xpFill').style.width=(100*clamp(r.xp/xpThreshold(r.runLevel),0,1))+'%'}ashRefreshContractHud(r);const statusHint=hudStatus();$('hint').textContent=statusHint;$('hint').hidden=!statusHint}
 function closeOverlay(){if(overlay==='level'&&data.run?.pendingLevels>0)return;if(overlayReturn==='pause'&&data.run&&(overlay==='bag'||overlay==='map')){overlayReturn='';openOverlay('pause');return;}overlayReturn='';overlay='';$('overlay').hidden=true;$('overlay').innerHTML='';if(data.run?.pendingLevels>0&&ashSweepChoiceTimer===null)openLevelChoice()}
-function openOverlay(mode){if(!data.run)return;overlay=mode;let r=data.run,html='<button class="close" data-op="close">'+afIcon('close')+' Fermer</button>';if(mode==='bag'){html+=`<h3>${afIcon("bag")} SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ash-run-build"><b>CONFIGURATION</b> · ${ashGearById(r.loadout?.helmet)?.name||'Casque standard'} · ${ashGearById(r.loadout?.module)?.name||'Module vide'}</div><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>({w,i})).sort((a,b)=>(LOOT_RARITY_RANK[b.w.rar]||0)-(LOOT_RARITY_RANK[a.w.rar]||0)||lootPower(b.w)-lootPower(a.w)||a.i-b.i).map(({w,i})=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">${afIcon("info")} Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
-}else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy));if(coords.length){html+='<h3>'+afIcon('map')+' CARTE TACTIQUE — K-17</h3><p class="muted">Découvertes : '+ashDiscoveryStats(r).complete+'/'+ashDiscoveryStats(r).total+' explorées.</p><p class="muted">La forme de chaque pièce reflète sa géométrie : 1×1, 2×1, 1×2 ou en L. Un ? représente un indice de salle non visitée.</p><div class="ash-map-scroll">'+ashMapMarkup(r,false)+'</div><p class="muted">'+r.visited.length+'/50 salles explorées · ● Vous · B Gardien · A Arène · E Extraction · P Balise · D Découverte (d terminée). Glisse pour explorer la carte.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else if(mode==='pause')html=`<section class="ash-pause-card" role="dialog" aria-modal="true" aria-labelledby="ash-pause-title"><div class="ash-pause-emblem" aria-hidden="true">${afIcon("pause")}</div><div class="ash-pause-eyebrow">K-17 · EXPÉDITION EN COURS</div><h2 id="ash-pause-title">PAUSE</h2><p class="ash-pause-subtitle">Le temps est suspendu. Ton expédition est sauvegardée.</p><p class="ash-run-build">${ashGearById(r.loadout?.helmet)?.name||'Casque standard'} · ${ashGearById(r.loadout?.module)?.name||'Module vide'}</p><div class="ash-pause-stats"><span>${afIcon("map")} ${r.visited.length}/50 SALLES</span><span>${afIcon("bag")} ${r.bag.length}/6 OBJETS</span><span>${afIcon("xp")} NIV. ${r.runLevel||1}</span><span>${afIcon("map")} ${ashDiscoveryStats(r).complete}/${ashDiscoveryStats(r).total} DÉCOUVERTES</span></div><div class="ash-pause-actions"><button type="button" class="ash-pause-primary" data-op="resume">${afIcon("resume")} REPRENDRE</button><div class="ash-pause-shortcuts"><button type="button" data-op="bag">${afIcon("bag")} SAC</button><button type="button" data-op="map">${afIcon("map")} CARTE</button></div><button type="button" class="ash-pause-danger" data-op="retreat">Abandonner l’expédition</button></div><div class="ash-pause-footer">${afIcon("save")} Sauvegarde locale active</div></section>`;
-else if(mode==='retreatConfirm')html=`<section class="ash-pause-card ash-pause-confirm" role="dialog" aria-modal="true" aria-labelledby="ash-pause-confirm-title"><div class="ash-pause-emblem danger" aria-hidden="true">${afIcon("danger")}</div><h2 id="ash-pause-confirm-title">ABANDONNER ?</h2><p>Ton équipement non assuré et les crédits gagnés pendant cette expédition seront perdus.</p><button type="button" class="ash-pause-primary" data-op="backPause">CONTINUER L’EXPÉDITION</button><button type="button" class="ash-pause-danger" data-op="confirmRetreat">CONFIRMER L’ABANDON</button></section>`;$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
+function openOverlay(mode){if(!data.run)return;if(mode==='bag'&&data.run.eq2){e2OpenBag();return;}overlay=mode;let r=data.run,html='<button class="close" data-op="close">'+afIcon('close')+' Fermer</button>';if(mode==='bag'){html+=`<h3>${afIcon("bag")} SAC D’EXPÉDITION <span class="ui-tag">${r.bag.length}/6 places</span></h3><p class="muted">Arme équipée et objets transportés. La rareté est indiquée par une couleur.</p><div class="ash-run-build"><b>CONFIGURATION</b> · ${ashGearById(r.loadout?.helmet)?.name||'Casque standard'} · ${ashGearById(r.loadout?.module)?.name||'Module vide'}</div><div class="ui-group-label">ARME ÉQUIPÉE</div>${uiWeaponCard(r.equipped,-1,'bag',true)}<div class="ui-group-label">OBJETS TRANSPORTÉS</div>${r.bag.length?r.bag.map((w,i)=>({w,i})).sort((a,b)=>(LOOT_RARITY_RANK[b.w.rar]||0)-(LOOT_RARITY_RANK[a.w.rar]||0)||lootPower(b.w)-lootPower(a.w)||a.i-b.i).map(({w,i})=>uiWeaponCard(w,i,'bag',false)).join(''):'<p class="ui-empty">Ton sac est vide. Ramasse les armes au sol pour les ajouter ici.</p>'}<p class="ui-help">${afIcon("info")} Équiper une autre arme replace l’ancienne dans le sac. L’assurance reste attachée à son objet d’origine.</p>`;
+}else if(mode==='map'){let coords=r.rooms.filter(z=>Number.isFinite(z.gx)&&Number.isFinite(z.gy));if(coords.length){html+='<h3>'+afIcon('map')+' CARTE TACTIQUE — K-17</h3><p class="muted">Découvertes : '+ashDiscoveryStats(r).complete+'/'+ashDiscoveryStats(r).total+' explorées.</p><p class="muted">La forme de chaque pièce reflète sa géométrie : 1×1, 2×1, 1×2 ou en L. Un ? représente un indice de salle non visitée.</p><div class="ash-map-scroll">'+ashMapMarkup(r,false)+'</div><p class="muted">'+r.visited.length+'/50 salles explorées · ● Vous · B Gardien · A Arène · E Extraction · P Balise · D Découverte (d terminée). Glisse pour explorer la carte.</p>';}else html+='<h3>ANCIENNE EXPÉDITION</h3><div class="cellmap">'+r.rooms.map((z,i)=>`<div class="${i===r.current?'here':z.seen?'known':''}">${z.seen?i+1:'?'}</div>`).join('')+'</div>';}else if(mode==='pause')html=`<section class="ash-pause-card" role="dialog" aria-modal="true" aria-labelledby="ash-pause-title"><div class="ash-pause-emblem" aria-hidden="true">${afIcon("pause")}</div><div class="ash-pause-eyebrow">K-17 · EXPÉDITION EN COURS</div><h2 id="ash-pause-title">PAUSE</h2><p class="ash-pause-subtitle">Le temps est suspendu. Ton expédition est sauvegardée.</p><p class="ash-run-build">${r.eq2?'Équipements 2.0 · '+r.eq2.loot.length+'/8 objets nouveaux':(ashGearById(r.loadout?.helmet)?.name||'Casque standard')+' · '+(ashGearById(r.loadout?.module)?.name||'Module vide')}</p><div class="ash-pause-stats"><span>${afIcon("map")} ${r.visited.length}/50 SALLES</span><span>${afIcon("bag")} ${r.eq2?r.eq2.loot.length+'/8':r.bag.length+'/6'} OBJETS</span><span>${afIcon("xp")} NIV. ${r.runLevel||1}</span><span>${afIcon("map")} ${ashDiscoveryStats(r).complete}/${ashDiscoveryStats(r).total} DÉCOUVERTES</span></div><div class="ash-pause-actions"><button type="button" class="ash-pause-primary" data-op="resume">${afIcon("resume")} REPRENDRE</button><div class="ash-pause-shortcuts"><button type="button" data-op="bag">${afIcon("bag")} SAC</button><button type="button" data-op="map">${afIcon("map")} CARTE</button></div><button type="button" class="ash-pause-danger" data-op="retreat">Abandonner l’expédition</button></div><div class="ash-pause-footer">${afIcon("save")} Sauvegarde locale active</div></section>`;
+else if(mode==='retreatConfirm')html=`<section class="ash-pause-card ash-pause-confirm" role="dialog" aria-modal="true" aria-labelledby="ash-pause-confirm-title"><div class="ash-pause-emblem danger" aria-hidden="true">${afIcon("danger")}</div><h2 id="ash-pause-confirm-title">ABANDONNER ?</h2><p>${data.run?.eq2?'Le nouveau butin non sécurisé et les crédits de l’expédition seront perdus. Tes équipements acquis resteront possédés.':'Ton équipement non assuré et les crédits gagnés pendant cette expédition seront perdus.'}</p><button type="button" class="ash-pause-primary" data-op="backPause">CONTINUER L’EXPÉDITION</button><button type="button" class="ash-pause-danger" data-op="confirmRetreat">CONFIRMER L’ABANDON</button></section>`;$('overlay').innerHTML=html;$('overlay').hidden=false;persist()}
 function tool(title,html){$('toolsTitle').textContent=title;$('toolsBody').innerHTML=html;$('tools').hidden=false}
-function backup(){persist();const code=btoa(unescape(encodeURIComponent(JSON.stringify(data))));tool('EXPORT / IMPORT',`<p>Le code inclut le refuge et l’expédition en cours. Conserve-le dans Notes ou Fichiers.</p><textarea id="exportCode" readonly></textarea><button id="copyCode">Copier le code</button><p>Restaurer une sauvegarde :</p><textarea id="importCode" placeholder="Colle ici une sauvegarde..."></textarea><button id="restoreCode">Restaurer</button>`);$('exportCode').value=code;$('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('exportCode').value);msg('Code copié.')}catch(e){$('exportCode').select();msg('Sélectionne le texte pour le copier.')}};$('restoreCode').onclick=()=>{try{const decoded=JSON.parse(decodeURIComponent(escape(atob($('importCode').value.trim()))));if(!valid(decoded))throw Error('format');if(!confirm('Remplacer toute la progression actuelle ?'))return;data=decoded;setPlayer();if(data.run&&isArena(data.run.current,data.run))enforceArena();bullets=[];closeOverlay();runProgress();persist();render();if(data.run?.pendingLevels>0)openLevelChoice();$('tools').hidden=true;msg('Sauvegarde restaurée.')}catch(e){msg('Code invalide ou incompatible.')}}}
+function backup(){persist();const code=btoa(unescape(encodeURIComponent(JSON.stringify(data))));tool('EXPORT / IMPORT',`<p>Le code inclut le refuge et l’expédition en cours. Conserve-le dans Notes ou Fichiers.</p><textarea id="exportCode" readonly></textarea><button id="copyCode">Copier le code</button><p>Restaurer une sauvegarde :</p><textarea id="importCode" placeholder="Colle ici une sauvegarde..."></textarea><button id="restoreCode">Restaurer</button>`);$('exportCode').value=code;$('copyCode').onclick=async()=>{try{await navigator.clipboard.writeText($('exportCode').value);msg('Code copié.')}catch(e){$('exportCode').select();msg('Sélectionne le texte pour le copier.')}};$('restoreCode').onclick=()=>{const previous=data;try{const decoded=JSON.parse(decodeURIComponent(escape(atob($('importCode').value.trim()))));if(!valid(decoded)||(decoded.eq2&&!E2.validate(decoded))||(decoded.run?.eq2&&!E2.validateRun(decoded.run)))throw Error('format');if(!confirm('Remplacer toute la progression actuelle ?'))return;data=decoded;if(!data.run&&!data.eq2&&!e2MigrateWhenSafe())throw Error('migration');setPlayer();if(data.run&&isArena(data.run.current,data.run))enforceArena();bullets=[];closeOverlay();runProgress();if(!persist())throw Error('sauvegarde impossible');render();if(data.run?.pendingLevels>0)openLevelChoice();$('tools').hidden=true;msg('Sauvegarde restaurée.')}catch(e){data=previous;setPlayer();render();msg('Import interrompu : sauvegarde initiale préservée.')}}}
 $('ashContractPicker').addEventListener('click',e=>{const b=e.target.closest('[data-contract-choice]');if(b)ashSelectContract(b.dataset.contractChoice);});
 $('upHp').onclick=()=>upgrade('hp');$('upDmg').onclick=()=>upgrade('dmg');$('insure').onclick=insure;$('merchantLaunch').onclick=()=>merchantOpen();$('start').onclick=start;
 $('bagBtn').onclick=()=>openOverlay('bag');$('mapBtn').onclick=()=>openOverlay('map');$('pauseBtn').onclick=()=>openOverlay('pause');
 // Le clic synthetique iOS peut etre annule quand un autre doigt tient le joystick.
-$('overlay').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let op=b.dataset.op,idx=Number(b.dataset.idx);if(op==='choosePerk')choosePerk(b.dataset.perk);else if(op==='close'||op==='resume')closeOverlay();else if(op==='equipBag')equipBag(idx);else if(op==='drop')drop(idx);else if(op==='bag'){overlayReturn='pause';openOverlay('bag')}else if(op==='map'){overlayReturn='pause';openOverlay('map')}else if(op==='backPause')openOverlay('pause');else if(op==='retreat')openOverlay('retreatConfirm');else if(op==='confirmRetreat')finish(false,'abandon')});
+$('overlay').addEventListener('click',e=>{
+  const action=e.target.closest('[data-e2-run-equip],[data-e2-run-drop],[data-e2-secure],[data-e2-transfer],[data-e2-replace],[data-e2-dismiss],[data-e2-inspect]');
+  if(action){const ops={'data-e2-run-equip':'equip','data-e2-run-drop':'drop','data-e2-secure':'secure','data-e2-transfer':'transfer','data-e2-replace':'replace','data-e2-dismiss':'dismiss','data-e2-inspect':'inspect'};for(const [attr,op] of Object.entries(ops))if(action.hasAttribute(attr)){e2RunAction(op,action.getAttribute(attr));return;}}
+  let b=e.target.closest('[data-op]');if(!b)return;let op=b.dataset.op,idx=Number(b.dataset.idx);if(op==='choosePerk')choosePerk(b.dataset.perk);else if(op==='close'||op==='resume')closeOverlay();else if(op==='equipBag')equipBag(idx);else if(op==='drop')drop(idx);else if(op==='bag'){overlayReturn='pause';openOverlay('bag')}else if(op==='map'){overlayReturn='pause';openOverlay('map')}else if(op==='backPause')openOverlay('pause');else if(op==='retreat')openOverlay('retreatConfirm');else if(op==='confirmRetreat')finish(false,'abandon')});
 function merchantClickHandler(e){let b=e.target.closest('[data-merchant-tab],[data-merchant-filter],[data-merchant-buy],[data-merchant-sell]');if(!b)return;if(b.hasAttribute('data-merchant-tab')){merchantTab=b.dataset.merchantTab;merchantRender()}else if(b.hasAttribute('data-merchant-filter')){merchantFilter=b.dataset.merchantFilter;merchantRender()}else if(b.hasAttribute('data-merchant-buy'))merchantBuy(Number(b.dataset.merchantBuy));else if(b.hasAttribute('data-merchant-sell'))merchantSell(Number(b.dataset.merchantSell));}
 $('runDebrief').addEventListener('click',e=>{if(e.target.closest('[data-end-action=return]'))closeRunDebrief();});
 $('toolsBody').addEventListener('click',merchantClickHandler);if($('merchantPageContent'))$('merchantPageContent').addEventListener('click',merchantClickHandler);
@@ -1965,12 +2128,13 @@ $('ashLootSearch').addEventListener('input',e=>{inventoryQuery=e.target.value;in
 $('ashLootRarityFilters').addEventListener('click',e=>{const b=e.target.closest('[data-loot-rarity]');if(!b)return;inventoryRarity=b.dataset.lootRarity;inventoryPage=0;renderRefugeCharacter();});
 $('inventoryPages').addEventListener('click',e=>{const b=e.target.closest('[data-inventory-page]');if(!b)return;inventoryPage+=b.dataset.inventoryPage==='next'?1:-1;renderRefugeCharacter();});
 $('inventorySelection').addEventListener('click',e=>{
- const b=e.target.closest('[data-grid-equip],[data-grid-sell]');if(!b)return;
+  const extra=e.target.closest('[data-e2-up],[data-e2-opt],[data-e2-recycle]');if(extra&&data.eq2){e2GearAction(extra.hasAttribute('data-e2-up')?'upgrade':extra.hasAttribute('data-e2-opt')?'optimize':'recycle',extra.getAttribute(extra.hasAttribute('data-e2-up')?'data-e2-up':extra.hasAttribute('data-e2-opt')?'data-e2-opt':'data-e2-recycle'),extra.getAttribute('data-e2-stat'));return;}
+  const b=e.target.closest('[data-grid-equip],[data-grid-sell]');if(!b)return;
  if(b.hasAttribute('data-grid-equip'))equipHome(Number(b.dataset.gridEquip));
  else sell(Number(b.dataset.gridSell));
 });
 $('stash').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let i=Number(b.dataset.idx);if(b.dataset.op==='equipHome')equipHome(i);else if(b.dataset.op==='sell')sell(i)});
-$('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Utilise le joystick semi-mobile en bas au centre pour te déplacer. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange signalée ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Les coffres s’ouvrent automatiquement après avoir sécurisé la salle, avec un rendu de caisse de butin plus lisible. Les avant-postes s’activent par proximité. SAC et CARTE mettent le combat en pause.</p><p>Reste 3 secondes dans la plateforme d’extraction pour lancer la procédure. Une fois validée, le compte à rebours continue tant que tu restes dans la salle ; sortir du cercle ne l’annule plus. En revanche, quitter la salle annule immédiatement l’extraction. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). Dans les nouvelles expéditions, les barils instables et modules électriques peuvent exploser sous les tirs : éloigne-toi de leur rayon signalé et utilise-les contre les ennemis. K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
+$('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Utilise le joystick semi-mobile en bas au centre pour te déplacer. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange signalée ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Les coffres s’ouvrent automatiquement après avoir sécurisé la salle, avec un rendu de caisse de butin plus lisible. Les avant-postes s’activent par proximité. SAC et CARTE mettent le combat en pause.</p><p>Reste 3 secondes dans la plateforme d’extraction pour lancer la procédure. Une fois validée, le compte à rebours continue tant que tu restes dans la salle ; sortir du cercle ne l’annule plus. En revanche, quitter la salle annule immédiatement l’extraction. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). Dans les nouvelles expéditions, les barils instables et modules électriques peuvent exploser sous les tirs : éloigne-toi de leur rayon signalé et utilise-les contre les ennemis. K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. ${data.run?!data.run.eq2?'À la mort, une ancienne assurance peut conserver une arme selon les règles historiques.':'À la mort, les équipements acquis restent possédés. Un seul nouvel objet peut être sauvegardé avec le Sac Sécurisateur.':data.eq2?'Les six équipements acquis portés au départ restent possédés après une mort. Les nouvelles trouvailles doivent être extraites ou sécurisées.':'À la mort, une ancienne assurance conserve une arme selon les règles historiques.'}</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
 // DASH : impulsion immédiate et indépendante du tick d'animation.
 // Conserve la direction du joystick au moment du clic et une direction de secours.
 
@@ -3045,7 +3209,7 @@ if(room.enemies.length){
 }
 drawFieldEvent(room);drawRefinedChest(room,r);if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
 lootDraw(room);ashSweepFxDraw();ashDrawEnemyTelegraphs(room);for(let e of room.enemies){const guardian=ashGuardianInRoom(e,room);drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),guardian);const bw=guardian?70:30,bhy=guardian?-57:-39;cx.fillStyle='#081722';cx.fillRect(e.x-bw/2,e.y+bhy,bw,5);cx.fillStyle=guardian?'#c99de5':'#79e0a1';cx.fillRect(e.x-bw/2,e.y+bhy,bw*Math.max(0,e.hp/e.max),5)}combatFxPaintBullets();if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}combatFxPaintWorld();cx.restore();if(isBoss(r.current,r))ashDrawBossHud(room);combatFxPaintHurt();}
-function hurt(amount,cause='combat'){if(!player||!data.run||player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));combatFxDamagePlayer();player.hp-=Math.max(1,Math.round(amount*(1-ashRunGear().resist)));player.inv=.65;if(player.hp<=0)finish(false,cause)}
+function hurt(amount,cause='combat'){if(!player||!data.run||player.inv>0)return;if(data.run.eq2){const f=data.run.eq2.fx;if(E2.profile(data.run).shield>0&&f.shieldReady){f.shieldReady=false;f.shieldCooldown=32;player.inv=.35;msg('Égide : impact absorbé.');return;}}window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));combatFxDamagePlayer();player.hp-=Math.max(1,Math.round(amount*(1-ashRunGear().resist)));player.inv=.65;if(player.hp<=0)finish(false,cause)}
 function transition(){
  if(locked())return false;
  const r=data.run,id=r.current,room=r.rooms[id];
@@ -3057,8 +3221,8 @@ function transition(){
  return false;
 }
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
-function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];combatFxStep(dt,room);ashSweepFxStep(dt);if(Number.isFinite(r.elapsedSeconds))r.elapsedSeconds+=dt;environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; updateInteractables(room,dt);if(!data.run)return; if(!room.cleared&&!room.hazardDisabled&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15,'environnement');if(!data.run)return;room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
-let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed')+ashRunGear().speed)*dt,vy*150*(1+perkBonus('speed')+ashRunGear().speed)*dt,12,room);if(transition())return;
+function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];if(r.eq2)e2Tick(dt,room);combatFxStep(dt,room);ashSweepFxStep(dt);if(Number.isFinite(r.elapsedSeconds))r.elapsedSeconds+=dt;environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; updateInteractables(room,dt);if(!data.run)return; if(!room.cleared&&!room.hazardDisabled&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15,'environnement');if(!data.run)return;room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
+let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed')+ashRunGear().speed+(r.eq2&&r.eq2.fx.killWindow>0?ashRunGear().killSpeed:0))*dt,vy*150*(1+perkBonus('speed')+ashRunGear().speed+(r.eq2&&r.eq2.fx.killWindow>0?ashRunGear().killSpeed:0))*dt,12,room);if(transition())return;
 updateIncident(room,dt);if(!data.run)return;
 if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};const arenaReward=pick(150,250);r.earnedCredits+=arenaReward;r.economy.arena+=arenaReward;objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre épique en cours d’ouverture !')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=450;r.economy.boss+=450;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)&&!incidentBlocksClear(room)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=20;r.economy.room+=20;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
 if(room.enemies.length&&player.fire<=0){
@@ -3069,8 +3233,8 @@ if(room.enemies.length&&player.fire<=0){
   const spread=tactical?0:mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09;
   const ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;
   const shotKind=combatFxFire(player.x,player.y,ang,r.equipped);
-  bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,style:shotKind,dmg:damage()*(1+perkBonus('power'))*(1+ashRunGear().damage),ttl:1.5});
-  player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')+ashRunGear().rate))
+  bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,style:shotKind,dmg:damage()*(1+perkBonus('power'))*(1+ashRunGear().damage+(r.eq2&&r.eq2.fx.killWindow>0?ashRunGear().killDamage+ashRunGear().frenzy:0)),ttl:1.5});
+  player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')+ashRunGear().rate+(r.eq2&&r.equipped.optimized==='rate'?.05:0)))
  }}
 for(let e of room.enemies){let d=length(e,player),angle=Math.atan2(player.y-e.y,player.x-e.x);e.wind=e.wind||0;if(ashBossTick(e,room,dt))continue;
  const oppositeWing=roomGeom(room).type==='ell'&&((e.x>355&&player.y>395)||(e.y>395&&player.x>355));
@@ -3089,7 +3253,7 @@ for(let b of bullets){
   if(collidesSolid(b.x,b.y,4,room)){combatFxWall(b.x,b.y,b);window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'impact',x:b.x,y:b.y,enemy:b.enemy}}));b.ttl=0;break}
  }
  if(b.ttl<=0)continue;
- b.ttl-=dt;if(b.enemy){if(length(b,player)<16){hurt(b.dmg);if(!data.run)return;b.ttl=0}}else{for(let e of room.enemies){if(length(b,e)<15){e.hp-=b.dmg;combatFxHit(e,b.dmg,e.hp<=0,b);window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:e.hp<=0?'death':'impact',x:e.x,y:e.y}}));b.ttl=0;if(e.hp<=0&&!e.lootDropped){e.lootDropped=true;if(data.run)runnableKill(data.run);lootSpawn(room,'xp',e.x,e.y,null,pick(2,5));lootSpawn(room,'credits',e.x,e.y,null,pick(4,10));if(Math.random()<.055){lootSpawn(room,'weapon',e.x,e.y,makeWeapon(sectorOf(room)))}}break}}}}
+ b.ttl-=dt;if(b.enemy){if(length(b,player)<16){hurt(b.dmg);if(!data.run)return;b.ttl=0}}else{for(let e of room.enemies){if(length(b,e)<15){e.hp-=b.dmg;combatFxHit(e,b.dmg,e.hp<=0,b);window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:e.hp<=0?'death':'impact',x:e.x,y:e.y}}));b.ttl=0;if(e.hp<=0&&!e.lootDropped){e2OnKill();e.lootDropped=true;if(data.run)runnableKill(data.run);lootSpawn(room,'xp',e.x,e.y,null,pick(2,5));lootSpawn(room,'credits',e.x,e.y,null,pick(4,10));if(Math.random()<.055){lootSpawn(room,'weapon',e.x,e.y,makeWeapon(sectorOf(room)))}}break}}}}
 room.enemies=room.enemies.filter(e=>e.hp>0);
 // À la fin d’un combat, supprimer immédiatement les tirs hostiles et désarmer les dangers de salle.
 // Une arène non terminée garde ses vagues : le nettoyage ne valide jamais une salle prématurément.
@@ -3185,7 +3349,7 @@ const tutorialSteps=[
  {title:'Portes rouges et vertes',scene:'lock,next',desc:'Les portes rouges vers des salles inconnues s’ouvrent après sécurisation de la salle. Tu peux généralement revenir par les portes vertes déjà visitées.',tip:'Exception : une arène ou un boss verrouille toutes les sorties jusqu’à la victoire.'},
  {title:'Butin de salle',scene:'loot,xp,bag',desc:'Quand la salle est sécurisée, tous les crédits et points d’XP encore au sol rejoignent automatiquement ton survivant. Les armes, elles, restent sur place.',tip:'Les silhouettes d’armes au sol prennent la couleur de leur rareté. Approche-toi pour les récupérer : leur illustration complète apparaît dans le sac.'},
  {title:'Niveaux et bonus',scene:'xp,research',desc:'L’XP fait monter ton niveau d’expédition : choisis un bonus temporaire parmi trois. Les coffres s’ouvrent après élimination des ennemis. Les caches et terminaux se déclenchent par proximité après sécurisation d’une salle, sans nouveau bouton.',tip:'Tes bonus de niveau disparaissent à la fin de l’expédition. Tes talents achetés au refuge restent.'},
- {title:'Extraire pour tout garder',scene:'extraction',desc:'Trouve une salle d’extraction puis reste 3 secondes dans le cercle pour la valider. Une fois lancée, la procédure continue tant que tu restes dans la salle, même si tu sors du cercle. Quitter la salle annule la procédure.',tip:'Si tu meurs, tu perds ton matériel non assuré. Avant de partir, tu peux assurer UN objet équipé au refuge.'}
+ {title:'Extraire pour tout garder',scene:'extraction',desc:'Trouve une salle d’extraction puis reste 3 secondes dans le cercle pour la valider. Une fois lancée, la procédure continue tant que tu restes dans la salle, même si tu sors du cercle. Quitter la salle annule la procédure.',tip:'Les anciennes expéditions gardent leurs règles. En Équipements 2.0, les objets acquis restent possédés et les nouvelles trouvailles demandent une extraction.'}
 ];
 let tutorialIndex=0;
 function tutorialShow(index=0){if(data.run)return;tutorialIndex=clamp(index,0,tutorialSteps.length-1);$('tutorialModal').hidden=false;tutorialRender();}
@@ -3212,7 +3376,9 @@ function survivorSwitch(panel){
  });
 }
 document.querySelectorAll('[data-survivor-panel]').forEach(button=>button.addEventListener('click',()=>survivorSwitch(button.dataset.survivorPanel)));
-$('ashGearConfigurator').addEventListener('click',e=>{const buy=e.target.closest('[data-gear-id]');if(buy){ashGearAction(buy.dataset.gearId);return}const rem=e.target.closest('[data-gear-remove]');if(rem)ashGearAction(rem.dataset.gearRemove,true);});
+$('ashGearConfigurator').addEventListener('click',e=>{
+ if(data.eq2){const b=e.target.closest('[data-e2-home-equip],[data-e2-up],[data-e2-opt],[data-e2-sell],[data-e2-recycle]');if(b){const mapping={'data-e2-home-equip':'equip','data-e2-up':'upgrade','data-e2-opt':'optimize','data-e2-sell':'sell','data-e2-recycle':'recycle'};for(const [attribute,op] of Object.entries(mapping))if(b.hasAttribute(attribute)){e2GearAction(op,b.getAttribute(attribute),b.getAttribute('data-e2-stat'));return;}}return;}
+ const buy=e.target.closest('[data-gear-id]');if(buy){ashGearAction(buy.dataset.gearId);return}const rem=e.target.closest('[data-gear-remove]');if(rem)ashGearAction(rem.dataset.gearRemove,true);});
 
 function refugeNavigate(tab){
  if(data.run || !['home','character','merchant','progress','chests'].includes(tab))return;
@@ -3239,5 +3405,5 @@ document.querySelectorAll('[data-refuge-tab]').forEach(b=>b.addEventListener('cl
 $('refuge-page-chests').addEventListener('click',e=>{const buy=e.target.closest('[data-chest-buy]');if(buy){ashChestPurchase(buy.dataset.chestBuy);return;}if(e.target.closest('#ashChestCollect'))ashChestCollect();});
 $('toolsClose').addEventListener('click',()=>{if(refugeActivePage==='merchant')refugeNavigate('home')});
 
-if(!data.equipped&&!data.run)data.equipped=starter();region();render();if(data.pendingDebrief)showRunDebrief();if(!data.run&&data.chestPending)refugeNavigate('chests');if(!data.run&&!data.pendingDebrief&&data.runs===0){try{if(!localStorage.getItem(TUTORIAL_KEY))tutorialShow(0)}catch(e){}}if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
+if(!data.equipped&&!data.run)data.equipped=starter();if(!data.run&&!data.eq2)e2MigrateWhenSafe();region();render();if(data.pendingDebrief)showRunDebrief();if(!data.run&&data.chestPending)refugeNavigate('chests');if(!data.run&&!data.pendingDebrief&&data.runs===0){try{if(!localStorage.getItem(TUTORIAL_KEY))tutorialShow(0)}catch(e){}}if(data.run?.pendingLevels>0)openLevelChoice();function frame(t){let dt=Math.min(.033,(t-last)/1000||.016);last=t;update(dt);if(data.run)draw();requestAnimationFrame(frame)}requestAnimationFrame(frame);
 })();

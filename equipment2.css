@@ -1,0 +1,38 @@
+/* Équipements 2.0 : extension mobile des composants existants, sans nouvelle couche d'overlay global. */
+.eq2-panel,.eq2-run-list{color:#e6eff2;font:inherit}
+.eq2-panel{margin:10px 0 20px;background:linear-gradient(150deg,#122834,#0b1b28);border-radius:14px;padding:14px;border:1px solid #315162}
+.eq2-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}.eq2-head span{color:#f3c77c;font-weight:750}
+.eq2-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.eq2-slot{min-width:0;display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;background:#152d3b;border:1px solid #355066;border-radius:11px;padding:9px 4px;min-height:94px}
+.eq2-slot-icon{font-size:29px;color:#86d5dd;line-height:1.2;min-height:31px}.eq2-slot-icon .weapon-art{max-width:70px;max-height:34px}
+.eq2-slot small{color:#a8bfcb;font-size:10px}.eq2-slot strong{font-size:11px;overflow-wrap:anywhere;line-height:1.2}
+.eq2-tip{font-size:12px;line-height:1.5;color:#afcad2;margin:12px 0}
+.eq2-collection,.eq2-economy{border-top:1px solid #355263;padding:12px 0 4px}
+.eq2-collection summary,.eq2-economy summary{color:#addbe2;font-weight:700;cursor:pointer;min-height:44px}
+.eq2-owned-list,.eq2-run-list{display:grid;gap:9px}
+.eq2-owned-card,.eq2-run-item{border-left:3px solid var(--eq2-rarity,#c5d3df);background:#182f3f;border-radius:8px;display:grid;grid-template-columns:50px minmax(0,1fr);gap:9px;padding:10px}
+.eq2-mini-art{display:flex;align-items:center;justify-content:center;color:#99d5e3;font-size:31px;grid-row:span 2;overflow:hidden}
+.eq2-mini-art .weapon-art{width:48px;height:35px;object-fit:contain}
+.eq2-item-copy,.eq2-run-item>div:nth-child(2){display:flex;flex-direction:column;gap:3px;min-width:0}
+.eq2-item-copy strong,.eq2-run-item strong{font-size:13px;overflow-wrap:anywhere}
+.eq2-item-copy small,.eq2-run-item small{font-size:11px;color:#b2c8d0}
+.eq2-item-actions,.eq2-run-actions{grid-column:2;display:flex;gap:5px;flex-wrap:wrap}
+.eq2-item-actions button,.eq2-run-actions button,.eq2-pending button{font-size:12px;min-height:36px;padding:6px 10px;border-radius:7px}
+.eq2-current{font-size:11px;font-weight:700;color:#87dbb4;padding:8px}
+.eq2-active-slots{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+.eq2-active-slot{background:#132936;border:1px solid #355063;border-radius:9px;padding:10px;min-width:0;display:flex;flex-direction:column;gap:4px}
+.eq2-active-slot span{color:#9cb7c4;font-size:11px}.eq2-active-slot strong{font-size:12px;overflow-wrap:anywhere}
+.eq2-active-slot small{font-size:11px;color:#ceae75}
+.eq2-secure-line{color:#b8e1dd;font-size:12px}
+.eq2-pending{background:#24343c;border:1px solid #e8ae6b;padding:10px;border-radius:10px;margin:14px 0;display:flex;flex-wrap:wrap;gap:8px}
+.eq2-pending strong,.eq2-pending p{flex-basis:100%}
+@media(max-width:340px){.eq2-slots{grid-template-columns:repeat(2,minmax(0,1fr))}.eq2-active-slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Six emplacements réellement actifs, répartis autour du survivant. */
+#refuge-page-character .tactical-showcase{grid-template-columns:minmax(45px,61px) minmax(0,1fr) minmax(45px,61px)!important;gap:5px!important;padding:8px!important}
+#refuge-page-character .tactical-showcase .tactical-left,#refuge-page-character .tactical-showcase .tactical-right{display:flex!important;flex-direction:column;align-items:center;gap:9px;grid-row:1;position:relative;z-index:2;align-self:center}
+#refuge-page-character .tactical-showcase .tactical-right{grid-column:3!important}
+#refuge-page-character .tactical-showcase .equip-square{width:100%!important;max-width:61px!important;min-height:70px!important;max-height:70px!important;padding:4px 1px!important;border-color:#456b7e!important;opacity:1!important;filter:none!important}
+#refuge-page-character .tactical-showcase .equip-square.eq2-filled{border-color:#e3b86b!important;background:#1b3445!important}
+#refuge-page-character .tactical-showcase .equip-square small{font-size:8px!important}
+#refuge-page-character .tactical-showcase .eq2-icon{font-size:24px;line-height:1}
+#refuge-page-character .tactical-showcase .survivor-portrait{grid-column:2!important}

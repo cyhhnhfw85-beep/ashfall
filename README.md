@@ -1,26 +1,30 @@
-# ASHFALL 0.8.9.78b — Correction des coffres gratuits
+# ASHFALL — 0.9.0-beta.1 · Équipements 2.0
 
-**ZIP complet jouable**, basé sur 0.8.9.77 Clean Core. Cette version est un correctif de cohérence : le niveau des armes de coffres gratuits dépend du secteur réel pour toute **nouvelle expédition**. Les anciens runs sauvegardés restent sous leur ancien régime de tirage. Voir `CHANGELOG_08978.md` et `VALIDATION_08978.md`.
+Version jouable de test construite sur **ASHFALL 0.8.9.78b — Refuge UI Cleanup**. Ce ZIP est une version intégrale du jeu, pas seulement un audit ou un patch.
 
 ## Installation
-1. Dans le jeu existant, exporter d'abord la sauvegarde par « Sauvegarde ».
-2. Déployer **tous** les fichiers du ZIP à la racine du **même site HTTPS**. Conserver exactement le même domaine / origine et ne pas vider les données locales.
-3. Vérifier que `0.8.9.78b` apparaît dans le jeu et recharger le cache via le contrôle de version si nécessaire.
-4. Contrôler la reprise d'une partie en cours, l'ouverture d'un coffre, l'affichage du butin et l'état hors ligne sur le téléphone.
 
-## Garanties ciblées
-- `localStorage` reste à la clé `ashfall_pwa_v1` et au schéma `version:1` ; mêmes clés de secours et d'import/export.
-- La nouvelle propriété facultative `freeChestLootRule` n'est présente que dans les nouvelles expéditions.
-- Aucune règle de prix / rareté / combat / coffre payant / marchand n'a changé.
+1. **Exporter le code de sauvegarde** de l’ancienne version avant de changer les fichiers.
+2. Conserver le même domaine/origine et remplacer **tous** les fichiers du site par le contenu du ZIP (respecter les dossiers).
+3. Rafraîchir le navigateur, vérifier le numéro **0.9.0-beta.1** et utiliser le contrôle de mise à jour si nécessaire.
+4. Une expédition commencée avec l’ancien système se termine suivant ses règles historiques. Au retour au refuge, la sauvegarde est migrée.
+5. Exporter de nouveau la sauvegarde après le premier démarrage, puis effectuer une session de validation sur l’appareil cible.
 
-## Contenu
-Moteur `game.js`, interface `index.html`, JS/CSS compagnons, service worker, manifeste, icônes et assets graphiques. Les documents historiques Clean Core sont conservés pour référence.
+**Clé de sauvegarde :** `ashfall_pwa_v1` inchangée ; `eq2.schema=2` est une extension versionnée. La copie locale de pré-migration est enregistrée avant conversion sous `ashfall_pwa_v1_eq2_original_v1` et une clé d’archive propre à la sauvegarde.
 
+## Fonctionnalités incluses
 
-## Correctif d’accueil 0.8.9.78b
-Voir `CHANGELOG_08978b.md` et `VALIDATION_08978b.md`.
+- Six emplacements : arme, armure, bottes, module, sac tactique, artefact ; six équipements acquis portés au départ, sans pièces de rechange.
+- Propriété permanente des objets acquis, huit emplacements de nouveau butin, ramassage et remplacement manuels à 8/8, abandon et récupération dans les salles.
+- Extraction et mort différenciées ; Sac Sécurisateur avec seuils par rareté et transfert de protection unique.
+- Quinze modèles de catalogue initiaux, effets automatiques et synergies, Composants, recyclage, améliorations +5, optimisation unique remplaçable, vente.
+- Conservation des cartes à 50 salles, du marchand existant, des coffres, des boss et de la progression historique.
 
+## Documents
 
-## 0.8.9.78b — Refuge UI Clean
+- `CHANGELOG_0900E2.md` : modifications effectuées.
+- `CATALOGUE_ECONOMIE_E2.md` : catalogue et barèmes de départ.
+- `MIGRATION_ET_SAUVEGARDES_E2.md` : conversions, compensations et transitions.
+- `VALIDATION_E2.md` : tests réellement exécutés et limites.
 
-Refonte d’affichage des pages Survivant, Marchand, Coffres et Secteurs sans modification des fonctions commerciales, des paramètres économiques, des actions de jeu ni du format de sauvegarde. Voir `CHANGELOG_08978b.md` et `VALIDATION_08978b.md`. Les volets secondaires restent accessibles et toutes les données demeurent dans les mêmes éléments techniques.
+**Statut : BETA**, car la PWA installée sur Safari iOS et une partie complète avec toutes les phases du boss n’ont pas été testées sur appareil. Ne pas écraser ta seule copie de sauvegarde.
