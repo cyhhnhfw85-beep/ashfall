@@ -95,7 +95,3 @@ button:disabled{cursor:not-allowed}
 #overlay .ui-weapon-stats{display:flex!important;flex-wrap:wrap!important;gap:6px!important}
 #overlay .ui-weapon-stats span{white-space:nowrap}
 @media(max-width:359px){#overlay .ui-weapon-head>.ui-weapon-icon{flex-basis:89px!important;width:89px!important;min-width:89px!important}#overlay .ui-weapon-head>div{min-width:95px!important}}
-
-/* ASHFALL 0.8.9.72 — pause : 4 compteurs lisibles, 2 colonnes sur mobile */
-.ash-pause-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 10px;text-align:left}
-.ash-pause-stats span{min-width:0;overflow-wrap:normal}.ash-pause-stats .af-icon{flex:none}

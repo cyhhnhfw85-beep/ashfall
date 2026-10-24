@@ -1,29 +1,29 @@
-# ASHFALL 0.8.9.73 — Équipement et personnalisation
+# ASHFALL — Alpha PWA 0.8.9.74
 
-Version complète, créée à partir de **0.8.9.72**, sans fusion de la branche boss 0.8.9.71.
+**Branche : progression longue durée.** Cette livraison est construite exclusivement à partir de **0.8.9.70**. Elle ne fusionne pas les branches 0.8.9.71 (boss), 0.8.9.72 (exploration) ou 0.8.9.73 (équipements).
 
 ## Nouveautés
-- 7 découvertes facultatives générées sur les nouvelles cartes : 2 relais d’écho, 3 dépôts abandonnés, 2 signaux de détresse.
-- Sites répartis dans 3 ou 4 secteurs selon les contraintes géométriques et les salles existantes ; aucune superposition avec les incidents ou terminaux.
-- Relais : révèle jusqu’à quatre salles et fournit 5 XP.
-- Dépôt : 36 à 72 crédits selon secteur et salle, 3 XP, jusqu’à 10 PV si blessé.
-- Signal : deux renforts ; 70 à 106 crédits et 7 XP **uniquement après victoire** ; récompense sauvegardée une fois.
-- Marqueur D/d sur la carte pour les sites visités et le compteur de découvertes dans la carte et la pause.
-- Activation par proximité après nettoyage, sans bouton supplémentaire.
 
-## Compatibilité et économie
-- Sauvegarde locale : `ashfall_pwa_v1` inchangée, export/import compatibles.
-- Les expéditions commencées avant la 0.8.9.72 ne reçoivent pas de nouveaux événements rétroactivement.
-- Les crédits de découvertes font partie du butin d’expédition et **ne sont conservés qu’après extraction**.
-- Prix des coffres inchangés : 900 / 2 800 / 7 500 crédits.
-- Graphismes d’armes, coffres, contrôles tactiles, combat et HUD de la 0.8.9.70 conservés.
+- **Dossier de maîtrise K-17** dans l'onglet Secteurs : quatre parcours permanents (exploration, combat, survie, récupération), chacun doté de trois paliers.
+- **Grade d'opérateur** évoluant avec les paliers : Recrue, Éclaireur, Opérateur, Vétéran, Légende K-17.
+- **Quatre défis de secteur** : explorer au moins trois salles d'un secteur dans une même expédition et réussir l'extraction. Chaque défi n'est validé qu'une fois.
+- **Collection d'arsenal** de cinq familles d'armes : Nomade, Vektor, Spectre, Ion, Cendre. Les pièces déjà possédées sont reconnues ; les armes gagnées à l'extraction complètent l'archive.
+- **Six insignes cosmétiques** déblocables, dont un insigne de départ. Un seul insigne peut être actif ; il est affiché au refuge et sélectionnable dans Secteurs.
+- **Aucun nouveau gain de crédits, recherche ou dégâts** : la progression longue durée est honorifique afin de préserver les extractions et l'économie des coffres.
 
-## Installer
-Exporter d’abord la sauvegarde. Déployer **tous** les fichiers à la racine du site (y compris le sous-dossier `assets`). Vérifier l’affichage **0.8.9.73**. Ne pas écraser la sauvegarde locale.
+## Sauvegardes et compatibilité
 
-## Validation
-Tests Chromium sur 320, 390, 416 et 430 px, reprises d’événements, attribution une fois, ancien run et 150 générations procédurales. Un essai réel sur Safari iPhone demeure nécessaire.
+- Clé **`ashfall_pwa_v1`** et version de données **`version:1`** préservées. Nouveau champ facultatif `longTerm` initialisé pour les anciennes sauvegardes.
+- Le total d'extractions historiques est repris de `stats.extractions`. Les totaux de salles, éliminations et armes extraites **commencent à la 0.8.9.74**, car ils ne sont pas reconstructibles avec certitude.
+- La validation d'une expédition et les nouvelles statistiques sont enregistrées dans le même snapshot. Une garde `lastRecordedRun` évite la double comptabilisation d'une expédition.
+- La mort compte l'exploration et les éliminations, mais ni les armes perdues ni les défis de secteur nécessitant une extraction réussie.
+- Aucune nouvelle touche : interaction uniquement dans le refuge, avec pictogrammes ASHFALL existants.
 
+## Installation
 
-## 0.8.9.73 — Équipements tactiques
-Survivant → Équipement → Casque et module. Débloquer avec crédits et recherche, puis équiper une option de chaque catégorie. Les bonus sont activés uniquement au lancement d'une nouvelle expédition. Les anciennes expéditions reprennent telles quelles. Consulte CHANGELOG_08973.md.
+1. Exporter la sauvegarde actuelle depuis le jeu.
+2. Déployer **tout le contenu du ZIP à la racine de l'hébergement**.
+3. Actualiser le site et vérifier **0.8.9.74** sur l'accueil.
+4. Aller dans **Secteurs > Maîtrise K-17**.
+
+Voir `CHANGELOG_08974.md` et `VALIDATION_08974.md` pour les détails.

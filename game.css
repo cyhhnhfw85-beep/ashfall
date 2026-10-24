@@ -955,7 +955,7 @@ body.ashfall-expedition #pauseBtn{flex-basis:30px!important;min-width:30px!impor
 }
 
 
-/* ASHFALL 0.8.9.70 — terrain plus vaste dans la zone réellement libre.
+/* ASHFALL 0.8.9.74 — terrain plus vaste dans la zone réellement libre.
    Le dessin reste au ratio original 360:400 : jamais d'étirement.
    Le jeu ne passe ni sous le HUD ni sous la zone du joystick. */
 body.ashfall-expedition #stage{display:block!important;position:absolute;inset:0;overflow:hidden!important;padding:0!important;}

@@ -1,5 +1,5 @@
-const CACHE='ashfall-08973-progression';
-const FILES=['./','./index.html','./game.css?v=08973','./identity-tokens.css?v=08973','./identity-components.css?v=08973','./identity-integrated.css?v=08973','./loot-phase.css?v=08973','./progression-phase.css?v=08973','./equipment-phase.css?v=08973','./identity.js?v=08973','./game.js?v=08973','./immersion.js?v=08973','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
+const CACHE='ashfall-08974-progression';
+const FILES=['./','./index.html','./game.css?v=08974','./identity-tokens.css?v=08974','./identity-components.css?v=08974','./identity-integrated.css?v=08974','./loot-phase.css?v=08974','./progression-phase.css?v=08974','./longterm-phase.css?v=08974','./identity.js?v=08974','./game.js?v=08974','./immersion.js?v=08974','./manifest.webmanifest','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('ashfall-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{
