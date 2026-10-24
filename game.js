@@ -722,7 +722,7 @@ $('inventorySelection').addEventListener('click',e=>{
  else sell(Number(b.dataset.gridSell));
 });
 $('stash').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let i=Number(b.dataset.idx);if(b.dataset.op==='equipHome')equipHome(i);else if(b.dataset.op==='sell')sell(i)});
-$('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Utilise le joystick semi-mobile en bas au centre pour te déplacer. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange ⚠ ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Les coffres s’ouvrent automatiquement après avoir sécurisé la salle. Les avant-postes s’activent par proximité. SAC et CARTE mettent le combat en pause.</p><p>Reste 3 secondes dans le cercle lumineux pour lancer une extraction. Une fois activée, reste dans le cercle pendant tout le compte à rebours : en sortir annule l’extraction. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
+$('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Utilise le joystick semi-mobile en bas au centre pour te déplacer. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange ⚠ ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Les coffres s’ouvrent automatiquement après avoir sécurisé la salle, avec un rendu de caisse de butin plus lisible. Les avant-postes s’activent par proximité. SAC et CARTE mettent le combat en pause.</p><p>Reste 3 secondes dans la plateforme d’extraction pour lancer la procédure. Une fois validée, un compte à rebours apparaît au centre du cercle : reste dedans jusqu’à la fin, sinon l’extraction est annulée. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
 // DASH : impulsion immédiate et indépendante du tick d'animation.
 // Conserve la direction du joystick au moment du clic et une direction de secours.
 function performDash(){
@@ -1530,6 +1530,89 @@ function drawDynamicHazard(room,sec){
 // Test hook en lecture seule: compte les rendus statiques et l'espace du cache.
 window.__ashfallVisualStats=()=>({paints:staticPaintCount,rooms:staticSurfaces.size,pixels:staticSurfacePixels});
 
+function drawRefinedChest(room,r){
+ const cx0=180,cy0=109,guarded=isGuarded(r.current,r),lockedState=guarded&&room.enemies.length>0;
+ const pulse=.72+.28*Math.sin(performance.now()/260);
+ if((room.chestFx||0)>0){
+  cx.save();cx.globalAlpha=Math.min(1,room.chestFx*.92);cx.strokeStyle='#f7d58b';cx.lineWidth=5;
+  cx.beginPath();cx.arc(cx0,cy0,28+(1.15-room.chestFx)*36,0,Math.PI*2);cx.stroke();
+  cx.restore();
+ }
+ if(room.chest==='closed' || room.chest==='opened'){
+  cx.save();
+  cx.translate(cx0,cy0+1);
+  cx.fillStyle='rgba(0,0,0,.28)';cx.beginPath();cx.ellipse(0,25,33,10,0,0,Math.PI*2);cx.fill();
+  const bodyTop=room.chest==='opened'?-4:0;
+  // socle
+  cx.fillStyle='#4f3b29';cx.fillRect(-23,-1,46,26);cx.fillStyle='#896547';cx.fillRect(-21,1,42,22);
+  cx.fillStyle='#a77d56';cx.fillRect(-21,1,42,5);
+  cx.fillStyle='#3b2c1f';cx.fillRect(-21,17,42,6);
+  // coins et ferrures
+  for(const x of [-18,14]){cx.fillStyle='#d1ac6d';cx.fillRect(x,3,4,18);cx.fillStyle='#6a4e36';cx.fillRect(x,7,4,2);cx.fillRect(x,15,4,2)}
+  cx.fillStyle='#715840';cx.fillRect(-2,6,4,13);
+  if(room.chest==='closed'){
+   cx.fillStyle='#6a4d35';cx.beginPath();cx.moveTo(-24,-1);cx.lineTo(0,-16);cx.lineTo(24,-1);cx.closePath();cx.fill();
+   cx.fillStyle='#b48b5c';cx.beginPath();cx.moveTo(-21,1);cx.lineTo(0,-11);cx.lineTo(21,1);cx.closePath();cx.fill();
+   cx.fillStyle='#e3be79';cx.fillRect(-3,-8,6,10);
+   if(lockedState){
+    cx.fillStyle='#cfe6ef';cx.font='bold 11px sans-serif';cx.textAlign='center';cx.fillText('🔒',0,-25);
+   }
+  }else{
+   cx.save();cx.translate(0,-5);cx.rotate(-.54);cx.fillStyle='#6a4d35';cx.fillRect(-23,-9,46,10);cx.fillStyle='#a87d54';cx.fillRect(-21,-7,42,7);cx.restore();
+   cx.fillStyle='rgba(242,200,120,.18)';cx.beginPath();cx.ellipse(0,-2,16,8,0,0,Math.PI*2);cx.fill();
+  }
+  if(guarded){
+   cx.strokeStyle=lockedState?'#f2d58c':'#7fdfe4';cx.lineWidth=2;cx.strokeRect(-25,-3,50,30);
+  }
+  cx.restore();
+  cx.textAlign='center';
+  cx.font='bold 10px sans-serif';
+  cx.fillStyle=lockedState?'#f7dfaa':'#dff6fb';
+  if(room.chest==='closed')cx.fillText(lockedState?'COFFRE GARDÉ':'COFFRE DISPONIBLE',cx0,76);
+  else cx.fillText('COFFRE VIDÉ',cx0,76);
+ }
+}
+
+function drawExtractionZone(r,room){
+ const x=180,y=195,radius=39;
+ const active=!!r.exitStarted;
+ const charge=Math.max(0,Math.min(1,(r.exitCharge||0)/3));
+ const contested=active && room.enemies.some(e=>length(e,{x,y})<105);
+ const t=performance.now()/1000;
+ cx.save();
+ // plateforme et balises
+ cx.translate(x,y);
+ cx.fillStyle='rgba(6,18,22,.42)';cx.beginPath();cx.arc(0,0,54,0,Math.PI*2);cx.fill();
+ cx.strokeStyle='#294b56';cx.lineWidth=13;cx.beginPath();cx.arc(0,0,49,0,Math.PI*2);cx.stroke();
+ cx.strokeStyle='#4a8f95';cx.lineWidth=2;cx.setLineDash([7,8]);cx.beginPath();cx.arc(0,0,49,0,Math.PI*2);cx.stroke();cx.setLineDash([]);
+ cx.strokeStyle=active?(contested?'#ff9c7e':'#69f0d0'):'#6ddfc3';
+ cx.lineWidth=5;cx.beginPath();cx.arc(0,0,radius,0,Math.PI*2);cx.stroke();
+ cx.strokeStyle='rgba(182,247,235,.35)';cx.lineWidth=1.5;cx.beginPath();cx.arc(0,0,30,0,Math.PI*2);cx.stroke();
+ for(let i=0;i<4;i++){
+  const ang=-Math.PI/4+i*Math.PI/2, bx=Math.cos(ang)*57, by=Math.sin(ang)*57;
+  cx.fillStyle=active?(contested?'#f4a46a':'#86ffea'):'#9fdde4';
+  cx.globalAlpha=.55+.45*Math.sin(t*4+i);
+  cx.beginPath();cx.arc(bx,by,4.8,0,Math.PI*2);cx.fill();
+  cx.globalAlpha=1;
+  cx.fillStyle='rgba(14,28,34,.92)';cx.fillRect(bx-5,by-10,10,20);
+  cx.fillStyle=active?(contested?'#ffb48f':'#b6fff0'):'#d0eef3';cx.fillRect(bx-2,by-7,4,14);
+ }
+ if(!active){
+  cx.strokeStyle='#ffca72';cx.lineWidth=7;cx.beginPath();cx.arc(0,0,44,-Math.PI/2,-Math.PI/2+Math.PI*2*charge);cx.stroke();
+  cx.fillStyle='#c7f5ec';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText('EXTRACTION',0,-10);
+  cx.font='bold 18px sans-serif';cx.fillStyle='#f6dca4';cx.fillText(Math.round(charge*100)+'%',0,10);
+  cx.font='10px sans-serif';cx.fillStyle='#d1eff3';cx.fillText('Reste dans le cercle',0,27);
+ }else{
+  const timeLeft=Math.max(0,Math.ceil(r.exitTime||0));
+  cx.fillStyle=contested?'rgba(100,18,12,.62)':'rgba(8,35,34,.62)';cx.beginPath();cx.arc(0,0,24,0,Math.PI*2);cx.fill();
+  cx.strokeStyle=contested?'#ff9b7c':'#c4fff4';cx.lineWidth=3;cx.beginPath();cx.arc(0,0,24,0,Math.PI*2);cx.stroke();
+  cx.fillStyle=contested?'#ffd1c3':'#ffffff';cx.font='700 28px sans-serif';cx.textAlign='center';cx.fillText(String(timeLeft),0,10);
+  cx.font='bold 10px sans-serif';cx.fillStyle=contested?'#ffb79a':'#93f2df';cx.fillText(contested?'CONTESTÉE':'EXTRACTION',0,-30);
+  cx.font='10px sans-serif';cx.fillStyle='#d8f5ef';cx.fillText('Tiens la zone',0,37);
+ }
+ cx.restore();
+}
+
 function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=sectorOf(room),theme=SECTORS[sec];
  cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,360,400);cx.save();
  const camera=cameraFor(room);window.__ashfallCamera={x:camera.x,y:camera.y,zoom:camera.zoom};cx.setTransform(camera.zoom,0,0,camera.zoom,-camera.x*camera.zoom,-camera.y*camera.zoom);
@@ -1539,7 +1622,7 @@ function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=
  drawDynamicHazard(room,sec);
  drawScenicLife(room,sec,theme);
 drawRoomWalls(room,r);
-if((room.chestFx||0)>0){cx.save();cx.globalAlpha=Math.min(1,room.chestFx);cx.strokeStyle='#f7d58b';cx.lineWidth=5;cx.beginPath();cx.arc(180,110,25+(1.15-room.chestFx)*38,0,Math.PI*2);cx.stroke();cx.restore()}if(room.chest==='closed'){cx.fillStyle='#b98b4d';cx.fillRect(159,91,42,35);cx.fillStyle='#f0c878';cx.fillRect(177,91,7,35);px(162,94,36,3,'#674e39');px(163,121,34,3,'#674e39');px(169,103,4,14,'#d4a36a');cx.font='10px sans-serif';cx.textAlign='center';cx.fillText(isGuarded(r.current,r)?room.enemies.length?'🔒 GARDÉ':'DÉVERROUILLÉ':'COFFRE',180,79)}if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost'){cx.strokeStyle='#81cafd';cx.lineWidth=3;cx.strokeRect(145,159,70,70);cx.fillStyle='#b8e9ff';cx.textAlign='center';cx.font='bold 11px sans-serif';cx.fillText('📡 BALISE',180,192);cx.font='9px sans-serif';cx.fillText(region().outposts.includes(room.sector)?'ACTIVÉ':'APPROCHE POUR ACTIVER',180,208)}if(isExit(r.current,r)){cx.strokeStyle='#6ddfc3';cx.lineWidth=4;cx.beginPath();cx.arc(180,195,39,0,7);cx.stroke();cx.fillStyle='#c1f9e8';cx.font='bold 11px sans-serif';cx.textAlign='center';cx.fillText(r.exitStarted?'RESTE DANS LE CERCLE':'RESTE DANS LE CERCLE',180,199);if(!r.exitStarted){cx.strokeStyle='#ffca72';cx.lineWidth=7;cx.beginPath();cx.arc(180,195,44,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.min(1,(r.exitCharge||0)/3));cx.stroke();cx.fillText(Math.round(Math.min(100,(r.exitCharge||0)/3*100))+' %',180,214)}}
+drawRefinedChest(room,r);if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost'){cx.strokeStyle='#81cafd';cx.lineWidth=3;cx.strokeRect(145,159,70,70);cx.fillStyle='#b8e9ff';cx.textAlign='center';cx.font='bold 11px sans-serif';cx.fillText('📡 BALISE',180,192);cx.font='9px sans-serif';cx.fillText(region().outposts.includes(room.sector)?'ACTIVÉ':'APPROCHE POUR ACTIVER',180,208)}if(isExit(r.current,r)){drawExtractionZone(r,room)}
 lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),room.kind==='boss'&&e.type==='sentinel');cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-39,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-39,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}cx.restore();}
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){
@@ -1627,7 +1710,7 @@ const tutorialSteps=[
  {title:'Portes rouges et vertes',scene:'🔒  🚪',desc:'Les portes rouges vers des salles inconnues s’ouvrent après sécurisation de la salle. Tu peux généralement revenir par les portes vertes déjà visitées.',tip:'Exception : une arène ou un boss verrouille toutes les sorties jusqu’à la victoire.'},
  {title:'Ramasse XP et équipement',scene:'💎  ✨  🎒',desc:'Les ennemis et les coffres laissent tomber de l’XP, des crédits et parfois des armes. Approche-toi pour les aspirer et les ramasser.',tip:'Les couleurs montrent la rareté. Si ton sac est plein, une arme reste au sol : reviens après avoir libéré une place.'},
  {title:'Niveaux et bouton ACTION',scene:'⭐  🔘',desc:'L’XP fait monter ton niveau d’expédition : choisis un bonus temporaire parmi trois. Les coffres s’ouvrent après élimination des ennemis et les balises s’activent par proximité.',tip:'Tes bonus de niveau disparaissent à la fin de l’expédition. Tes talents achetés au refuge restent.'},
- {title:'Extraire pour tout garder',scene:'📡  🏃',desc:'Trouve une salle d’extraction puis reste 3 secondes dans le cercle lumineux pour la lancer. Reste ensuite dans le cercle jusqu’à la fin du compte à rebours pour rentrer avec ton butin. En sortir annule la procédure.',tip:'Si tu meurs, tu perds ton matériel non assuré. Avant de partir, tu peux assurer UN objet équipé au refuge.'}
+ {title:'Extraire pour tout garder',scene:'📡  🏃',desc:'Trouve une salle d’extraction puis reste 3 secondes dans le cercle pour la valider. Un compte à rebours apparaît ensuite au centre : tiens la zone jusqu’à la fin pour rentrer avec ton butin. En sortir annule la procédure.',tip:'Si tu meurs, tu perds ton matériel non assuré. Avant de partir, tu peux assurer UN objet équipé au refuge.'}
 ];
 let tutorialIndex=0;
 function tutorialShow(index=0){if(data.run)return;tutorialIndex=clamp(index,0,tutorialSteps.length-1);$('tutorialModal').hidden=false;tutorialRender();}
