@@ -289,7 +289,7 @@ function spawnReinforcement(room,count){for(let k=0;k<count;k++){
  if(pos)room.enemies.push({id:uid(),type,...pos,hp,max:hp,cd:1,wind:0,aim:0});
 }}
 
-function createRun(){let m=makeLargeMap();region().expeditions++;return {...m,current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}}}
+function createRun(){let m=makeLargeMap();region().expeditions++;return {...m,interactiveV50:true,current:0,visited:[0],bag:[],equipped:data.equipped,insuredId:data.insured,earnedCredits:0,economy:{enemy:0,chest:0,room:0,arena:0,boss:0},xp:0,xpTotal:0,runLevel:1,runPerks:{},pendingLevels:0,objectives:[],exitTime:0,exitStarted:false,exitWave:0,player:{x:180,y:310,hp:maxHp(),max:maxHp(),inv:0,fire:0,dash:0,dx:0,dy:0}}}
 function setPlayer(){player=data.run?.player||null}
 
 // Progression temporaire : aucun champ de sauvegarde permanent modifié.
@@ -392,12 +392,131 @@ function cancelExtraction(r,reason){
  if(wasActive&&reason)msg('↩ Extraction annulée : '+reason+'. Retourne au cercle pour recommencer.');
  if(wasActive)persist();
 }
+// PHASE 3A (0.8.9.50) — Interactions tactiques limitées à la nouvelle expédition.
+// Une expédition créée avant cette version ne reçoit aucun obstacle supplémentaire.
+function prepareRoomInteractables(room){
+ const run=data.run;
+ if(!run?.interactiveV50||Array.isArray(room.interactables))return;
+ room.interactables=[];
+ if(room.kind!=='standard'||(room.id*11+room.sector*7)%10>=7)return;
+ const geom=roomGeom(room),n=geom.cells.length>1&&room.id%3===0?2:1;
+ for(let i=0;i<n;i++){
+  const cell=geom.cells[(room.id*5+i*3)%geom.cells.length];
+  const kind=(room.sector===1||room.sector===3)?'capacitor':'barrel';
+  let chosen=null;
+  for(let k=0;k<34;k++){
+   const x=cell[0]*CELL_W+65+((room.id*59+i*113+k*83)%228);
+   const y=cell[1]*CELL_H+70+((room.id*43+i*89+k*71)%245);
+   const radius=17;
+   const collides=roomWalls(room).some(rect=>rectTouches(x,y,radius+6,rect))||roomObstacles(room).some(rect=>rectTouches(x,y,radius+8,rect));
+   const nearDoor=doors(room.id).some(d=>{let p=roomDoor(room,d.side);return Math.hypot(x-p.x,y-p.y)<105});
+   const reserved=Math.hypot(x-180,y-110)<90||Math.hypot(x-180,y-195)<65;
+   const crowded=room.interactables.some(o=>Math.hypot(x-o.x,y-o.y)<125);
+   if(!collides&&!nearDoor&&!reserved&&!crowded){chosen={x,y};break}
+  }
+  if(chosen)room.interactables.push({id:'v50-'+room.id+'-'+i,kind,x:chosen.x,y:chosen.y,radius:17,state:'intact',fuse:0,fx:0});
+ }
+}
+function igniteInteractable(room,obj){
+ if(!obj||obj.state!=='intact')return false;
+ obj.state='primed';obj.fuse=.85;
+ window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'impact',x:obj.x,y:obj.y}}));
+ msg(obj.kind==='capacitor'?'⚡ Module instable : éloigne-toi !':'⚠ Baril instable : explosion imminente !');
+ return true;
+}
+function updateInteractables(room,dt){
+ for(const obj of room.interactables||[]){
+  if(obj.fx>0)obj.fx=Math.max(0,obj.fx-dt);
+  if(obj.state!=='primed')continue;
+  obj.fuse-=dt;
+  if(obj.fuse>0)continue;
+  obj.state='spent';obj.fuse=0;obj.fx=.48;
+  const range=obj.kind==='capacitor'?83:78;
+  const dmg=obj.kind==='capacitor'?46:58;
+  for(const enemy of room.enemies){
+   if(Math.hypot(enemy.x-obj.x,enemy.y-obj.y)<=range){
+    enemy.hp-=dmg;
+    if(enemy.hp<=0&&!enemy.lootDropped){
+     enemy.lootDropped=true;
+     lootSpawn(room,'xp',enemy.x,enemy.y,null,pick(2,5));
+     lootSpawn(room,'credits',enemy.x,enemy.y,null,pick(4,10));
+    }
+   }
+  }
+  // Une explosion peut déclencher une autre installation à proximité, sans boucle instantanée.
+  for(const other of room.interactables||[]){
+   if(other!==obj&&other.state==='intact'&&Math.hypot(other.x-obj.x,other.y-obj.y)<range)igniteInteractable(room,other);
+  }
+  window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'impact',x:obj.x,y:obj.y}}));
+  if(player&&Math.hypot(player.x-obj.x,player.y-obj.y)<=range){hurt(obj.kind==='capacitor'?10:12);}
+  persist();
+ }
+}
+function drawInteractables(room){
+ const clock=performance.now()/1000;
+ for(const obj of room.interactables||[]){
+  cx.save();cx.translate(obj.x,obj.y);
+  const electric=obj.kind==='capacitor',base=electric?'#3a758c':'#9e5940';
+  if(obj.state==='primed'){
+   const radius=electric?83:78;
+   cx.fillStyle=electric?'#5ac9df20':'#ff9e5320';cx.beginPath();cx.arc(0,0,radius,0,7);cx.fill();
+   cx.strokeStyle=electric?'#a2f5ff':'#ffca7e';cx.lineWidth=3;cx.setLineDash([9,7]);
+   cx.beginPath();cx.arc(0,0,radius,0,7);cx.stroke();cx.setLineDash([]);
+   cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillStyle='#fff2cb';
+   cx.fillText('!',0,-34);
+  }
+  if(obj.fx>0){
+   const t=1-obj.fx/.48;cx.globalAlpha=obj.fx/.48;
+   cx.strokeStyle=electric?'#8bf4ff':'#ffbb76';cx.lineWidth=5*(1-t)+1;
+   cx.beginPath();cx.arc(0,0,(electric?83:78)*t,0,7);cx.stroke();cx.globalAlpha=1;
+  }
+  if(obj.state==='spent'){
+   cx.fillStyle='#1c2d32';cx.beginPath();cx.ellipse(0,8,18,7,0,0,7);cx.fill();
+   cx.fillStyle=electric?'#294b57':'#5c3d30';cx.fillRect(-16,-1,32,8);
+   cx.strokeStyle='#64727a';cx.lineWidth=2;cx.beginPath();cx.moveTo(-15,-2);cx.lineTo(-7,1);cx.lineTo(3,-3);cx.lineTo(13,1);cx.stroke();
+  }else{
+   cx.fillStyle='#07172099';cx.beginPath();cx.ellipse(0,17,22,9,0,0,7);cx.fill();
+   cx.fillStyle='#111f2b';cx.fillRect(-19,-18,38,36);
+   cx.fillStyle=base;cx.fillRect(-15,-15,30,31);
+   cx.fillStyle=electric?'#213d53':'#5c322d';cx.fillRect(-16,-15,32,6);cx.fillRect(-16,10,32,7);
+   cx.strokeStyle=electric?'#93c8db':'#e2b17c';cx.lineWidth=2;cx.strokeRect(-15,-15,30,31);
+   cx.fillStyle=electric?'#b4f1fd':'#ffcf88';
+   if(electric){
+    cx.fillRect(-7,-7,14,14);cx.fillStyle='#2e6f8b';cx.fillRect(-4,-4,8,8);
+    cx.fillStyle='#82e9ee';cx.fillRect(-21,-9,5,18);cx.fillRect(16,-9,5,18);
+   }else{
+    cx.beginPath();cx.moveTo(0,-8);cx.lineTo(-6,2);cx.lineTo(0,2);cx.lineTo(-3,10);cx.lineTo(7,-2);cx.lineTo(0,-2);cx.closePath();cx.fill();
+   }
+   if(obj.state==='primed'){
+    cx.globalAlpha=.45+.55*Math.sin(clock*18);cx.strokeStyle='#fff0c0';cx.lineWidth=3;cx.strokeRect(-20,-20,40,42);cx.globalAlpha=1;
+   }
+  }
+  cx.restore();
+ }
+}
+function canTargetInteractable(px,py,obj,room){
+ const dx=obj.x-px,dy=obj.y-py,steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/12));
+ for(let i=1;i<steps;i++){
+  const x=px+dx*i/steps,y=py+dy*i/steps;
+  if(roomWalls(room).some(rect=>rectTouches(x,y,4,rect))||roomObstacles(room).some(rect=>rectTouches(x,y,4,rect)))return false;
+  if((room.interactables||[]).some(other=>other!==obj&&other.state!=='spent'&&Math.hypot(x-other.x,y-other.y)<other.radius+4))return false;
+ }
+ return true;
+}
+function tryHitInteractable(room,x,y){
+ for(const obj of room.interactables||[]){
+  if(obj.state!=='spent'&&Math.hypot(x-obj.x,y-obj.y)<obj.radius+4){
+   igniteInteractable(room,obj);return true;
+  }
+ }
+ return false;
+}
 function enter(id,from){let r=data.run,room=r.rooms[id];
  // Une extraction n'a jamais le droit de survivre à un changement de salle.
  if(r.exitStarted||r.exitCharge)cancelExtraction(r,from===null?'':'tu as quitté la salle');
  r.current=id;room.seen=true;if(!r.visited.includes(id))r.visited.push(id);
 if(isLarge(r)){let reg=region();reg.maxSector=Math.max(reg.maxSector,room.sector);}
-environment(room);if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(id);}
+environment(room);prepareRoomInteractables(room);if(!room.spawned){room.spawned=true;room.enemies=enemiesFor(id);}
 if(from!==null){
   const [a,b]=pos(from),[x,y]=pos(id),g=roomGeom(room);
   if(x>a){player.x=47;player.y=195}
@@ -722,7 +841,7 @@ $('inventorySelection').addEventListener('click',e=>{
  else sell(Number(b.dataset.gridSell));
 });
 $('stash').addEventListener('click',e=>{let b=e.target.closest('[data-op]');if(!b)return;let i=Number(b.dataset.idx);if(b.dataset.op==='equipHome')equipHome(i);else if(b.dataset.op==='sell')sell(i)});
-$('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Utilise le joystick semi-mobile en bas au centre pour te déplacer. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange ⚠ ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Les coffres s’ouvrent automatiquement après avoir sécurisé la salle, avec un rendu de caisse de butin plus lisible. Les avant-postes s’activent par proximité. SAC et CARTE mettent le combat en pause.</p><p>Reste 3 secondes dans la plateforme d’extraction pour lancer la procédure. Une fois validée, un compte à rebours apparaît au centre du cercle : reste dedans jusqu’à la fin, sinon l’extraction est annulée. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
+$('saveBtn').onclick=()=>persist(false);$('backupBtn').onclick=backup;$('toolsClose').onclick=()=>$('tools').hidden=true;$('rulesBtn').onclick=()=>tool('RÈGLES',`<p>Utilise le joystick semi-mobile en bas au centre pour te déplacer. Les tirs sont automatiques ; ta précision diminue lorsque tu bouges.</p><p>Traverse librement les portes vertes. Une porte orange ⚠ ARÈNE annonce un combat obligatoire dès l’entrée ; trois vagues, coffre épique garanti en cas de victoire.</p><p>Les coffres s’ouvrent automatiquement après avoir sécurisé la salle, avec un rendu de caisse de butin plus lisible. Les avant-postes s’activent par proximité. SAC et CARTE mettent le combat en pause.</p><p>Reste 3 secondes dans la plateforme d’extraction pour lancer la procédure. Une fois validée, un compte à rebours apparaît au centre du cercle : reste dedans jusqu’à la fin, sinon l’extraction est annulée. Les blocs solides arrêtent le joueur, les ennemis et les tirs (y compris pendant le dash). Les quatre secteurs possèdent désormais des ennemis, décors et dangers différents (laser et chaleur télégraphiés). Dans les nouvelles expéditions, les barils instables et modules électriques peuvent exploser sous les tirs : éloigne-toi de leur rayon signalé et utilise-les contre les ennemis. K-17 comporte 50 salles irrégulières, trois sorties, trois avant-postes activables et quatre arènes. Les secteurs découverts restent débloqués mais la carte se régénère à chaque nouvelle expédition. Le boss principal débloque Helix pour une version future.</p><p>Extrais-toi depuis une salle d’extraction. À la mort, un seul objet assuré avant le départ peut être conservé. Les objets trouvés ne sont jamais assurés.</p><p>Les sauvegardes locales peuvent être effacées par iOS : exporte régulièrement une copie.</p>`);
 // DASH : impulsion immédiate et indépendante du tick d'animation.
 // Conserve la direction du joystick au moment du clic et une direction de secours.
 function performDash(){
@@ -769,7 +888,7 @@ function collidesSolid(x,y,radius,room){
  if(x<radius||y<radius||x>g.w-radius||y>g.h-radius)return true;
  // Never allow an actor or projectile into the absent fourth tile of an L room.
  if(!g.cells.some(([tx,ty])=>x>=tx*CELL_W&&x<= (tx+1)*CELL_W&&y>=ty*CELL_H&&y<= (ty+1)*CELL_H))return true;
- return roomWalls(room).some(rect=>rectTouches(x,y,radius,rect))||roomObstacles(room).some(rect=>rectTouches(x,y,radius,rect));
+ return roomWalls(room).some(rect=>rectTouches(x,y,radius,rect))||roomObstacles(room).some(rect=>rectTouches(x,y,radius,rect))||((room.interactables||[]).some(o=>o.state!=='spent'&&Math.hypot(o.x-x,o.y-y)<o.radius+radius));
 }
 function advanceSolid(entity,dx,dy,radius,room){
  const g=roomGeom(room),steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/5));
@@ -1668,7 +1787,7 @@ function draw(){let r=data.run;if(!r)return;let room=r.rooms[r.current];let sec=
  drawDynamicHazard(room,sec);
  drawScenicLife(room,sec,theme);
 drawRoomWalls(room,r);
-drawRefinedChest(room,r);if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
+drawInteractables(room);drawRefinedChest(room,r);if(isArena(r.current,r)){cx.fillStyle=room.cleared?'#90e8b5':'#ffd388';cx.font='bold 12px sans-serif';cx.textAlign='center';cx.fillText(room.cleared?'ARÈNE TERMINÉE':`VAGUE ${room.arenaWave||1}/3`,180,68);if(room.cleared&&room.chest==='closed'){cx.fillStyle='#d4a561';cx.fillText('COFFRE ÉPIQUE À OUVRIR',180,152)}}if(isBoss(r.current,r)){cx.fillStyle='#f1ad76';cx.textAlign='center';cx.font='bold 12px sans-serif';cx.fillText(room.cleared?'GARDIEN VAINCU · HELIX DÉBLOQUÉ':'☠ GARDIEN K-17',180,70)}if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
 lootDraw(room);for(let e of room.enemies){if(e.wind>0){cx.strokeStyle=(e.type==='chaser'||e.type==='brute')?'#ff6666':'#ffc45d';cx.lineWidth=3;cx.beginPath();cx.moveTo(e.x,e.y);cx.lineTo(e.x+Math.cos(e.aim)*125,e.y+Math.sin(e.aim)*125);cx.stroke();cx.beginPath();cx.arc(e.x,e.y,19,0,7);cx.stroke()}drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),room.kind==='boss'&&e.type==='sentinel');cx.fillStyle='#081722';cx.fillRect(e.x-15,e.y-39,30,4);cx.fillStyle='#79e0a1';cx.fillRect(e.x-15,e.y-39,30*Math.max(0,e.hp/e.max),4)}for(let b of bullets){cx.fillStyle=b.enemy?'#ff9285':'#c1fae4';cx.beginPath();cx.arc(b.x,b.y,4,0,7);cx.fill()}if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);cx.restore();}
 function hurt(amount){if(player.inv>0)return;window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));player.hp-=amount;player.inv=.65;if(player.hp<=0)finish(false)}
 function transition(){
@@ -1682,10 +1801,19 @@ function transition(){
  return false;
 }
 function objective(name){let r=data.run;if(!r.objectives.includes(name))r.objectives.push(name)}
-function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; if(!room.cleared&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
+function update(dt){if(!data.run||overlay)return;enforceArena();let r=data.run,room=r.rooms[r.current];environment(room);if(room.cleared){room.hazardOn=false;for(let i=bullets.length-1;i>=0;i--)if(bullets[i].enemy)bullets.splice(i,1)}if(sanitizeEnemyPositions(room))persist();let sec=sectorOf(room);room.envPhase+=dt; updateInteractables(room,dt);if(!data.run)return; if(!room.cleared&&room.kind!=='outpost'&&!isExit(r.current,r)&&r.current!==0&&(sec===1||sec===2)){room.hazardCooldown-=dt;if(room.hazardCooldown<=0){room.hazardOn=!room.hazardOn;room.hazardCooldown=room.hazardOn?1.15:2.9;if(!room.hazardOn)room.hazardX=sec===1?pick(105,255):pick(105,255)}if(room.hazardOn){let hit=sec===1?Math.abs(player.x-room.hazardX)<14&&player.y>50&&player.y<350:Math.hypot(player.x-room.hazardX,player.y-205)<42;if(hit){if(!room.hazardTick||room.hazardTick<=0){hurt(sec===1?11:15);room.hazardTick=.65}}}room.hazardTick=Math.max(0,(room.hazardTick||0)-dt)}player.inv=Math.max(0,player.inv-dt);player.fire=Math.max(0,player.fire-dt);player.dash=0;player.dashCooldown=Math.max(0,(player.dashCooldown||0)-dt);player.dashFlash=Math.max(0,(player.dashFlash||0)-dt);
 let vx=joy.x+(keyState.ArrowRight||keyState.d?1:0)-(keyState.ArrowLeft||keyState.a?1:0),vy=joy.y+(keyState.ArrowDown||keyState.s?1:0)-(keyState.ArrowUp||keyState.w?1:0),mag=Math.hypot(vx,vy);if(mag>1){vx/=mag;vy/=mag}player.dx=vx;player.dy=vy;if(mag>.15){player.facingX=vx;player.facingY=vy}advanceSolid(player,vx*150*(1+perkBonus('speed'))*dt,vy*150*(1+perkBonus('speed'))*dt,12,room);if(transition())return;
 if(room.activated&&isArena(r.current,r)&&room.enemies.length===0&&!room.cleared){room.arenaWave=(room.arenaWave||1)+1;if(room.arenaWave<=3){spawnReinforcement(room,room.arenaWave===2?3:4);if(room.arenaWave===3){const elite=enemiesFor(r.current)[3];const pos=spawnSafe(room,room.enemies,{x:180,y:105});if(elite&&pos)room.enemies.push({...elite,id:uid(),hp:160,max:160,...pos});}player.inv=Math.max(player.inv,.7);msg(`⚠ ARÈNE : vague ${room.arenaWave}/3 !`)}else{room.cleared=true;room.chest='closed';r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};const arenaReward=pick(150,250);r.earnedCredits+=arenaReward;r.economy.arena+=arenaReward;objective('arène');objective('arène-recherche-1');objective('arène-recherche-2');msg('🏆 VICTOIRE : coffre épique en cours d’ouverture !')}persist()}if(isBoss(r.current,r)&&room.spawned&&room.enemies.length===0&&!room.cleared){room.cleared=true;region().bossDefeated=true;data.unlockHelix=true;r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=450;r.economy.boss+=450;objective('boss-k17');objective('boss-recherche');msg('🏆 GARDIEN K-17 VAINCU ! HELIX DÉBLOQUÉ (future région).');persist()}if(!room.cleared&&room.spawned&&room.enemies.length===0&&!isArena(r.current,r)&&!isBoss(r.current,r)){room.cleared=true;if(room.kind!=='start'&&room.kind!=='outpost'){r.economy??={enemy:0,chest:0,room:0,arena:0,boss:0};r.earnedCredits+=20;r.economy.room+=20;objective('combat-'+r.current)}msg('✓ Salle sécurisée : nouvelles portes ouvertes !');persist()}
-if(room.enemies.length&&player.fire<=0){let candidates=room.enemies.filter(e=>hasLineOfSight(player.x,player.y,e.x,e.y,room));if(candidates.length){let target=candidates.reduce((a,b)=>length(player,a)<length(player,b)?a:b);let spread=mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09,ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,dmg:damage()*(1+perkBonus('power')),ttl:1.5});player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')))}}
+if(room.enemies.length&&player.fire<=0){
+ const candidates=room.enemies.filter(e=>hasLineOfSight(player.x,player.y,e.x,e.y,room));
+ const tactical=(room.interactables||[]).filter(o=>o.state==='intact'&&Math.hypot(o.x-player.x,o.y-player.y)>102&&canTargetInteractable(player.x,player.y,o,room)&&room.enemies.some(e=>Math.hypot(e.x-o.x,e.y-o.y)<65));
+ if(candidates.length||tactical.length){
+  const target=tactical.length?tactical[0]:candidates.reduce((a,b)=>length(player,a)<length(player,b)?a:b);
+  const spread=tactical.length?0:mag>.15?(Math.random()-.5)*.46:(Math.random()-.5)*.09;
+  const ang=Math.atan2(target.y-player.y,target.x-player.x)+spread;
+  bullets.push({x:player.x,y:player.y,vx:Math.cos(ang)*300,vy:Math.sin(ang)*300,enemy:false,dmg:damage()*(1+perkBonus('power')),ttl:1.5});
+  player.fire=1/(r.equipped.rate*(1+perkBonus('rapid')))
+ }}
 for(let e of room.enemies){let d=length(e,player),angle=Math.atan2(player.y-e.y,player.x-e.x);e.wind=e.wind||0;
  const oppositeWing=roomGeom(room).type==='ell'&&((e.x>355&&player.y>395)||(e.y>395&&player.x>355));
  const navTarget=oppositeWing?{x:180,y:195}:player;
@@ -1699,6 +1827,7 @@ for(let b of bullets){
  let steps=Math.max(1,Math.ceil(Math.hypot(dx,dy)/5));
  for(let i=0;i<steps;i++){
   b.x+=dx/steps;b.y+=dy/steps;
+  if(tryHitInteractable(room,b.x,b.y)){b.ttl=0;break}
   if(collidesSolid(b.x,b.y,4,room)){window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'impact',x:b.x,y:b.y,enemy:b.enemy}}));b.ttl=0;break}
  }
  if(b.ttl<=0)continue;

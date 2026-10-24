@@ -671,7 +671,7 @@ button.refuge-tab.active,.refuge-tab.active{box-shadow:0 0 0 1px #f3d5a0 inset,0
 @media(max-width:360px){.ash-merchant-offer-head{grid-template-columns:76px minmax(0,1fr)}.ash-offer-picture{width:76px;height:72px}.ash-offer-picture .weapon-art{max-width:72px}.ash-price-chip{font-size:13px}#refuge-page-merchant .ash-merchant-metrics .mini-panel{padding:9px 6px}}
 .ash-offer-stock{display:inline-block;border:1px solid #3a6980;background:#112e3e;border-radius:6px;padding:3px 6px;font-size:10px;color:#85dcc0;margin-top:2px}
 
-/* 0.8.9.49 — Contrôle de version sans impact sur l'expédition */
+/* 0.8.9.50 — Contrôle de version sans impact sur l'expédition */
 .ash-update-panel{margin:12px 0 8px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid rgba(114,160,181,.29);border-radius:12px;background:rgba(16,35,49,.8);font-size:11px;letter-spacing:.05em;color:#a9bdc7}
 .ash-update-panel b{color:#edbb76}
 .ash-update-panel button{cursor:pointer;border:1px solid #4f7689;border-radius:9px;background:#193447;color:#d2e8ed;padding:9px 12px;font-size:12px;font-weight:700}

@@ -1,18 +1,12 @@
-# ASHFALL 0.8.9.49 — Polish final des interactifs
+# ASHFALL 0.8.9.50 — Phase 3A : dangers tactiques
 
-Base : 0.8.9.48. Sauvegarde `ashfall_pwa_v1` inchangée.
+Base : 0.8.9.49 Polish Interactifs.
 
-## Nouveautés
-- Coffres : volumes différenciés, ouverture automatique plus visible, coffre ouvert persistant et coffre d’arène mis en valeur.
-- Balises : nouvelle silhouette avec socle, antenne et témoin de statut disponible ou activé.
-- Extraction : plateforme et balisage améliorés. Activation 3 secondes inchangée. Après validation, le compte à rebours de 12 secondes est dessiné au PREMIER PLAN, au centre de la zone même lorsque le Nomade y reste.
-- Extraction contestée : compteur mis en pause et signal visuel rouge/orange. Quitter la zone annule toujours la procédure.
-- Tutoriel : retrait d'une mention obsolète de bouton ACTION.
+- Les nouvelles expéditions reçoivent, dans certaines salles standards, des **barils instables** ou des **modules électriques** destructibles. Les anciennes expéditions actives conservent leur disposition et ne reçoivent aucun nouvel obstacle.
+- Les tirs automatiques peuvent cibler un module situé près d’ennemis, depuis une distance de sécurité. Les tirs qui traversent un module peuvent aussi le déclencher.
+- Une fois touché, le module annonce son explosion pendant 0,85 s et marque le rayon de danger au sol ; il inflige des dégâts aux ennemis et peut blesser le joueur proche.
+- Un module détruit reste détruit, sa collision disparaît et son état est conservé dans la sauvegarde d’expédition.
+- Les explosions ne génèrent pas de butin bonus. Un ennemi abattu peut laisser son butin habituel.
+- Le refuge, les graphiques approuvés, les coffres, la mécanique d’extraction et l’économie restent inchangés.
 
-## Ce qui ne change pas
-- Récompenses, économie, progression, gameplay, vitesse, dégâts, collisions et sauvegardes.
-- Coffres ouverts automatiquement après sécurisation de la salle.
-- Avant-postes activés par proximité, sans checkpoint ni départ alternatif.
-
-## Publication et iPhone
-Remplacer tous les fichiers hébergés, y compris `index.html` et `service-worker.js`. Vérifier « 0.8.9.49 · POLISH INTERACTIFS » en haut de l’accueil. Sauvegarder sa progression avant toute manipulation du stockage du navigateur.
+Test recommandé : ouvrir une nouvelle expédition, trouver un module, attirer un ennemi près de lui, déclencher son explosion, quitter puis revisiter la salle, et vérifier la sauvegarde/extraction.
