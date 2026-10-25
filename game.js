@@ -1544,14 +1544,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.9.1-graphics-p1.1';
+const ASHFALL_RUNTIME_VERSION='0.9.2-graphics-p2';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.9.1-graphics-p1.1, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.9.2-graphics-p2, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();
@@ -3208,7 +3208,20 @@ if(room.enemies.length){
  if(tactical){cx.save();cx.strokeStyle='#f8d68b';cx.lineWidth=2;cx.setLineDash([4,3]);cx.beginPath();cx.arc(tactical.x,tactical.y,25,0,Math.PI*2);cx.stroke();cx.setLineDash([]);cx.fillStyle='#ffe8b3';cx.font='bold 9px sans-serif';cx.textAlign='center';/* La cible tactique est identifiée par un anneau doré en pointillés. */cx.restore()}
 }
 drawFieldEvent(room);drawRefinedChest(room,r);if(room.kind==='outpost')drawRefinedOutpost(room);if(isExit(r.current,r))drawExtractionGround(r,room)
-lootDraw(room);ashSweepFxDraw();ashDrawEnemyTelegraphs(room);for(let e of room.enemies){const guardian=ashGuardianInRoom(e,room);drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),guardian);const bw=guardian?70:30,bhy=guardian?-57:-39;cx.fillStyle='#081722';cx.fillRect(e.x-bw/2,e.y+bhy,bw,5);cx.fillStyle=guardian?'#c99de5':'#79e0a1';cx.fillRect(e.x-bw/2,e.y+bhy,bw*Math.max(0,e.hp/e.max),5)}combatFxPaintBullets();if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){drawNomadGameplay(player.x,player.y,performance.now()/1000,player.facingX||1,player.facingY||0,r.equipped,room)}combatFxPaintWorld();cx.restore();if(isBoss(r.current,r))ashDrawBossHud(room);combatFxPaintHurt();}
+lootDraw(room);ashSweepFxDraw();ashDrawEnemyTelegraphs(room);for(let e of room.enemies){const guardian=ashGuardianInRoom(e,room);drawEnemyGameplay(e,sec,performance.now()/1000+(e.x*.04),guardian);const bw=guardian?70:30,bhy=guardian?-57:-39;cx.fillStyle='#081722';cx.fillRect(e.x-bw/2,e.y+bhy,bw,5);cx.fillStyle=guardian?'#c99de5':'#79e0a1';cx.fillRect(e.x-bw/2,e.y+bhy,bw*Math.max(0,e.hp/e.max),5)}combatFxPaintBullets();if(isExit(r.current,r)&&r.exitStarted)drawExtractionCountdown(r,room);if((player.dashFlash||0)>0){cx.strokeStyle='#a5faff';cx.lineWidth=5;cx.beginPath();cx.arc(player.x,player.y,18+25*player.dashFlash/.22,0,Math.PI*2);cx.stroke()}if(player.inv<=0||Math.floor(player.inv*14)%2===0){
+ // Graphics P2: read-only visual adapter, old drawing retained as atomic fallback.
+ const active=r.eq2?{armor:E2.active(r,'armor'),boots:E2.active(r,'boots'),bag:E2.active(r,'bag'),module:E2.active(r,'module'),artifact:E2.active(r,'artifact')}:{};
+ const visualWeapon=r.eq2?(E2.active(r,'weapon')||r.equipped):r.equipped;
+ const artId=WEAPON_NAMED_ART[String(visualWeapon?.name||'').toLowerCase()]||null;
+ let aimX=player.facingX||1,aimY=player.facingY||0;
+ // The last real player bullet supplies the actual fired direction, including spread.
+ const latest=bullets.filter(b=>!b.enemy&&b.ttl>1.16&&Math.hypot(b.x-player.x,b.y-player.y)<90).sort((a,b)=>b.ttl-a.ttl)[0];
+ if(latest){aimX=latest.vx;aimY=latest.vy;}
+ else if(room.enemies?.length){const seen=room.enemies.filter(e=>hasLineOfSight(player.x,player.y,e.x,e.y,room));const tactical=tacticalObjectToTarget(room,seen);const target=tactical||(seen.length?seen.reduce((a,b)=>length(player,a)<length(player,b)?a:b):null);if(target){aimX=target.x-player.x;aimY=target.y-player.y;}}
+ const mag=Math.hypot(aimX,aimY)||1;aimX/=mag;aimY/=mag;
+ const drawn=window.AshNomad2?.draw(cx,{x:player.x,y:player.y,time:performance.now()/1000,dx:player.dx,dy:player.dy,fx:aimX,fy:aimY,weaponArtId:artId,...active,shieldReady:!!r.eq2?.fx?.shieldReady})||false;
+ if(!drawn)drawNomadGameplay(player.x,player.y,performance.now()/1000,aimX,aimY,r.equipped,room);
+ }combatFxPaintWorld();cx.restore();if(isBoss(r.current,r))ashDrawBossHud(room);combatFxPaintHurt();}
 function hurt(amount,cause='combat'){if(!player||!data.run||player.inv>0)return;if(data.run.eq2){const f=data.run.eq2.fx;if(E2.profile(data.run).shield>0&&f.shieldReady){f.shieldReady=false;f.shieldCooldown=32;player.inv=.35;msg('Égide : impact absorbé.');return;}}window.dispatchEvent(new CustomEvent('ashfall-fx',{detail:{kind:'damage',x:player.x,y:player.y}}));combatFxDamagePlayer();player.hp-=Math.max(1,Math.round(amount*(1-ashRunGear().resist)));player.inv=.65;if(player.hp<=0)finish(false,cause)}
 function transition(){
  if(locked())return false;
