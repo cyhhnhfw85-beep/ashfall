@@ -80,18 +80,37 @@
     },
     "pack": {
       "world": [
-        32,
-        32
+        33.6,
+        31.4
       ],
       "offset": [
-        -16,
-        -29
+        -16.7,
+        -35.0
       ],
       "resolution": [
-        160,
-        111
+        88,
+        74
       ],
-      "src": "assets/visual2/hero/pack.png"
+      "src": "assets/visual2/hero/pack.png",
+      "visibility": "only_when_slot_bag_equipped",
+      "orientation": "back"
+    },
+    "pack-side": {
+      "world": [
+        19.2,
+        31.8
+      ],
+      "offset": [
+        -16.2,
+        -32.2
+      ],
+      "resolution": [
+        40,
+        72
+      ],
+      "src": "assets/visual2/hero/pack-side.png",
+      "visibility": "only_when_slot_bag_equipped",
+      "orientation": "side"
     }
   }
 }
