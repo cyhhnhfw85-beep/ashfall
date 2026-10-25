@@ -1,0 +1,97 @@
+{
+  "schema": 1,
+  "source": "user-approved concept board Decision 51",
+  "licenseNote": "derived from user-provided visual reference",
+  "layers": {
+    "torso-front": {
+      "world": [
+        41,
+        36
+      ],
+      "offset": [
+        -20.5,
+        -39.5
+      ],
+      "resolution": [
+        151,
+        115
+      ],
+      "src": "assets/visual2/hero/torso-front.png"
+    },
+    "torso-side": {
+      "world": [
+        37,
+        37
+      ],
+      "offset": [
+        -18.5,
+        -40.5
+      ],
+      "resolution": [
+        106,
+        145
+      ],
+      "src": "assets/visual2/hero/torso-side.png"
+    },
+    "torso-back": {
+      "world": [
+        38,
+        39
+      ],
+      "offset": [
+        -19,
+        -42
+      ],
+      "resolution": [
+        125,
+        150
+      ],
+      "src": "assets/visual2/hero/torso-back.png"
+    },
+    "leg-left": {
+      "world": [
+        23,
+        36
+      ],
+      "offset": [
+        -18,
+        -4
+      ],
+      "resolution": [
+        77,
+        102
+      ],
+      "src": "assets/visual2/hero/leg-left.png"
+    },
+    "leg-right": {
+      "world": [
+        23,
+        36
+      ],
+      "offset": [
+        -4,
+        -4
+      ],
+      "resolution": [
+        79,
+        102
+      ],
+      "src": "assets/visual2/hero/leg-right.png"
+    },
+    "pack": {
+      "world": [
+        32,
+        32
+      ],
+      "offset": [
+        -16,
+        -29
+      ],
+      "resolution": [
+        160,
+        111
+      ],
+      "src": "assets/visual2/hero/pack.png"
+    }
+  }
+}
