@@ -216,7 +216,7 @@ function ashRefreshContractHud(r){
  const hud=$('ashContractHud');if(!hud)return;
  const contract=ashContractStatus(r);hud.hidden=!contract;
  if(!contract)return;
- hud.textContent=`CONTRAT ${contract.name} · ${Math.min(contract.actual,contract.target)}/${contract.target}${contract.complete?' · OBJECTIF ATTEINT':''}`;
+ hud.innerHTML=`<span class="ash-contract-caption"><svg class="af-icon" aria-hidden="true" viewBox="0 0 24 24"><use href="#af-i-enemies"></use></svg><span><span class="ash-contract-tag">CONTRAT</span><span class="ash-contract-name">${uiSafe(contract.name)}${contract.complete?' · OBJECTIF ATTEINT':''}</span></span><strong class="ash-contract-progress">${Math.min(contract.actual,contract.target)}/${contract.target}</strong>`;
  hud.classList.toggle('complete',contract.complete);
 }
 function ashRegisterCareer(summary){
@@ -1544,14 +1544,14 @@ function ashChestIcon(tier){
  return `<img class="ash-chest-art" src="${ASH_CHEST_IMAGE_DATA[tier.id].closed}" alt="Coffre ${tier.name}" loading="eager" decoding="async">`;
 }
 
-const ASHFALL_RUNTIME_VERSION='0.9.0-beta.1';
+const ASHFALL_RUNTIME_VERSION='0.9.1-graphics-p1.1';
 window.__ASHFALL_RUNTIME_VERSION=ASHFALL_RUNTIME_VERSION;
 (function checkAssetVersion(){
  const el=document.getElementById('ashVersion');
  if(el&&String(el.textContent||'').trim()!==ASHFALL_RUNTIME_VERSION){
   const banner=document.createElement('div');banner.className='ash-version-mismatch';
   banner.setAttribute('role','alert');
-  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.9.0-beta.1, puis recharge la page.';
+  banner.textContent='Mise à jour incomplète : certains fichiers du jeu sont encore en cache. Réinstalle tous les fichiers de la version 0.9.1-graphics-p1.1, puis recharge la page.';
   document.body.prepend(banner);
  }
 })();

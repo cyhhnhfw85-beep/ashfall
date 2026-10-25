@@ -1,30 +1,14 @@
-# ASHFALL — 0.9.0-beta.1 · Équipements 2.0
+# ASHFALL — Version 0.9.1-graphics-p1.1
 
-Version jouable de test construite sur **ASHFALL 0.8.9.78b — Refuge UI Cleanup**. Ce ZIP est une version intégrale du jeu, pas seulement un audit ou un patch.
+Version de jeu complète, basée exclusivement sur ASHFALL 0.9.0-beta.1 Équipements 2.0, et sur le correctif d'interface P1.1 pour HUD/joystick. Pas de nouvelle étape 2 engagée.
 
-## Installation
+- `index.html` : point d'entrée PWA HTML.
+- `game.js` : moteur original, uniquement version et présentation d'un texte de contrat ajustés.
+- `graphics-p1.css` : nouveau HUD premium et joystick visuellement modernisé.
+- `assets/hud/nomad-badge.png` : portrait extrait de la maquette artistique fournie.
+- `equipment2-core.js` : mécanique Équipements 2.0 historique inchangée.
+- `service-worker.js` : cache PWA 0.9.1 P1.1 avec toutes les ressources nécessaires.
 
-1. **Exporter le code de sauvegarde** de l’ancienne version avant de changer les fichiers.
-2. Conserver le même domaine/origine et remplacer **tous** les fichiers du site par le contenu du ZIP (respecter les dossiers).
-3. Rafraîchir le navigateur, vérifier le numéro **0.9.0-beta.1** et utiliser le contrôle de mise à jour si nécessaire.
-4. Une expédition commencée avec l’ancien système se termine suivant ses règles historiques. Au retour au refuge, la sauvegarde est migrée.
-5. Exporter de nouveau la sauvegarde après le premier démarrage, puis effectuer une session de validation sur l’appareil cible.
+Lire `CHANGELOG_GRAPHICS_P1_1.md`, `RAPPORT_GRAPHICS_P1_1.md`, `VALIDATION_GRAPHICS_P1_1.md` et `INSTALLATION_IPHONE_GRAPHICS_P1_1.md` avant déploiement.
 
-**Clé de sauvegarde :** `ashfall_pwa_v1` inchangée ; `eq2.schema=2` est une extension versionnée. La copie locale de pré-migration est enregistrée avant conversion sous `ashfall_pwa_v1_eq2_original_v1` et une clé d’archive propre à la sauvegarde.
-
-## Fonctionnalités incluses
-
-- Six emplacements : arme, armure, bottes, module, sac tactique, artefact ; six équipements acquis portés au départ, sans pièces de rechange.
-- Propriété permanente des objets acquis, huit emplacements de nouveau butin, ramassage et remplacement manuels à 8/8, abandon et récupération dans les salles.
-- Extraction et mort différenciées ; Sac Sécurisateur avec seuils par rareté et transfert de protection unique.
-- Quinze modèles de catalogue initiaux, effets automatiques et synergies, Composants, recyclage, améliorations +5, optimisation unique remplaçable, vente.
-- Conservation des cartes à 50 salles, du marchand existant, des coffres, des boss et de la progression historique.
-
-## Documents
-
-- `CHANGELOG_0900E2.md` : modifications effectuées.
-- `CATALOGUE_ECONOMIE_E2.md` : catalogue et barèmes de départ.
-- `MIGRATION_ET_SAUVEGARDES_E2.md` : conversions, compensations et transitions.
-- `VALIDATION_E2.md` : tests réellement exécutés et limites.
-
-**Statut : BETA**, car la PWA installée sur Safari iOS et une partie complète avec toutes les phases du boss n’ont pas été testées sur appareil. Ne pas écraser ta seule copie de sauvegarde.
+**Sauvegardes** : conserver un export. L'installation remplace les fichiers du site, pas les données de progression. Les tests Safari iPhone doivent encore être réalisés par le propriétaire.

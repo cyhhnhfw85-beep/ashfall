@@ -1,0 +1,12 @@
+# Installer ASHFALL 0.9.1-graphics-p1.1 sur iPhone sans risquer la sauvegarde
+
+1. **Sur la version actuellement installée**, utiliser l'export de sauvegarde intégré et conserver le fichier indépendamment (dans Fichiers, idéalement avec une copie de secours). Ne jamais supprimer la PWA ou effacer les données du site pour tester une version graphique.
+2. **Option recommandée :** déployer P1.1 sur une **autre origine HTTPS** (sous-domaine/site de test distinct), pour isoler `localStorage` et le cache du jeu principal. Attention : **une autre URL d'origine ne partage pas la sauvegarde**, il faut faire un import volontaire de la copie uniquement dans le site test si on souhaite y tester la progression réelle.
+3. Pour GitHub Pages : décompresser le ZIP, charger **tout le contenu** (sous-dossiers `assets/` inclus) dans le répertoire publié puis committer les changements. Conserver le ZIP original 0.9.0-beta.1 et le ZIP P1 hors de ce déploiement. Ne pas publier seulement `index.html`.
+4. Depuis Safari sur iPhone, ouvrir l'URL HTTPS publiée en étant connecté, attendre le chargement complet et consulter la mention de version `0.9.1-graphics-p1.1`. Si l'ancienne version reste affichée, fermer/réouvrir l'app et vérifier l'état des ressources en ligne ; **ne pas effacer les données du site**.
+5. Vérifier dans une expédition : secteur/PV/XP/contrat, mini-carte, sac 0/8, pause, un doigt sur le joystick (centre semi-mobile), puis reprise après fermeture et réouverture. Vérifier le fonctionnement hors ligne après un premier chargement connecté.
+6. Prendre une capture pour validation artistique à taille réelle sur iPhone 16 Pro Max. Noter anomalies de coupe, de contrôles, de mise à jour ou d'animations.
+7. **Retour arrière :** redéployer le ZIP complet P1 d'origine, ou `0.9.0-beta.1` si nécessaire, sur la même origine, lorsque la connexion est disponible. Recharger, contrôler la version et la sauvegarde. **Ne pas rétrograder des données après un changement de schéma futur** ; P1.1 ne crée aucune migration ni nouveau champ de sauvegarde.
+
+## Différence importante
+Sur une **même origine**, `localStorage` reste partagé entre versions tant qu'il n'est pas effacé. Sur des origines différentes, il est isolé. Un changement de cache PWA peut nécessiter plusieurs ouvertures pour activer la nouvelle version ; ne jamais forcer l'effacement du stockage comme première méthode de rafraîchissement.
